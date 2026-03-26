@@ -1,307 +1,148 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Start</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>접근 금지 | Junossam</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-<style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      background: linear-gradient(135deg, #eef2f7, #dfe7f1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      color: #1f2937;
+    }
 
-body{
-margin:0;
-font-family:-apple-system, BlinkMacSystemFont, sans-serif;
-background:#0b0f19;
-color:white;
-}
+    .panel {
+      width: 100%;
+      max-width: 760px;
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 28px;
+      padding: 48px 32px;
+      text-align: center;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.12);
+      backdrop-filter: blur(6px);
+    }
 
-.container{
-max-width:500px;
-margin:auto;
-padding:20px;
-}
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
 
-/* 검색 */
+    .logo {
+      width: 110px;
+      display: block;
+      mix-blend-mode: multiply;
+    }
 
-.search{
-margin-top:10px;
-}
+    .brand-text {
+      font-size: 34px;
+      font-weight: 800;
+      color: #374151;
+    }
 
-.search-bar{
-display:flex;
-gap:6px;
-}
+    .badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: #fee2e2;
+      color: #b91c1c;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
 
-.search input{
-flex:1;
-padding:12px;
-border-radius:10px;
-border:none;
-background:#1a2236;
-color:white;
-}
+    h1 {
+      margin: 0 0 14px;
+      font-size: 42px;
+      font-weight: 800;
+      color: #111827;
+    }
 
-.search select{
-padding:10px;
-border-radius:10px;
-border:none;
-background:#1a2236;
-color:white;
-}
+    .desc {
+      margin: 0 auto 20px;
+      max-width: 520px;
+      font-size: 18px;
+      line-height: 1.7;
+      color: #4b5563;
+    }
 
-.search button{
-padding:12px 14px;
-border-radius:10px;
-border:none;
-background:#3b82f6;
-color:white;
-}
+    .sub {
+      margin: 0 auto 28px;
+      max-width: 560px;
+      font-size: 15px;
+      line-height: 1.7;
+      color: #6b7280;
+    }
 
-/* 날씨 */
+    .footer {
+      margin-top: 28px;
+      font-size: 13px;
+      color: #9ca3af;
+    }
 
-.weather{
-margin-top:25px;
-background:#121a2b;
-padding:20px;
-border-radius:16px;
-text-align:center;
-}
+    @media (max-width: 640px) {
+      .panel {
+        padding: 36px 22px;
+      }
 
-.weather-top{
-display:flex;
-justify-content:center;
-align-items:center;
-gap:10px;
-}
+      .logo {
+        width: 88px;
+      }
 
-.weather-icon{
-font-size:40px;
-}
+      .brand-text {
+        font-size: 26px;
+      }
 
-.temp{
-font-size:36px;
-font-weight:bold;
-}
+      h1 {
+        font-size: 32px;
+      }
 
-.desc{
-opacity:.7;
-}
-
-/* 주간 예보 */
-
-.forecast{
-display:flex;
-justify-content:space-between;
-margin-top:18px;
-font-size:12px;
-}
-
-.day{
-text-align:center;
-}
-
-.day-icon{
-font-size:20px;
-margin:4px 0;
-}
-
-/* 바로가기 */
-
-.links{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:18px;
-margin-top:30px;
-}
-
-.links a{
-text-decoration:none;
-color:white;
-text-align:center;
-font-size:12px;
-}
-
-.links img{
-width:52px;
-height:52px;
-border-radius:14px;
-background:#121a2b;
-padding:10px;
-}
-
-.links span{
-display:block;
-margin-top:6px;
-}
-
-</style>
+      .desc {
+        font-size: 16px;
+      }
+    }
+  </style>
 </head>
 
 <body>
+  <div class="panel">
 
-<div class="container">
+    <!-- 브랜드 -->
+    <div class="brand">
+      <img src="logo.png" class="logo" alt="Junossam 로고">
+      <div class="brand-text">Junossam</div>
+    </div>
 
-<h2>Juno Main Page</h2>
+    <div class="badge">PRIVATE SPACE</div>
 
-<div class="search">
+    <h1>접근 금지</h1>
 
-<div class="search-bar">
+    <p class="desc">
+      이 페이지는 개인적으로 운영되는 공간입니다.
+    </p>
 
-<select id="engine">
-<option value="naver">네이버</option>
-<option value="google">구글</option>
-</select>
+    <p class="sub">
+      허가되지 않은 접근은 제한됩니다.<br>
+      해당 페이지는 외부 공개를 목적으로 하지 않습니다.
+    </p>
 
-<input id="query" placeholder="검색">
+    <div class="footer">
+      © 2026 Junossam
+    </div>
 
-<button onclick="search()">검색</button>
-
-</div>
-
-</div>
-
-<div class="weather">
-
-<div class="weather-top">
-<div class="weather-icon" id="icon">☁️</div>
-<div class="temp" id="temp">--°</div>
-</div>
-
-<div class="desc" id="desc">날씨 불러오는 중</div>
-
-<div class="forecast" id="forecast"></div>
-
-</div>
-
-<div class="links">
-
-<a href="https://naver.com">
-<img src="https://www.google.com/s2/favicons?domain=naver.com&sz=64">
-<span>네이버</span>
-</a>
-
-<a href="https://comic.naver.com/webtoon?tab=finish">
-<img src="https://www.google.com/s2/favicons?domain=comic.naver.com&sz=64">
-<span>네이버 웹툰</span>
-</a>
-
-<a href="https://etoland.co.kr/">
-<img src="https://www.google.com/s2/favicons?domain=etoland.co.kr&sz=64">
-<span>이토랜드</span>
-</a>
-
-<a href="https://namu.wiki/">
-<img src="https://www.google.com/s2/favicons?domain=namu.wiki&sz=64">
-<span>나무위키</span>
-</a>
-
-<a href="https://news.naver.com">
-<img src="https://www.google.com/s2/favicons?domain=news.naver.com&sz=64">
-<span>뉴스</span>
-</a>
-
-<a href="https://google.com">
-<img src="https://www.google.com/s2/favicons?domain=google.com&sz=64">
-<span>구글</span>
-</a>
-
-<a href="https://youtube.com">
-<img src="https://www.google.com/s2/favicons?domain=youtube.com&sz=64">
-<span>유튜브</span>
-</a>
-
-<a href="https://maps.google.com">
-<img src="https://www.google.com/s2/favicons?domain=maps.google.com&sz=64">
-<span>지도</span>
-</a>
-
-<a href="https://mail.google.com">
-<img src="https://www.google.com/s2/favicons?domain=gmail.com&sz=64">
-<span>메일</span>
-</a>
-
-</div>
-
-</div>
-
-<script>
-
-function search(){
-
-let q=document.getElementById("query").value
-let engine=document.getElementById("engine").value
-
-if(engine==="naver"){
-location.href="https://search.naver.com/search.naver?query="+q
-}else{
-location.href="https://www.google.com/search?q="+q
-}
-
-}
-
-/* 날씨 아이콘 */
-
-function weatherIcon(code){
-
-if(code==0) return "☀️"
-if(code<=3) return "⛅"
-if(code<=48) return "☁️"
-if(code<=67) return "🌧"
-if(code<=77) return "❄️"
-if(code<=82) return "🌧"
-if(code<=99) return "⛈"
-
-return "☁️"
-
-}
-
-/* 위치 */
-
-navigator.geolocation.getCurrentPosition(pos=>{
-
-let lat=pos.coords.latitude
-let lon=pos.coords.longitude
-
-fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`)
-.then(r=>r.json())
-.then(data=>{
-
-let w=data.current_weather
-
-document.getElementById("temp").innerText=w.temperature+"°"
-document.getElementById("icon").innerText=weatherIcon(w.weathercode)
-document.getElementById("desc").innerText="현재 날씨"
-
-let days=["일","월","화","수","목","금","토"]
-
-let forecastHTML=""
-
-for(let i=0;i<7;i++){
-
-let date=new Date(data.daily.time[i])
-let day=days[date.getDay()]
-
-let icon=weatherIcon(data.daily.weathercode[i])
-let max=data.daily.temperature_2m_max[i]
-let min=data.daily.temperature_2m_min[i]
-
-forecastHTML+=`
-<div class="day">
-<div>${day}</div>
-<div class="day-icon">${icon}</div>
-<div>${min}°</div>
-<div>${max}°</div>
-</div>
-`
-
-}
-
-document.getElementById("forecast").innerHTML=forecastHTML
-
-})
-
-})
-
-</script>
-
+  </div>
 </body>
 </html>
