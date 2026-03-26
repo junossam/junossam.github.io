@@ -3,52 +3,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>탐색 알고리즘 카드 실습</title>
+  <title>카드 정렬 실습</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
       background: #f5f7fb;
       color: #1f2937;
     }
-
     .wrap {
       max-width: 1400px;
       margin: 0 auto;
       padding: 24px;
     }
-
     h1 {
-      margin: 0 0 10px;
+      margin: 0 0 8px;
       font-size: 32px;
     }
-
     .desc {
       margin: 0 0 20px;
       color: #4b5563;
-      line-height: 1.7;
+      line-height: 1.6;
     }
-
     .panel {
       background: white;
       border-radius: 18px;
       padding: 20px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
       margin-bottom: 20px;
     }
-
     .top-controls {
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
       align-items: center;
-      margin-bottom: 14px;
+      margin-bottom: 8px;
     }
-
     .field {
       display: flex;
       align-items: center;
@@ -57,18 +48,11 @@
       border-radius: 12px;
       padding: 10px 12px;
     }
-
     .field label {
       font-size: 14px;
       font-weight: 700;
       color: #374151;
     }
-
-    select,
-    input[type="checkbox"] {
-      accent-color: #111827;
-    }
-
     select {
       border: 1px solid #d1d5db;
       border-radius: 10px;
@@ -77,183 +61,73 @@
       background: white;
       color: #111827;
     }
-
-    .checkbox-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 15px;
-      font-weight: 700;
-      color: #374151;
-    }
-
-    .target-box {
-      margin-top: 14px;
-      padding: 18px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #eff6ff, #dbeafe);
-      border: 1px solid #93c5fd;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .target-label {
-      font-size: 14px;
-      color: #1d4ed8;
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-
-    .target-number {
-      font-size: 36px;
-      font-weight: 800;
-      color: #1e3a8a;
-    }
-
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 14px;
-      color: #4b5563;
-      font-size: 13px;
-    }
-
-    .legend-item {
+    .swap-hint {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: #f9fafb;
-      border-radius: 999px;
-      padding: 6px 10px;
+      gap: 8px;
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: #92400e;
+      font-weight: 700;
     }
-
-    .legend-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      display: inline-block;
+    .swap-hint input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
     }
-
     .cards {
       display: grid;
-      gap: 12px;
-      margin-top: 18px;
+      gap: 14px;
+      margin-top: 16px;
     }
-
     .card {
-      position: relative;
-      min-height: 92px;
+      min-height: 120px;
       border: 3px solid #d1d5db;
       border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
+      font-size: 34px;
       font-weight: 700;
+      cursor: pointer;
       user-select: none;
-      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, opacity 0.18s ease;
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
       background: linear-gradient(135deg, #ffffff, #eef2ff);
       color: #111827;
-      padding: 24px 8px 8px;
-      text-align: center;
+      padding: 8px;
     }
-
+    .card:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
     .card.back {
       background: linear-gradient(135deg, #2563eb, #1d4ed8);
       color: white;
-      font-size: 20px;
-      letter-spacing: 1px;
+      font-size: 22px;
+      letter-spacing: 2px;
     }
-
-    .card.range {
-      border-color: #94a3b8;
-      box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.15);
+    .card.selected {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.25);
     }
-
-    .card.active {
-      border-color: #8b5cf6;
-      box-shadow: 0 0 0 5px rgba(139, 92, 246, 0.18);
-      transform: translateY(-3px);
-      background: linear-gradient(135deg, #f5f3ff, #ede9fe);
-    }
-
-    .card.found {
+    .card.fixed {
       background: linear-gradient(135deg, #ecfdf5, #d1fae5);
       color: #065f46;
       border-color: #10b981;
-      box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.18);
+      cursor: default;
     }
-
-    .card.checked {
-      background: linear-gradient(135deg, #fff7ed, #ffedd5);
-      color: #9a3412;
-      border-color: #fb923c;
+    .card.pending-swap {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.22);
+      animation: pulseSwap 0.8s ease-in-out infinite;
     }
-
-    .card.excluded {
-      opacity: 0.38;
-      background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
-      color: #6b7280;
-      border-color: #cbd5e1;
+    @keyframes pulseSwap {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
     }
-
-    .card-index {
-      position: absolute;
-      top: 8px;
-      left: 10px;
-      font-size: 12px;
-      font-weight: 800;
-      line-height: 1;
-      padding: 4px 6px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.9);
-      color: #475569;
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      pointer-events: none;
-    }
-
-    .card.back .card-index {
-      background: rgba(255, 255, 255, 0.18);
-      color: rgba(255, 255, 255, 0.95);
-      border: 1px solid rgba(255, 255, 255, 0.22);
-    }
-
-    .card.active .card-index {
-      background: rgba(139, 92, 246, 0.14);
-      color: #6d28d9;
-      border-color: rgba(109, 40, 217, 0.18);
-    }
-
-    .card.found .card-index {
-      background: rgba(16, 185, 129, 0.14);
-      color: #047857;
-      border-color: rgba(4, 120, 87, 0.18);
-    }
-
-    .card.checked .card-index {
-      background: rgba(251, 146, 60, 0.16);
-      color: #c2410c;
-      border-color: rgba(194, 65, 12, 0.16);
-    }
-
-    .card.excluded .card-index {
-      background: rgba(255, 255, 255, 0.8);
-      color: #6b7280;
-    }
-
-    .card-content {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 44px;
-      width: 100%;
-    }
-
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -261,7 +135,6 @@
       margin-top: 18px;
       align-items: center;
     }
-
     button {
       border: none;
       border-radius: 12px;
@@ -272,122 +145,48 @@
       background: #111827;
       color: white;
     }
-
-    button.secondary {
-      background: #e5e7eb;
-      color: #111827;
-    }
-
     button:disabled {
       opacity: 0.45;
       cursor: not-allowed;
     }
-
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
     .status {
       margin-top: 14px;
-      padding: 16px;
+      padding: 14px;
       border-radius: 12px;
       background: #f9fafb;
       color: #374151;
-      line-height: 1.7;
-      min-height: 120px;
-      font-size: 15px;
+      line-height: 1.6;
+      min-height: 56px;
     }
-
-    .status-title {
-      display: inline-block;
-      font-size: 14px;
-      font-weight: 800;
-      color: #7c3aed;
-      margin-bottom: 10px;
-    }
-
-    .status-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(120px, 1fr));
-      gap: 12px;
-    }
-
-    .status-box {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 12px;
-    }
-
-    .status-box.wide {
-      grid-column: 1 / -1;
-    }
-
-    .status-label {
-      font-size: 13px;
-      color: #6b7280;
-      margin-bottom: 6px;
-      font-weight: 700;
-    }
-
-    .status-value {
-      font-size: 22px;
-      font-weight: 800;
-      color: #111827;
-      line-height: 1.4;
-      word-break: keep-all;
-    }
-
-    .status-value.small {
-      font-size: 16px;
-      font-weight: 700;
-      color: #374151;
-    }
-
-    .status-value.state-success {
-      color: #047857;
-    }
-
-    .status-value.state-left {
-      color: #b45309;
-    }
-
-    .status-value.state-right {
-      color: #1d4ed8;
-    }
-
-    .status-value.state-wait {
-      color: #374151;
-    }
-
     .info {
       display: grid;
-      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      grid-template-columns: repeat(4, minmax(140px, 1fr));
       gap: 12px;
       margin-top: 14px;
     }
-
     .info-box {
       background: #f9fafb;
       border-radius: 14px;
       padding: 14px;
     }
-
     .label {
       font-size: 13px;
       color: #6b7280;
       margin-bottom: 6px;
     }
-
     .value {
       font-size: 24px;
       font-weight: 800;
     }
-
     .result {
       margin-top: 14px;
       font-weight: 700;
       color: #065f46;
-      min-height: 24px;
-      line-height: 1.6;
     }
-
     .copyright {
       margin-top: 28px;
       padding: 18px 8px 8px;
@@ -396,7 +195,6 @@
       line-height: 1.8;
       color: #6b7280;
     }
-
     .copyright strong {
       display: block;
       color: #4b5563;
@@ -404,141 +202,84 @@
       margin-bottom: 2px;
       font-weight: 700;
     }
-
-    @media (max-width: 1200px) {
-      .info {
-        grid-template-columns: repeat(3, minmax(120px, 1fr));
-      }
-
-      .status-grid {
-        grid-template-columns: repeat(2, minmax(120px, 1fr));
+    @media (max-width: 1100px) {
+      .cards {
+        grid-template-columns: repeat(5, minmax(90px, 1fr)) !important;
       }
     }
-
-    @media (max-width: 800px) {
-      .info {
-        grid-template-columns: repeat(2, minmax(120px, 1fr));
-      }
-
-      .status-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .card {
-        min-height: 80px;
-        font-size: 20px;
-      }
-
-      .target-number {
-        font-size: 28px;
+    @media (max-width: 700px) {
+      .info { grid-template-columns: 1fr 1fr; }
+      .card { min-height: 100px; font-size: 28px; }
+      .cards {
+        grid-template-columns: repeat(3, minmax(90px, 1fr)) !important;
       }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>탐색 알고리즘 카드 실습</h1>
+    <h1>카드 정렬 실습</h1>
     <p class="desc">
-      정렬된 카드 데이터에서 목표 숫자를 찾는 과정을 단계별로 확인해 보세요.
-      <b>순차 탐색</b>과 <b>이진 탐색</b>을 선택할 수 있으며,
-      자동 애니메이션을 체크하면 새 문제를 만들자마자 자동으로 진행됩니다.
+      카드 개수와 데이터 형태를 정한 뒤 게임을 시작하세요.
+      카드 2장을 선택한 뒤 <b>보기</b>로 숫자를 확인하고,
+      필요하면 <b>바꾸기</b>로 위치를 교환하세요.
+      <b>자동 바꾸기</b>를 켜면 보기 후 1초 뒤에 자동으로 교환됩니다.
     </p>
 
     <div class="panel">
       <div class="top-controls">
         <div class="field">
-          <label for="algorithmSelect">탐색 알고리즘</label>
-          <select id="algorithmSelect">
-            <option value="linear" selected>순차 탐색</option>
-            <option value="binary">이진 탐색</option>
-          </select>
-        </div>
-
-        <div class="field">
           <label for="cardCountSelect">카드 개수</label>
           <select id="cardCountSelect">
-            <option value="10">10장</option>
-            <option value="20" selected>20장</option>
-            <option value="50">50장</option>
-            <option value="100">100장</option>
+            <option value="5">5장</option>
+            <option value="10" selected>10장</option>
+            <option value="15">15장</option>
+            <option value="20">20장</option>
           </select>
         </div>
 
         <div class="field">
-          <label class="checkbox-wrap" for="autoPlayCheck">
-            <input type="checkbox" id="autoPlayCheck" />
-            자동 애니메이션
-          </label>
-        </div>
-
-        <div class="field">
-          <label for="speedSelect">자동 속도</label>
-          <select id="speedSelect">
-            <option value="300">매우 빠름</option>
-            <option value="600">빠름</option>
-            <option value="1000" selected>보통</option>
-            <option value="1500">느림</option>
-            <option value="2200">매우 느림</option>
+          <label for="dataModeSelect">데이터 형태</label>
+          <select id="dataModeSelect">
+            <option value="random" selected>무작위</option>
+            <option value="sorted">정렬됨</option>
+            <option value="reverse">역정렬</option>
           </select>
         </div>
-      </div>
-
-      <div class="target-box">
-        <div>
-          <div class="target-label">찾아야 하는 숫자</div>
-          <div class="target-number" id="targetNumber">-</div>
-        </div>
-      </div>
-
-      <div class="legend">
-        <span class="legend-item">
-          <span class="legend-dot" style="background:#ede9fe;"></span>현재 확인 중
-        </span>
-        <span class="legend-item">
-          <span class="legend-dot" style="background:#ffedd5;"></span>이미 확인한 카드
-        </span>
-        <span class="legend-item">
-          <span class="legend-dot" style="background:#d1fae5;"></span>찾은 카드
-        </span>
-        <span class="legend-item">
-          <span class="legend-dot" style="background:#e5e7eb;"></span>탐색 범위 제외
-        </span>
       </div>
 
       <div class="cards" id="cards"></div>
 
       <div class="controls">
-        <button id="nextBtn">다음 단계</button>
-        <button id="newRoundBtn" class="secondary">새 문제</button>
-        <button id="resetStatsBtn" class="secondary">통계 초기화</button>
+        <button id="revealBtn" disabled>보기</button>
+        <button id="swapBtn" disabled>바꾸기</button>
+        <label class="swap-hint" for="autoSwapToggle">
+          <input id="autoSwapToggle" type="checkbox" />
+          <span>자동 바꾸기</span>
+        </label>
+        <button id="fixBtn" disabled>고정</button>
+        <button id="hideBtn" class="secondary">다시 뒷면으로</button>
+        <button id="resetBtn" class="secondary">새 게임</button>
       </div>
 
-      <div class="status" id="status">새 문제를 만들면 바로 탐색이 준비됩니다.</div>
+      <div class="status" id="status">카드 2장을 선택하세요.</div>
 
       <div class="info">
         <div class="info-box">
-          <div class="label">알고리즘</div>
-          <div class="value" id="algorithmInfo">순차</div>
+          <div class="label">선택된 위치</div>
+          <div class="value" id="selectedInfo">-</div>
         </div>
         <div class="info-box">
-          <div class="label">현재 단계</div>
-          <div class="value" id="stepInfo">0</div>
+          <div class="label">보기 횟수</div>
+          <div class="value" id="revealCount">0</div>
         </div>
         <div class="info-box">
-          <div class="label">총 실행 문제 수</div>
-          <div class="value" id="roundCountInfo">0</div>
+          <div class="label">바꾸기 횟수</div>
+          <div class="value" id="swapCount">0</div>
         </div>
         <div class="info-box">
-          <div class="label">평균 탐색 횟수</div>
-          <div class="value" id="avgSearchCount">0</div>
-        </div>
-        <div class="info-box">
-          <div class="label">최소 탐색 횟수</div>
-          <div class="value" id="minSearchCount">0</div>
-        </div>
-        <div class="info-box">
-          <div class="label">최대 탐색 횟수</div>
-          <div class="value" id="maxSearchCount">0</div>
+          <div class="label">고정된 카드</div>
+          <div class="value" id="fixedCount">0</div>
         </div>
       </div>
 
@@ -553,154 +294,126 @@
 
   <script>
     const cardContainer = document.getElementById('cards');
-    const algorithmSelect = document.getElementById('algorithmSelect');
     const cardCountSelect = document.getElementById('cardCountSelect');
-    const autoPlayCheck = document.getElementById('autoPlayCheck');
-    const speedSelect = document.getElementById('speedSelect');
-    const targetNumberEl = document.getElementById('targetNumber');
-    const nextBtn = document.getElementById('nextBtn');
-    const newRoundBtn = document.getElementById('newRoundBtn');
-    const resetStatsBtn = document.getElementById('resetStatsBtn');
+    const dataModeSelect = document.getElementById('dataModeSelect');
+    const autoSwapToggleEl = document.getElementById('autoSwapToggle');
+    const revealBtn = document.getElementById('revealBtn');
+    const swapBtn = document.getElementById('swapBtn');
+    const fixBtn = document.getElementById('fixBtn');
+    const hideBtn = document.getElementById('hideBtn');
+    const resetBtn = document.getElementById('resetBtn');
     const statusEl = document.getElementById('status');
+    const selectedInfoEl = document.getElementById('selectedInfo');
+    const revealCountEl = document.getElementById('revealCount');
+    const swapCountEl = document.getElementById('swapCount');
+    const fixedCountEl = document.getElementById('fixedCount');
     const resultEl = document.getElementById('result');
 
-    const algorithmInfoEl = document.getElementById('algorithmInfo');
-    const stepInfoEl = document.getElementById('stepInfo');
-    const roundCountInfoEl = document.getElementById('roundCountInfo');
-    const avgSearchCountEl = document.getElementById('avgSearchCount');
-    const minSearchCountEl = document.getElementById('minSearchCount');
-    const maxSearchCountEl = document.getElementById('maxSearchCount');
-
-    let cardCount = 20;
+    let cardCount = 10;
     let numbers = [];
-    let targetNumber = null;
-    let targetIndex = -1;
-
     let revealed = [];
-    let checkedIndices = [];
-    let activeIndices = [];
-    let foundIndices = [];
-    let excludedIndices = [];
-    let rangeIndices = [];
+    let selected = [];
+    let fixed = [];
+    let revealCount = 0;
+    let swapCount = 0;
+    let pendingSwap = [];
+    let isSwapLocked = false;
 
-    let operations = [];
-    let stepIndex = 0;
-    let currentProblemSearchCount = 0;
-    let started = false;
-    let finished = false;
-    let autoTimer = null;
-
-    const historyByAlgorithm = {
-      linear: [],
-      binary: []
-    };
-
-    const roundCountByAlgorithm = {
-      linear: 0,
-      binary: 0
-    };
-
-    function randInt(min, max) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    function shuffle(arr) {
-      const copied = [...arr];
-      for (let i = copied.length - 1; i > 0; i--) {
+    function shuffledNumbers(count) {
+      const pool = Array.from({ length: 100 }, (_, i) => i + 1);
+      for (let i = pool.length - 1; i > 0; i -= 1) {
         const j = Math.floor(Math.random() * (i + 1));
-        [copied[i], copied[j]] = [copied[j], copied[i]];
+        [pool[i], pool[j]] = [pool[j], pool[i]];
       }
-      return copied;
+      return pool.slice(0, count);
     }
 
-    function generateNumbersWithRangeLimit(count) {
-      while (true) {
-        const start = randInt(1, 500);
-        const end = randInt(start, Math.min(1000, start + 500));
-        const pool = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+    function createNumbersByMode(count, mode) {
+      const base = shuffledNumbers(count);
 
-        if (pool.length < count) continue;
-
-        const selected = shuffle(pool)
-          .slice(0, count)
-          .sort((a, b) => a - b);
-
-        const min = Math.min(...selected);
-        const max = Math.max(...selected);
-
-        if (max - min <= 500) {
-          return selected;
-        }
+      if (mode === 'sorted') {
+        return [...base].sort((a, b) => a - b);
       }
-    }
-
-    function algorithmLabel(value) {
-      return value === 'binary' ? '이진' : '순차';
-    }
-
-    function getAutoDelay() {
-      return Number(speedSelect.value);
-    }
-
-    function clearAutoTimer() {
-      if (autoTimer) {
-        clearTimeout(autoTimer);
-        autoTimer = null;
+      if (mode === 'reverse') {
+        return [...base].sort((a, b) => b - a);
       }
+      return base;
     }
 
-    function escapeHtml(text) {
-      return String(text)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;');
+    function getModeLabel(mode) {
+      if (mode === 'sorted') return '정렬된 데이터';
+      if (mode === 'reverse') return '역정렬된 데이터';
+      return '무작위 데이터';
+    }
+
+    function isSorted(arr) {
+      return arr.every((v, i) => i === 0 || arr[i - 1] <= v);
+    }
+
+    function getOrderedSelectedPair() {
+      if (selected.length !== 2) return null;
+      const [a, b] = selected;
+      return a < b ? [a, b] : [b, a];
+    }
+
+    function shouldSwapSelectedCards() {
+      const orderedPair = getOrderedSelectedPair();
+      if (!orderedPair) return false;
+
+      const [leftIndex, rightIndex] = orderedPair;
+      if (!revealed[leftIndex] || !revealed[rightIndex]) return false;
+
+      return numbers[leftIndex] > numbers[rightIndex];
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function updateCounters() {
+      revealCountEl.textContent = String(revealCount);
+      swapCountEl.textContent = String(swapCount);
+      fixedCountEl.textContent = String(fixed.filter(Boolean).length);
+    }
+
+    function setCardsLayout() {
+      const currentCount = Number(cardCountSelect.value);
+
+      if (currentCount <= 5) {
+        cardContainer.style.gridTemplateColumns = `repeat(${currentCount}, minmax(90px, 1fr))`;
+      } else if (currentCount === 10) {
+        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(90px, 1fr))';
+      } else if (currentCount === 15) {
+        cardContainer.style.gridTemplateColumns = 'repeat(15, minmax(70px, 1fr))';
+      } else if (currentCount === 20) {
+        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(70px, 1fr))';
+      } else {
+        cardContainer.style.gridTemplateColumns = `repeat(${currentCount}, minmax(90px, 1fr))`;
+      }
     }
 
     function setStatus(message) {
       statusEl.innerHTML = message;
     }
 
-    function setCardsLayout() {
-      const count = Number(cardCountSelect.value);
+    function checkSorted() {
+      const sorted = isSorted(numbers);
+      const allFixed = fixed.length > 0 && fixed.every(Boolean);
 
-      if (count === 10) {
-        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(70px, 1fr))';
-      } else if (count === 20) {
-        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(70px, 1fr))';
-      } else if (count === 50) {
-        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(60px, 1fr))';
-      } else if (count === 100) {
-        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(54px, 1fr))';
+      if (sorted && allFixed) {
+        resultEl.textContent = '정렬 완료! 모든 카드가 고정되었고 오름차순으로 정렬되었습니다.';
+      } else if (sorted) {
+        resultEl.textContent = '숫자는 오름차순입니다. 필요한 카드를 고정해 보세요.';
       } else {
-        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(60px, 1fr))';
+        resultEl.textContent = '';
       }
     }
 
-    function updateStats() {
-      const algorithm = algorithmSelect.value;
-      const history = historyByAlgorithm[algorithm];
-      const roundCount = roundCountByAlgorithm[algorithm];
-
-      algorithmInfoEl.textContent = algorithmLabel(algorithm);
-      stepInfoEl.textContent = String(stepIndex);
-      roundCountInfoEl.textContent = String(roundCount);
-
-      if (history.length === 0) {
-        avgSearchCountEl.textContent = '0';
-        minSearchCountEl.textContent = '0';
-        maxSearchCountEl.textContent = '0';
-      } else {
-        const total = history.reduce((sum, value) => sum + value, 0);
-        const avg = (total / history.length).toFixed(2);
-        const min = Math.min(...history);
-        const max = Math.max(...history);
-
-        avgSearchCountEl.textContent = String(avg);
-        minSearchCountEl.textContent = String(min);
-        maxSearchCountEl.textContent = String(max);
-      }
+    function updateButtons() {
+      const twoSelected = selected.length === 2;
+      revealBtn.disabled = isSwapLocked || !twoSelected;
+      swapBtn.disabled = isSwapLocked || !twoSelected || selected.some((i) => fixed[i]);
+      fixBtn.disabled = isSwapLocked || selected.length === 0 || selected.some((i) => !revealed[i] || fixed[i]);
     }
 
     function renderCards() {
@@ -708,446 +421,280 @@
       setCardsLayout();
 
       numbers.forEach((num, index) => {
-        const card = document.createElement('div');
+        const card = document.createElement('button');
         card.className = 'card';
+        card.type = 'button';
 
-        const isRevealed = revealed[index];
-        const isRange = rangeIndices.includes(index);
-        const isActive = activeIndices.includes(index);
-        const isChecked = checkedIndices.includes(index);
-        const isFound = foundIndices.includes(index);
-        const isExcluded = excludedIndices.includes(index);
-
-        if (!isRevealed) {
+        if (fixed[index]) {
+          card.classList.add('fixed');
+          card.textContent = String(num);
+          card.disabled = true;
+        } else if (revealed[index]) {
+          card.textContent = String(num);
+        } else {
           card.classList.add('back');
+          card.textContent = '뒷면';
         }
 
-        if (isRange && !isFound && !isActive) {
-          card.classList.add('range');
+        if (selected.includes(index)) {
+          card.classList.add('selected');
         }
-        if (isChecked && !isFound && !isActive) {
-          card.classList.add('checked');
-        }
-        if (isExcluded && !isFound && !isActive) {
-          card.classList.add('excluded');
-        }
-        if (isActive) {
-          card.classList.add('active');
-        }
-        if (isFound) {
-          card.classList.add('found');
+        if (pendingSwap.includes(index)) {
+          card.classList.add('pending-swap');
         }
 
-        const indexLabel = document.createElement('div');
-        indexLabel.className = 'card-index';
-        indexLabel.textContent = `${index + 1}번`;
-
-        const content = document.createElement('div');
-        content.className = 'card-content';
-        content.textContent = isRevealed ? String(num) : '뒷면';
-
-        card.appendChild(indexLabel);
-        card.appendChild(content);
+        card.addEventListener('click', () => toggleSelect(index));
         cardContainer.appendChild(card);
       });
 
-      updateStats();
+      updateButtons();
+      updateCounters();
+      selectedInfoEl.textContent = selected.length ? selected.map((i) => i + 1).join(', ') : '-';
+      checkSorted();
     }
 
-    function resetVisualState() {
-      revealed = Array(cardCount).fill(false);
-      checkedIndices = [];
-      activeIndices = [];
-      foundIndices = [];
-      excludedIndices = [];
-      rangeIndices = [];
-    }
-
-    function makeRange(start, end) {
-      if (end < start) return [];
-      return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-    }
-
-    function buildLinearStatusCard(title, stateText, stateClass = 'state-wait') {
-      return `
-        <span class="status-title">${title}</span>
-        <div class="status-grid">
-          <div class="status-box wide">
-            <div class="status-label">현재 상태</div>
-            <div class="status-value small ${stateClass}">${stateText}</div>
-          </div>
-        </div>
-      `;
-    }
-
-    function buildBinaryStatusCard(data) {
-      const {
-        rangeText,
-        remainCount,
-        middleText,
-        selectedText,
-        stateText,
-        stateClass
-      } = data;
-
-      return `
-        <span class="status-title">현재 단계</span>
-        <div class="status-grid">
-          <div class="status-box">
-            <div class="status-label">현재 탐색 범위</div>
-            <div class="status-value">${escapeHtml(rangeText)}</div>
-          </div>
-          <div class="status-box">
-            <div class="status-label">총 남은 카드 개수</div>
-            <div class="status-value">${escapeHtml(remainCount)}</div>
-          </div>
-          <div class="status-box">
-            <div class="status-label">가운데 카드</div>
-            <div class="status-value">${escapeHtml(middleText)}</div>
-          </div>
-          <div class="status-box">
-            <div class="status-label">선택 카드</div>
-            <div class="status-value">${escapeHtml(selectedText)}</div>
-          </div>
-          <div class="status-box wide">
-            <div class="status-label">현재 상태</div>
-            <div class="status-value small ${stateClass}">${stateText}</div>
-          </div>
-        </div>
-      `;
-    }
-
-    function buildLinearOperations() {
-      const ops = [];
-
-      for (let i = 0; i < numbers.length; i++) {
-        if (numbers[i] === targetNumber) {
-          ops.push({
-            type: 'found',
-            index: i,
-            range: makeRange(i, i),
-            statusHtml: buildLinearStatusCard(
-              '현재 단계',
-              `${i + 1}번 카드를 선택했습니다. 카드의 값은 ${numbers[i]}이고, 목표 숫자 ${targetNumber}와 같으므로 찾기에 성공했습니다.`,
-              'state-success'
-            )
-          });
-          break;
-        } else {
-          ops.push({
-            type: 'miss',
-            index: i,
-            range: makeRange(i + 1, numbers.length - 1),
-            statusHtml: buildLinearStatusCard(
-              '현재 단계',
-              `${i + 1}번 카드를 선택했습니다. 카드의 값은 ${numbers[i]}이고, 목표 숫자 ${targetNumber}와 다르므로 다음 카드로 이동합니다.`,
-              'state-wait'
-            )
-          });
+    function clearUnfixedRevealedCards(indices) {
+      indices.forEach((i) => {
+        if (!fixed[i]) {
+          revealed[i] = false;
         }
+      });
+    }
+
+    function toggleSelect(index) {
+      if (isSwapLocked) {
+        return;
       }
 
-      return ops;
-    }
+      if (fixed[index]) {
+        setStatus('고정된 카드는 선택하거나 바꿀 수 없습니다.');
+        return;
+      }
 
-    function getBinaryChoiceInfo(left, right, mid) {
-      const count = right - left + 1;
-      const leftCard = left + 1;
-      const rightCard = right + 1;
-      const midCard = mid + 1;
-
-      let middleText = '';
-      if (count % 2 === 1) {
-        middleText = `${midCard}번`;
+      if (selected.includes(index)) {
+        selected = selected.filter((i) => i !== index);
+        if (!fixed[index]) {
+          revealed[index] = false;
+        }
       } else {
-        const middleLeft = Math.floor((left + right) / 2);
-        const middleRight = middleLeft + 1;
-        middleText = `${middleLeft + 1}번, ${middleRight + 1}번`;
-      }
-
-      return {
-        rangeText: `${leftCard}번 ~ ${rightCard}번`,
-        remainCount: `${count}장`,
-        middleText,
-        selectedText: `${midCard}번`,
-        selectedCardNo: midCard
-      };
-    }
-
-    function buildBinaryOperations() {
-      const ops = [];
-      let left = 0;
-      let right = numbers.length - 1;
-
-      while (left <= right) {
-        const mid = Math.floor((left + right) / 2);
-        const choiceInfo = getBinaryChoiceInfo(left, right, mid);
-        const selectedValue = numbers[mid];
-
-        if (selectedValue === targetNumber) {
-          ops.push({
-            type: 'found',
-            index: mid,
-            range: [mid],
-            statusHtml: buildBinaryStatusCard({
-              ...choiceInfo,
-              stateText:
-                `${choiceInfo.selectedCardNo}번 카드를 선택했습니다. ` +
-                `값은 ${selectedValue}이고 목표 숫자 ${targetNumber}와 같으므로 찾기에 성공했습니다.`,
-              stateClass: 'state-success'
-            })
-          });
-          break;
+        if (selected.length >= 2) {
+          clearUnfixedRevealedCards([...selected]);
+          selected = [index];
+          renderCards();
+          setStatus(`이전에 선택한 카드들은 다시 뒷면으로 돌렸습니다. ${index + 1}번 카드를 선택했습니다. 한 장 더 선택하세요.`);
+          return;
         }
-
-        if (selectedValue < targetNumber) {
-          const excluded = makeRange(left, mid);
-          const newRange = makeRange(mid + 1, right);
-          const excludedText = `${left + 1}번 ~ ${mid + 1}번`;
-
-          ops.push({
-            type: 'binaryMiss',
-            index: mid,
-            excluded,
-            range: newRange,
-            direction: 'right',
-            statusHtml: buildBinaryStatusCard({
-              ...choiceInfo,
-              stateText:
-                `${choiceInfo.selectedCardNo}번 카드를 선택했습니다. ` +
-                `값은 ${selectedValue}이고 목표 숫자 ${targetNumber}보다 작습니다. ` +
-                `따라서 ${excludedText} 카드를 제외하고 오른쪽 범위만 계속 탐색합니다.`,
-              stateClass: 'state-right'
-            })
-          });
-
-          left = mid + 1;
-        } else {
-          const excluded = makeRange(mid, right);
-          const newRange = makeRange(left, mid - 1);
-          const excludedText = `${mid + 1}번 ~ ${right + 1}번`;
-
-          ops.push({
-            type: 'binaryMiss',
-            index: mid,
-            excluded,
-            range: newRange,
-            direction: 'left',
-            statusHtml: buildBinaryStatusCard({
-              ...choiceInfo,
-              stateText:
-                `${choiceInfo.selectedCardNo}번 카드를 선택했습니다. ` +
-                `값은 ${selectedValue}이고 목표 숫자 ${targetNumber}보다 큽니다. ` +
-                `따라서 ${excludedText} 카드를 제외하고 왼쪽 범위만 계속 탐색합니다.`,
-              stateClass: 'state-left'
-            })
-          });
-
-          right = mid - 1;
-        }
+        selected.push(index);
       }
 
-      return ops;
-    }
-
-    function buildOperations() {
-      return algorithmSelect.value === 'binary'
-        ? buildBinaryOperations()
-        : buildLinearOperations();
-    }
-
-    function applyOperation(op) {
-      activeIndices = [];
-      foundIndices = [];
-
-      if (op.type === 'miss') {
-        currentProblemSearchCount += 1;
-        revealed[op.index] = true;
-        activeIndices = [op.index];
-        checkedIndices = [...new Set([...checkedIndices, op.index])];
-        rangeIndices = [...op.range];
-        setStatus(op.statusHtml);
-        return;
-      }
-
-      if (op.type === 'binaryMiss') {
-        currentProblemSearchCount += 1;
-        revealed[op.index] = true;
-        activeIndices = [op.index];
-        checkedIndices = [...new Set([...checkedIndices, op.index])];
-        excludedIndices = [...new Set([...excludedIndices, ...op.excluded])];
-        op.excluded.forEach((idx) => {
-          revealed[idx] = true;
-        });
-        rangeIndices = [...op.range];
-        setStatus(op.statusHtml);
-        return;
-      }
-
-      if (op.type === 'found') {
-        currentProblemSearchCount += 1;
-        revealed[op.index] = true;
-        activeIndices = [op.index];
-        foundIndices = [op.index];
-        rangeIndices = [...op.range];
-        finished = true;
-        historyByAlgorithm[algorithmSelect.value].push(currentProblemSearchCount);
-        resultEl.textContent = `${algorithmLabel(algorithmSelect.value)} 탐색 성공! ${currentProblemSearchCount}번 만에 목표 숫자를 찾았습니다.`;
-        setStatus(op.statusHtml);
-      }
-    }
-
-    function finishSearchIfNeeded() {
-      if (!finished) return;
-
-      clearAutoTimer();
-      nextBtn.disabled = true;
-      renderCards();
-    }
-
-    function scheduleNextAutoStep() {
-      clearAutoTimer();
-
-      if (autoPlayCheck.checked && started && !finished && stepIndex < operations.length) {
-        autoTimer = setTimeout(runNextStep, getAutoDelay());
-      }
-    }
-
-    function runNextStep() {
-      if (!started || finished) return;
-      if (stepIndex >= operations.length) return;
-
-      const op = operations[stepIndex];
-      stepIndex += 1;
-      applyOperation(op);
-      renderCards();
-      finishSearchIfNeeded();
-
-      if (!finished) {
-        scheduleNextAutoStep();
-      }
-    }
-
-    function prepareSearch() {
-      clearAutoTimer();
-      started = true;
-      finished = false;
-      stepIndex = 0;
-      currentProblemSearchCount = 0;
-      resultEl.textContent = '';
-      resetVisualState();
-      operations = buildOperations();
-
-      rangeIndices = makeRange(0, numbers.length - 1);
-
-      nextBtn.disabled = false;
-      setStatus(`${algorithmLabel(algorithmSelect.value)} 탐색이 준비되었습니다.`);
       renderCards();
 
-      if (autoPlayCheck.checked) {
-        runNextStep();
+      if (selected.length === 2) {
+        const orderedPair = getOrderedSelectedPair();
+        setStatus(`${orderedPair[0] + 1}번 위치 카드와 ${orderedPair[1] + 1}번 위치 카드를 선택했습니다.`);
+      } else if (selected.length === 1) {
+        setStatus(`${selected[0] + 1}번 카드를 선택했습니다. 한 장 더 선택하세요.`);
+      } else {
+        setStatus('카드 2장을 선택하세요.');
       }
     }
 
-    function startRound() {
-      clearAutoTimer();
+    function performSwap() {
+      const orderedPair = getOrderedSelectedPair();
+      if (!orderedPair) return false;
 
-      const algorithm = algorithmSelect.value;
-      roundCountByAlgorithm[algorithm] += 1;
-
-      cardCount = Number(cardCountSelect.value);
-      numbers = generateNumbersWithRangeLimit(cardCount);
-      targetIndex = randInt(0, cardCount - 1);
-      targetNumber = numbers[targetIndex];
-
-      targetNumberEl.textContent = String(targetNumber);
-
-      started = false;
-      finished = false;
-      stepIndex = 0;
-      currentProblemSearchCount = 0;
-      resultEl.textContent = '';
-      resetVisualState();
-      updateStats();
-      renderCards();
-
-      prepareSearch();
-    }
-
-    nextBtn.addEventListener('click', () => {
-      runNextStep();
-    });
-
-    newRoundBtn.addEventListener('click', () => {
-      startRound();
-    });
-
-    resetStatsBtn.addEventListener('click', () => {
-      clearAutoTimer();
-      historyByAlgorithm.linear = [];
-      historyByAlgorithm.binary = [];
-      roundCountByAlgorithm.linear = 0;
-      roundCountByAlgorithm.binary = 0;
-      currentProblemSearchCount = 0;
-      resultEl.textContent = '';
-      updateStats();
-      setStatus('순차 탐색과 이진 탐색의 누적 통계를 초기화했습니다.');
-    });
-
-    algorithmSelect.addEventListener('change', () => {
-      startRound();
-    });
-
-    cardCountSelect.addEventListener('change', () => {
-      startRound();
-    });
-
-    autoPlayCheck.addEventListener('change', () => {
-      clearAutoTimer();
-
-      if (autoPlayCheck.checked && started && !finished && stepIndex < operations.length) {
-        scheduleNextAutoStep();
+      const [a, b] = orderedPair;
+      if (fixed[a] || fixed[b]) {
+        setStatus('고정된 카드는 바꿀 수 없습니다.');
+        return false;
       }
-    });
 
-    speedSelect.addEventListener('change', () => {
-      if (autoPlayCheck.checked && started && !finished && stepIndex < operations.length) {
-        scheduleNextAutoStep();
-      }
-    });
-
-    function isSorted(arr) {
-      for (let i = 0; i < arr.length - 1; i++) {
-        if (arr[i] > arr[i + 1]) return false;
-      }
+      [numbers[a], numbers[b]] = [numbers[b], numbers[a]];
+      [revealed[a], revealed[b]] = [revealed[b], revealed[a]];
+      [fixed[a], fixed[b]] = [fixed[b], fixed[a]];
+      swapCount += 1;
       return true;
     }
 
-    function runTests() {
-      for (let t = 0; t < 30; t++) {
-        const sample = generateNumbersWithRangeLimit(20);
-        const min = Math.min(...sample);
-        const max = Math.max(...sample);
+    function initGame() {
+      cardCount = Number(cardCountSelect.value);
+      const mode = dataModeSelect.value;
 
-        console.assert(sample.length === 20, '카드 개수 오류');
-        console.assert(sample.every((n) => n >= 1 && n <= 1000), '값 범위 오류');
-        console.assert(new Set(sample).size === sample.length, '중복 값 오류');
-        console.assert(max - min <= 500, '최소값/최대값 차이 오류');
-        console.assert(isSorted(sample), '정렬 오류');
+      numbers = createNumbersByMode(cardCount, mode);
+      revealed = Array(cardCount).fill(false);
+      selected = [];
+      fixed = Array(cardCount).fill(false);
+      revealCount = 0;
+      swapCount = 0;
+      pendingSwap = [];
+      isSwapLocked = false;
+      resultEl.textContent = '';
+      renderCards();
+      setStatus(`${getModeLabel(mode)}로 새 게임을 시작했습니다. 카드 2장을 선택하세요.`);
+    }
+
+    revealBtn.addEventListener('click', async () => {
+      if (selected.length !== 2 || isSwapLocked) return;
+
+      const orderedPair = getOrderedSelectedPair();
+      const [leftIndex, rightIndex] = orderedPair;
+
+      const alreadyRevealed = orderedPair.every((i) => revealed[i]);
+      if (alreadyRevealed) {
+        setStatus('이미 선택된 카드가 앞면으로 공개되어 있습니다.');
+        return;
       }
 
-      numbers = [10, 20, 30, 40, 50];
-      targetNumber = 40;
-      let linearOps = buildLinearOperations();
-      let binaryOps = buildBinaryOperations();
+      orderedPair.forEach((i) => {
+        revealed[i] = true;
+      });
+      revealCount += 1;
+      renderCards();
 
-      console.assert(linearOps.some((op) => op.type === 'found' && op.index === 3), '순차 탐색 동작 오류');
-      console.assert(binaryOps.some((op) => op.type === 'found' && op.index === 3), '이진 탐색 동작 오류');
-      console.assert(linearOps.filter((op) => op.type === 'miss').length === 3, '순차 탐색 miss 단계 오류');
+      const leftValue = numbers[leftIndex];
+      const rightValue = numbers[rightIndex];
+      const shouldSwap = shouldSwapSelectedCards();
+
+      if (autoSwapToggleEl.checked && shouldSwap) {
+        pendingSwap = [leftIndex, rightIndex];
+        isSwapLocked = true;
+        renderCards();
+        setStatus(`${leftIndex + 1}번 위치 카드 = <b>${leftValue}</b>, ${rightIndex + 1}번 위치 카드 = <b>${rightValue}</b>. 앞쪽 카드가 더 크므로 1초 뒤 자동으로 바꿉니다.`);
+
+        await sleep(1000);
+
+        const swapped = performSwap();
+        pendingSwap = [];
+        isSwapLocked = false;
+        renderCards();
+
+        if (swapped) {
+          setStatus(`${leftIndex + 1}번 위치 카드와 ${rightIndex + 1}번 위치 카드가 자동으로 교환되었습니다.`);
+        }
+        return;
+      }
+
+      const extraMessage = shouldSwap
+        ? ' 앞쪽 카드의 숫자가 더 크므로 바꾸기가 필요합니다.'
+        : ' 앞쪽 카드가 더 작거나 같으므로 바꾸지 않아도 됩니다.';
+      setStatus(`${leftIndex + 1}번 위치 카드 = <b>${leftValue}</b>, ${rightIndex + 1}번 위치 카드 = <b>${rightValue}</b>.${extraMessage}`);
+    });
+
+    swapBtn.addEventListener('click', () => {
+      if (selected.length !== 2 || isSwapLocked) return;
+
+      const orderedPair = getOrderedSelectedPair();
+      const [a, b] = orderedPair;
+      const swapped = performSwap();
+      renderCards();
+
+      if (swapped) {
+        setStatus(`${a + 1}번 위치 카드와 ${b + 1}번 위치 카드의 위치를 바꿨습니다.`);
+      }
+    });
+
+    fixBtn.addEventListener('click', () => {
+      if (selected.length === 0 || isSwapLocked) return;
+
+      const canFix = selected.every((i) => revealed[i] && !fixed[i]);
+      if (!canFix) {
+        setStatus('앞면으로 공개된 카드만 고정할 수 있습니다.');
+        return;
+      }
+
+      selected.forEach((i) => {
+        fixed[i] = true;
+        revealed[i] = true;
+      });
+
+      const fixedPositions = selected.map((i) => i + 1).sort((a, b) => a - b).join(', ');
+      selected = [];
+      renderCards();
+      setStatus(`${fixedPositions}번 카드를 고정했습니다. 고정된 카드는 항상 앞면으로 보이고 바꿀 수 없습니다.`);
+    });
+
+    hideBtn.addEventListener('click', () => {
+      if (isSwapLocked) return;
+      revealed = revealed.map((_, i) => fixed[i]);
+      selected = [];
+      pendingSwap = [];
+      renderCards();
+      setStatus('선택되지 않은 카드는 다시 뒷면으로 돌렸습니다.');
+    });
+
+    resetBtn.addEventListener('click', () => {
+      initGame();
+    });
+
+    cardCountSelect.addEventListener('change', () => {
+      initGame();
+    });
+
+    dataModeSelect.addEventListener('change', () => {
+      initGame();
+    });
+
+    function runTests() {
+      console.assert(isSorted([1, 2, 3, 4]) === true, 'Test failed: sorted array should return true');
+      console.assert(isSorted([1, 3, 2, 4]) === false, 'Test failed: unsorted array should return false');
+
+      const sample10 = shuffledNumbers(10);
+      console.assert(sample10.length === 10, 'Test failed: should generate 10 numbers');
+      console.assert(new Set(sample10).size === 10, 'Test failed: numbers should be unique');
+      console.assert(sample10.every((n) => n >= 1 && n <= 100), 'Test failed: numbers should be between 1 and 100');
+
+      const sorted10 = createNumbersByMode(10, 'sorted');
+      console.assert(sorted10.length === 10, 'Test failed: sorted mode should generate requested number of cards');
+      console.assert(isSorted(sorted10) === true, 'Test failed: sorted mode should return ascending order');
+
+      const reverse10 = createNumbersByMode(10, 'reverse');
+      console.assert(reverse10.length === 10, 'Test failed: reverse mode should generate requested number of cards');
+      console.assert(reverse10.every((v, i) => i === 0 || reverse10[i - 1] >= v), 'Test failed: reverse mode should return descending order');
+
+      selected = [3, 1];
+      const orderedPair = getOrderedSelectedPair();
+      console.assert(orderedPair[0] === 1 && orderedPair[1] === 3, 'Test failed: ordered pair should follow card position, not click order');
+
+      numbers = [30, 10, 50, 80];
+      selected = [0, 1];
+      revealed = [true, true, false, false];
+      console.assert(shouldSwapSelectedCards() === true, 'Test failed: swap should be needed when left card value is bigger');
+
+      numbers = [10, 30, 50, 80];
+      selected = [1, 0];
+      revealed = [true, true, false, false];
+      console.assert(shouldSwapSelectedCards() === false, 'Test failed: swap should not depend on click order');
+
+      numbers = [30, 10, 50, 80];
+      selected = [0, 1];
+      revealed = [true, false, false, false];
+      console.assert(shouldSwapSelectedCards() === false, 'Test failed: hidden card pair should not trigger swap');
+
+      numbers = [40, 20, 60, 80];
+      selected = [1, 0];
+      revealed = [true, true, false, false];
+      fixed = [false, false, false, false];
+      swapCount = 0;
+      const swapped = performSwap();
+      console.assert(swapped === true, 'Test failed: performSwap should return true on successful swap');
+      console.assert(numbers[0] === 20 && numbers[1] === 40, 'Test failed: performSwap should exchange numbers based on position');
+      console.assert(swapCount === 1, 'Test failed: performSwap should increment swap count');
+
+      numbers = [40, 20, 60, 80];
+      selected = [0, 1];
+      revealed = [true, true, false, false];
+      fixed = [true, false, false, false];
+      swapCount = 0;
+      const blockedSwap = performSwap();
+      console.assert(blockedSwap === false, 'Test failed: performSwap should fail when a fixed card is selected');
+      console.assert(swapCount === 0, 'Test failed: failed swap should not increment swap count');
+
+      pendingSwap = [1, 2];
+      console.assert(pendingSwap.includes(1) && pendingSwap.includes(2), 'Test failed: pending swap markers should store both selected cards');
     }
 
     runTests();
-    startRound();
+    initGame();
   </script>
 </body>
 </html>
