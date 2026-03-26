@@ -3,52 +3,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>탐색 알고리즘 카드 실습</title>
+  <title>정렬 알고리즘 효율성 테스트</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
       background: #f5f7fb;
       color: #1f2937;
     }
-
     .wrap {
-      max-width: 1400px;
+      max-width: 1150px;
       margin: 0 auto;
       padding: 24px;
     }
-
     h1 {
-      margin: 0 0 10px;
+      margin: 0 0 8px;
       font-size: 32px;
     }
-
     .desc {
       margin: 0 0 20px;
       color: #4b5563;
-      line-height: 1.7;
+      line-height: 1.6;
     }
-
     .panel {
-      background: white;
+      background: #ffffff;
       border-radius: 18px;
       padding: 20px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
       margin-bottom: 20px;
     }
-
     .top-controls {
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
       align-items: center;
-      margin-bottom: 14px;
+      margin-bottom: 8px;
     }
-
     .field {
       display: flex;
       align-items: center;
@@ -57,98 +48,167 @@
       border-radius: 12px;
       padding: 10px 12px;
     }
-
     .field label {
       font-size: 14px;
       font-weight: 700;
       color: #374151;
     }
-
     select {
       border: 1px solid #d1d5db;
       border-radius: 10px;
       padding: 8px 10px;
       font-size: 15px;
-      background: white;
+      background: #ffffff;
       color: #111827;
     }
-
-    .target-box {
-      margin-top: 14px;
-      padding: 18px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #eff6ff, #dbeafe);
-      border: 1px solid #93c5fd;
+    .legend {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
       flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+      color: #4b5563;
+      font-size: 13px;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f9fafb;
+      border-radius: 999px;
+      padding: 6px 10px;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      display: inline-block;
     }
 
-    .target-label {
-      font-size: 14px;
-      color: #1d4ed8;
-      font-weight: 700;
-      margin-bottom: 6px;
+    .cards-stage {
+      position: relative;
+      margin-top: 16px;
     }
-
-    .target-number {
-      font-size: 36px;
-      font-weight: 800;
-      color: #1e3a8a;
-    }
-
     .cards {
       display: grid;
+      grid-template-columns: repeat(10, 1fr);
       gap: 14px;
-      margin-top: 18px;
+      position: relative;
+      z-index: 1;
+      align-items: start;
+    }
+    .group-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .group-outline {
+      position: absolute;
+      border: 3px dashed;
+      border-radius: 18px;
+      background: transparent;
+      pointer-events: none;
+    }
+    .group-outline.small {
+      border-color: #60a5fa;
+    }
+    .group-outline.large {
+      border-color: #6b7280;
     }
 
     .card {
-      min-height: 110px;
+      min-height: 120px;
       border: 3px solid #d1d5db;
       border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 30px;
+      font-size: 32px;
       font-weight: 700;
-      cursor: pointer;
       user-select: none;
-      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      transition: margin-top 0.25s ease, transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
       background: linear-gradient(135deg, #ffffff, #eef2ff);
       color: #111827;
       padding: 8px;
+      text-align: center;
+      position: relative;
     }
-
-    .card:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-    }
-
-    .card.back {
+    .card.hidden {
       background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      color: white;
+      color: #ffffff;
       font-size: 22px;
-      letter-spacing: 1px;
+      letter-spacing: 2px;
     }
-
-    .card.found {
+    .card.lowered {
+      opacity: 0.98;
+    }
+    .card.active {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.25);
+      transform: translateY(-4px);
+    }
+    .card.compare {
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.22);
+    }
+    .card.swap {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.22);
+      animation: pulseSwap 0.8s ease-in-out infinite;
+    }
+    .card.sorted {
       background: linear-gradient(135deg, #ecfdf5, #d1fae5);
       color: #065f46;
       border-color: #10b981;
-      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18);
     }
-
-    .card.wrong {
-      background: linear-gradient(135deg, #fff7ed, #ffedd5);
+    .card.pivot {
+      border-color: #f97316;
+      box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.25);
+      background: linear-gradient(135deg, #fff7ed, #fed7aa);
       color: #9a3412;
-      border-color: #fb923c;
+    }
+    .card.candidate {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18);
+    }
+    .card.candidate::after {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border: 2px dashed #f59e0b;
+      border-radius: 10px;
+      pointer-events: none;
+    }
+    .card.insertion-target {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
+    }
+    .card.insertion-target::after {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border: 2px dashed #3b82f6;
+      border-radius: 10px;
+      pointer-events: none;
     }
 
-    .card.dimmed {
-      opacity: 0.7;
+    .card.last-swap {
+      box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.18);
+    }
+    .card.last-swap::after {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border: 2px dashed #ec4899;
+      border-radius: 10px;
+      pointer-events: none;
+    }
+
+    @keyframes pulseSwap {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
     }
 
     .controls {
@@ -158,7 +218,46 @@
       margin-top: 18px;
       align-items: center;
     }
-
+    .auto-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f9fafb;
+    }
+    .mode-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      color: #374151;
+      flex-wrap: wrap;
+    }
+    .mode-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+    .speed-wrap {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      min-width: 280px;
+    }
+    .speed-wrap.visible {
+      display: inline-flex;
+    }
+    .speed-wrap input[type="range"] {
+      width: 220px;
+    }
+    .speed-hint {
+      display: none;
+    }
     button {
       border: none;
       border-radius: 12px;
@@ -167,60 +266,51 @@
       font-weight: 700;
       cursor: pointer;
       background: #111827;
-      color: white;
+      color: #ffffff;
     }
-
-    button.secondary {
-      background: #e5e7eb;
-      color: #111827;
-    }
-
     button:disabled {
       opacity: 0.45;
       cursor: not-allowed;
     }
-
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
     .status {
       margin-top: 14px;
       padding: 14px;
       border-radius: 12px;
       background: #f9fafb;
       color: #374151;
-      line-height: 1.6;
-      min-height: 56px;
+      line-height: 1.7;
+      min-height: 64px;
     }
-
     .info {
       display: grid;
-      grid-template-columns: repeat(4, minmax(140px, 1fr));
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
       gap: 12px;
       margin-top: 14px;
     }
-
     .info-box {
       background: #f9fafb;
       border-radius: 14px;
       padding: 14px;
     }
-
     .label {
       font-size: 13px;
       color: #6b7280;
       margin-bottom: 6px;
     }
-
     .value {
       font-size: 24px;
       font-weight: 800;
     }
-
     .result {
       margin-top: 14px;
       font-weight: 700;
       color: #065f46;
-      min-height: 24px;
+      line-height: 1.7;
     }
-
     .copyright {
       margin-top: 28px;
       padding: 18px 8px 8px;
@@ -229,7 +319,6 @@
       line-height: 1.8;
       color: #6b7280;
     }
-
     .copyright strong {
       display: block;
       color: #4b5563;
@@ -240,85 +329,165 @@
 
     @media (max-width: 1100px) {
       .cards {
-        grid-template-columns: repeat(5, minmax(90px, 1fr)) !important;
+        grid-template-columns: repeat(5, 1fr);
+      }
+      .info {
+        grid-template-columns: repeat(3, 1fr);
       }
     }
 
+    @media (max-width: 800px) {
+      .info { grid-template-columns: 1fr 1fr; }
+      .card { min-height: 100px; font-size: 28px; }
+    }
+
     @media (max-width: 700px) {
-      .info {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .card {
-        min-height: 95px;
-        font-size: 24px;
-      }
-
       .cards {
-        grid-template-columns: repeat(3, minmax(90px, 1fr)) !important;
-      }
-
-      .target-number {
-        font-size: 28px;
+        grid-template-columns: repeat(3, 1fr);
       }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>탐색 알고리즘 카드 실습</h1>
+    <h1>정렬 알고리즘 효율성 테스트</h1>
     <p class="desc">
-      정렬된 카드 데이터 중에서 <b>찾아야 하는 숫자</b>를 찾아보세요.
-      카드는 처음에 모두 뒷면으로 보이며, 카드를 클릭하면 숫자가 공개됩니다.
-      목표 숫자를 찾으면 이번 탐색이 종료되고, 하단 통계가 갱신됩니다.
+      알고리즘과 데이터 형태를 선택한 뒤 <b>다음</b> 버튼을 누르면,
+      해당 알고리즘이 비교하거나 이동해야 할 카드가 자동으로 선택됩니다.
+      무작위 / 정렬됨 / 역정렬 상태를 바꿔가며 비교 횟수와 교환(이동) 횟수를 비교해 보세요.
     </p>
 
     <div class="panel">
       <div class="top-controls">
         <div class="field">
+          <label for="algorithmSelect">정렬 알고리즘</label>
+          <select id="algorithmSelect">
+            <option value="selection" selected>선택 정렬</option>
+            <option value="bubble_basic">버블 정렬(기본)</option>
+            <option value="bubble_optimized">버블 정렬(개선)</option>
+            <option value="insertion">삽입 정렬</option>
+            <option value="quick">퀵 정렬</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="cardCountSelect">카드 개수</label>
           <select id="cardCountSelect">
-            <option value="10">10장</option>
-            <option value="20" selected>20장</option>
-            <option value="50">50장</option>
-            <option value="100">100장</option>
+            <option value="5">5장</option>
+            <option value="10" selected>10장</option>
+            <option value="15">15장</option>
+            <option value="20">20장</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="dataModeSelect">데이터 형태</label>
+          <select id="dataModeSelect">
+            <option value="sorted">정렬됨</option>
+            <option value="mostly_sorted_75">어느정도 정렬됨(75%)</option>
+            <option value="random" selected>무작위</option>
+            <option value="mostly_reverse_25">어느정도 역정렬됨(25%)</option>
+            <option value="reverse">역정렬</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="showFaceToggle">숫자 보이기</label>
+          <select id="showFaceToggle">
+            <option value="step">현재 단계 카드만 공개</option>
+            <option value="all">항상 전체 공개</option>
           </select>
         </div>
       </div>
 
-      <div class="target-box">
-        <div>
-          <div class="target-label">찾아야 하는 숫자</div>
-          <div class="target-number" id="targetNumber">-</div>
+      <div class="legend" id="legend" aria-label="색상 범례">
+        <span class="legend-item" data-legend="bubble_basic,bubble_optimized,insertion,selection,quick">
+          <span class="legend-dot" style="background:#ede9fe"></span>현재 비교 중
+        </span>
+
+        <span class="legend-item" data-legend="selection">
+          <span class="legend-dot" style="background:#fff7ed; border:2px dashed #f59e0b"></span>현재 최소값 후보
+        </span>
+
+        <span class="legend-item" data-legend="insertion">
+          <span class="legend-dot" style="background:#eff6ff; border:2px dashed #3b82f6"></span>현재 삽입 중인 카드
+        </span>
+
+        <span class="legend-item" data-legend="quick">
+          <span class="legend-dot" style="background:#fed7aa"></span>피벗
+        </span>
+
+        <span class="legend-item" data-legend="quick">
+          <span class="legend-dot" style="background:#ffffff; border:2px dashed #60a5fa"></span>이미 확인한 작은 값 묶음
+        </span>
+
+        <span class="legend-item" data-legend="quick">
+          <span class="legend-dot" style="background:#ffffff; border:2px dashed #6b7280"></span>이미 확인한 큰 값 묶음
+        </span>
+
+        <span class="legend-item" data-legend="bubble_basic,bubble_optimized,insertion,selection,quick">
+          <span class="legend-dot" style="background:#ffd6d6"></span>교환 중
+        </span>
+
+        <span class="legend-item" data-legend="quick">
+          <span class="legend-dot" style="background:#e5e7eb"></span>아래로 내려간 부분 문제
+        </span>
+
+        <span class="legend-item" data-legend="bubble_optimized">
+          <span class="legend-dot" style="background:#ffffff; border:2px dashed #ec4899"></span>마지막 바뀜 위치
+        </span>
+        <span class="legend-item" data-legend="bubble_basic,bubble_optimized,insertion,selection,quick">
+          <span class="legend-dot" style="background:#d1fae5"></span>정렬 완료
+        </span>
+      </div>
+
+      <div class="cards-stage">
+        <div class="cards" id="cards"></div>
+        <div class="group-overlay" id="groupOverlay"></div>
+      </div>
+
+      <div class="controls">
+        <button id="nextBtn" type="button">다음</button>
+        <button id="resetBtn" type="button" class="secondary">새 게임</button>
+      </div>
+
+      <div class="auto-controls">
+        <div class="mode-group" aria-label="진행 방식 선택">
+          <span>진행 방식</span>
+          <label class="mode-option"><input type="radio" name="playMode" value="manual" checked> 수동</label>
+          <label class="mode-option"><input type="radio" name="playMode" value="auto"> 자동</label>
+        </div>
+        <div class="speed-wrap" id="speedWrap">
+          <label for="speedSlider"><strong>자동 속도</strong></label>
+          <input type="range" id="speedSlider" min="1" max="100" step="1" value="45">
+          <span id="speedValue">보통</span>
+          <span class="speed-hint" id="speedHint" aria-hidden="true"></span>
         </div>
       </div>
 
-      <div class="cards" id="cards"></div>
-
-      <div class="controls">
-        <button id="newRoundBtn">새 문제</button>
-        <button id="hideBtn" class="secondary">다시 뒷면으로</button>
-        <button id="resetStatsBtn" class="secondary">통계 초기화</button>
-      </div>
-
-      <div class="status" id="status">새 문제를 시작한 뒤 카드를 클릭하세요.</div>
+      <div class="status" id="status">시작하려면 다음 버튼을 누르세요.</div>
 
       <div class="info">
         <div class="info-box">
-          <div class="label">현재 탐색 횟수</div>
-          <div class="value" id="currentSearchCount">0</div>
+          <div class="label">알고리즘</div>
+          <div class="value" id="algorithmInfo">선택</div>
         </div>
         <div class="info-box">
-          <div class="label">평균 탐색 횟수</div>
-          <div class="value" id="avgSearchCount">0</div>
+          <div class="label">데이터 형태</div>
+          <div class="value" id="dataModeInfo">무작위</div>
         </div>
         <div class="info-box">
-          <div class="label">최소 탐색 횟수</div>
-          <div class="value" id="minSearchCount">0</div>
+          <div class="label">현재 단계</div>
+          <div class="value" id="stepInfo">0</div>
         </div>
         <div class="info-box">
-          <div class="label">최대 탐색 횟수</div>
-          <div class="value" id="maxSearchCount">0</div>
+          <div class="label">비교 횟수</div>
+          <div class="value" id="compareCount">0</div>
+        </div>
+        <div class="info-box">
+          <div class="label">교환/이동 횟수</div>
+          <div class="value" id="moveCount">0</div>
+        </div>
+        <div class="info-box">
+          <div class="label">완료 카드</div>
+          <div class="value" id="sortedCount">0</div>
         </div>
       </div>
 
@@ -333,229 +502,1119 @@
 
   <script>
     const cardContainer = document.getElementById('cards');
+    const groupOverlay = document.getElementById('groupOverlay');
+    const legendEl = document.getElementById('legend');
+    const algorithmSelect = document.getElementById('algorithmSelect');
     const cardCountSelect = document.getElementById('cardCountSelect');
-    const targetNumberEl = document.getElementById('targetNumber');
-    const newRoundBtn = document.getElementById('newRoundBtn');
-    const hideBtn = document.getElementById('hideBtn');
-    const resetStatsBtn = document.getElementById('resetStatsBtn');
+    const dataModeSelect = document.getElementById('dataModeSelect');
+    const showFaceToggle = document.getElementById('showFaceToggle');
+    const nextBtn = document.getElementById('nextBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const playModeRadios = document.querySelectorAll('input[name="playMode"]');
+    const speedWrap = document.getElementById('speedWrap');
+    const speedSlider = document.getElementById('speedSlider');
+    const speedValueEl = document.getElementById('speedValue');
+    const speedHintEl = document.getElementById('speedHint');
     const statusEl = document.getElementById('status');
-    const currentSearchCountEl = document.getElementById('currentSearchCount');
-    const avgSearchCountEl = document.getElementById('avgSearchCount');
-    const minSearchCountEl = document.getElementById('minSearchCount');
-    const maxSearchCountEl = document.getElementById('maxSearchCount');
+    const algorithmInfoEl = document.getElementById('algorithmInfo');
+    const dataModeInfoEl = document.getElementById('dataModeInfo');
+    const stepInfoEl = document.getElementById('stepInfo');
+    const compareCountEl = document.getElementById('compareCount');
+    const moveCountEl = document.getElementById('moveCount');
+    const sortedCountEl = document.getElementById('sortedCount');
     const resultEl = document.getElementById('result');
 
-    let cardCount = 10;
+    let initialNumbers = [];
     let numbers = [];
-    let revealed = [];
-    let targetNumber = null;
-    let foundIndex = -1;
-    let currentSearchCount = 0;
-    let finished = false;
-    let searchHistory = [];
+    let operations = [];
+    let stepIndex = 0;
+    let compareCount = 0;
+    let moveCount = 0;
+    let activeIndices = [];
+    let compareIndices = [];
+    let swapIndices = [];
+    let sortedIndices = [];
+    let contextIndices = [];
+    let pivotIndices = [];
+    let checkedSmallIndices = [];
+    let checkedLargeIndices = [];
+    let candidateIndices = [];
+    let insertionTargetIndices = [];
+    let lastSwapMarkerIndices = [];
+    let levelByIndex = [];
+    let quickLeftStopIndex = null;
+    let quickRightStopIndex = null;
+    let isDone = false;
+    let isAutoMode = false;
+    let autoTimer = null;
 
-    function randInt(min, max) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    function shuffle(arr) {
-      const copied = [...arr];
-      for (let i = copied.length - 1; i > 0; i--) {
+    function shuffledNumbers(count) {
+      const pool = Array.from({ length: 100 }, (_, i) => i + 1);
+      for (let i = pool.length - 1; i > 0; i -= 1) {
         const j = Math.floor(Math.random() * (i + 1));
-        [copied[i], copied[j]] = [copied[j], copied[i]];
+        [pool[i], pool[j]] = [pool[j], pool[i]];
       }
-      return copied;
+      return pool.slice(0, count);
     }
 
-    function generateNumbersWithRangeLimit(count) {
-      while (true) {
-        const start = randInt(1, 500);
-        const end = randInt(start, Math.min(1000, start + 500));
+    function createNumbersByMode(count, mode) {
+      const base = shuffledNumbers(count);
 
-        const pool = Array.from({ length: end - start + 1 }, (_, i) => start + i);
-
-        if (pool.length < count) {
-          continue;
-        }
-
-        const shuffledPool = shuffle(pool);
-        const selected = shuffledPool
-          .slice(0, count)
-          .sort((a, b) => a - b);
-
-        const min = Math.min(...selected);
-        const max = Math.max(...selected);
-
-        if (max - min <= 500) {
-          return selected;
-        }
+      if (mode === 'sorted') {
+        return [...base].sort((a, b) => a - b);
       }
+      if (mode === 'reverse') {
+        return [...base].sort((a, b) => b - a);
+      }
+      if (mode === 'mostly_sorted_75') {
+        const arr = [...base].sort((a, b) => a - b);
+        const swapCount = Math.max(1, Math.floor(count * 0.25));
+        for (let i = 0; i < swapCount; i += 1) {
+          const a = Math.floor(Math.random() * count);
+          let b = Math.floor(Math.random() * count);
+          while (a === b) {
+            b = Math.floor(Math.random() * count);
+          }
+          [arr[a], arr[b]] = [arr[b], arr[a]];
+        }
+        return arr;
+      }
+      if (mode === 'mostly_reverse_25') {
+        const arr = [...base].sort((a, b) => b - a);
+        const swapCount = Math.max(1, Math.floor(count * 0.25));
+        for (let i = 0; i < swapCount; i += 1) {
+          const a = Math.floor(Math.random() * count);
+          let b = Math.floor(Math.random() * count);
+          while (a === b) {
+            b = Math.floor(Math.random() * count);
+          }
+          [arr[a], arr[b]] = [arr[b], arr[a]];
+        }
+        return arr;
+      }
+      return base;
     }
 
-    function setCardsLayout() {
-      const currentCount = Number(cardCountSelect.value);
+    function cloneArray(arr) {
+      return Array.isArray(arr) ? arr.slice() : [];
+    }
 
-      if (currentCount <= 5) {
-        cardContainer.style.gridTemplateColumns = `repeat(${currentCount}, minmax(90px, 1fr))`;
-      } else if (currentCount === 10) {
-        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(90px, 1fr))';
-      } else if (currentCount === 15) {
-        cardContainer.style.gridTemplateColumns = 'repeat(15, minmax(70px, 1fr))';
-      } else if (currentCount === 20) {
-        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(70px, 1fr))';
+    function uniqueSortedIndices(arr) {
+      return [...new Set(arr)].filter((i) => Number.isInteger(i)).sort((a, b) => a - b);
+    }
+
+    function getSelectedPlayMode() {
+      const selected = [...playModeRadios].find((radio) => radio.checked);
+      return selected ? selected.value : 'manual';
+    }
+
+    function updateSpeedDisplay() {
+      const value = Number(speedSlider.value);
+      let label = '보통';
+
+      if (value <= 20) {
+        label = '매우 느림';
+      } else if (value <= 40) {
+        label = '느림';
+      } else if (value <= 60) {
+        label = '보통';
+      } else if (value <= 80) {
+        label = '빠름';
       } else {
-        cardContainer.style.gridTemplateColumns = `repeat(${currentCount}, minmax(90px, 1fr))`;
+        label = '매우 빠름';
       }
+
+      speedValueEl.textContent = label;
+      speedHintEl.textContent = '';
+    }
+
+    function getAutoDelay() {
+      const minDelay = 25;
+      const maxDelay = 1200;
+      const ratio = (100 - Number(speedSlider.value)) / 99;
+      return Math.round(minDelay + ratio * (maxDelay - minDelay));
+    }
+
+    function stopAutoPlay() {
+      if (autoTimer) {
+        clearTimeout(autoTimer);
+        autoTimer = null;
+      }
+    }
+
+    function updatePlayModeUI() {
+      isAutoMode = getSelectedPlayMode() === 'auto';
+      speedWrap.classList.toggle('visible', isAutoMode);
+      nextBtn.textContent = isAutoMode ? (isDone ? '완료' : '시작') : '다음';
+    }
+
+    function runNextStep() {
+      if (isDone) return;
+      if (stepIndex >= operations.length) {
+        finishIfDone();
+        return;
+      }
+
+      const operation = operations[stepIndex];
+      stepIndex += 1;
+      applyOperation(operation);
+      renderCards();
+      finishIfDone();
+    }
+
+    function scheduleAutoPlay() {
+      stopAutoPlay();
+      if (!isAutoMode || isDone) return;
+
+      autoTimer = setTimeout(function tick() {
+        if (!isAutoMode || isDone) {
+          stopAutoPlay();
+          return;
+        }
+
+        runNextStep();
+
+        if (!isDone) {
+          autoTimer = setTimeout(tick, getAutoDelay());
+        } else {
+          stopAutoPlay();
+        }
+      }, getAutoDelay());
+    }
+
+    function isSorted(arr) {
+      return arr.every((v, i) => i === 0 || arr[i - 1] <= v);
+    }
+
+    function pushMarkSorted(ops, indices) {
+      const unique = uniqueSortedIndices(indices);
+      if (unique.length > 0) {
+        ops.push({ type: 'markSorted', indices: unique });
+      }
+    }
+
+    function makeRange(start, endInclusive) {
+      if (endInclusive < start) return [];
+      return Array.from({ length: endInclusive - start + 1 }, (_, idx) => start + idx);
+    }
+
+    function generateBubbleBasicOperations(source) {
+      const arr = cloneArray(source);
+      const ops = [];
+      const n = arr.length;
+
+      for (let end = n - 1; end > 0; end -= 1) {
+        for (let j = 0; j < end; j += 1) {
+          ops.push({ type: 'compare', indices: [j, j + 1] });
+          if (arr[j] > arr[j + 1]) {
+            [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+            ops.push({ type: 'swap', indices: [j, j + 1] });
+          }
+        }
+        pushMarkSorted(ops, [end]);
+      }
+
+      if (n > 0) pushMarkSorted(ops, [0]);
+      return ops;
+    }
+
+    function generateBubbleOptimizedOperations(source) {
+      const arr = cloneArray(source);
+      const ops = [];
+      const n = arr.length;
+      let end = n - 1;
+      let sortedStart = n;
+
+      while (end > 0) {
+        let lastSwap = -1;
+
+        for (let j = 0; j < end; j += 1) {
+          ops.push({ type: 'compare', indices: [j, j + 1] });
+          if (arr[j] > arr[j + 1]) {
+            [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+            ops.push({ type: 'swap', indices: [j, j + 1], lastSwapIndex: j });
+            lastSwap = j;
+          }
+        }
+
+        const newSortedStart = lastSwap === -1 ? 0 : lastSwap + 1;
+        const newlySorted = makeRange(newSortedStart, sortedStart - 1);
+        if (newlySorted.length > 0) {
+          pushMarkSorted(ops, newlySorted);
+        }
+
+        if (lastSwap === -1) {
+          return ops;
+        }
+
+        sortedStart = newSortedStart;
+        end = lastSwap;
+      }
+
+      if (sortedStart > 0) {
+        pushMarkSorted(ops, makeRange(0, sortedStart - 1));
+      }
+
+      return ops;
+    }
+
+    function generateSelectionOperations(source) {
+      const arr = cloneArray(source);
+      const ops = [];
+      const n = arr.length;
+
+      for (let i = 0; i < n - 1; i += 1) {
+        let minIndex = i;
+
+        ops.push({
+          type: 'setSelectionCandidate',
+          candidateIndex: minIndex,
+          message: `${i + 1}번째 자리에 들어갈 현재 최소값 후보는 ${minIndex + 1}번 카드입니다.`
+        });
+
+        for (let j = i + 1; j < n; j += 1) {
+          ops.push({
+            type: 'compare',
+            indices: [minIndex, j],
+            candidateIndex: minIndex
+          });
+
+          if (arr[j] < arr[minIndex]) {
+            minIndex = j;
+            ops.push({
+              type: 'setSelectionCandidate',
+              candidateIndex: minIndex,
+              message: `${i + 1}번째 자리에 들어갈 현재 최소값 후보가 ${minIndex + 1}번 카드로 바뀌었습니다.`
+            });
+          }
+        }
+
+        if (minIndex !== i) {
+          [arr[i], arr[minIndex]] = [arr[minIndex], arr[i]];
+          ops.push({ type: 'swap', indices: [i, minIndex] });
+        }
+
+        pushMarkSorted(ops, [i]);
+      }
+
+      pushMarkSorted(ops, [n - 1]);
+      return ops;
+    }
+
+    function generateInsertionOperations(source) {
+      const arr = cloneArray(source);
+      const ops = [];
+      const n = arr.length;
+
+      pushMarkSorted(ops, [0]);
+
+      for (let i = 1; i < n; i += 1) {
+        let j = i;
+        const prefix = makeRange(0, i);
+
+        ops.push({
+          type: 'focus',
+          indices: prefix,
+          contextIndices: prefix,
+          insertionTargetIndex: j,
+          message: `${i + 1}번 카드 값을 앞쪽 정렬된 부분에 삽입합니다.`
+        });
+
+        while (j > 0) {
+          ops.push({
+            type: 'compare',
+            indices: [j - 1, j],
+            contextIndices: prefix,
+            insertionTargetIndex: j
+          });
+
+          if (arr[j - 1] <= arr[j]) {
+            break;
+          }
+
+          [arr[j - 1], arr[j]] = [arr[j], arr[j - 1]];
+
+          ops.push({
+            type: 'swap',
+            indices: [j - 1, j],
+            contextIndices: prefix,
+            insertionTargetIndex: j - 1
+          });
+
+          j -= 1;
+        }
+
+        ops.push({
+          type: 'focus',
+          indices: [j],
+          contextIndices: makeRange(0, i),
+          insertionTargetIndex: j,
+          message: `삽입할 카드가 ${j + 1}번 자리에 들어갔습니다.`
+        });
+
+        pushMarkSorted(ops, prefix);
+      }
+
+      return ops;
+    }
+
+    function generateQuickOperations(source) {
+      const arr = cloneArray(source);
+      const ops = [];
+      const n = arr.length;
+
+      function qs(lo, hi, depth) {
+        if (lo > hi) return;
+
+        if (lo === hi) {
+          ops.push({
+            type: 'quickSingle',
+            index: lo,
+            depth,
+            range: [lo]
+          });
+          return;
+        }
+
+        const range = makeRange(lo, hi);
+        const pivotIndex = lo;
+        const pivotValue = arr[pivotIndex];
+
+        ops.push({
+          type: 'setPivot',
+          pivotIndex,
+          pivotValue,
+          range,
+          depth
+        });
+
+        let left = lo + 1;
+        let right = hi;
+
+        while (true) {
+          while (left <= right) {
+            if (arr[left] <= pivotValue) {
+              ops.push({
+                type: 'quickLeftCheckHide',
+                pivotIndex,
+                checkedIndex: left,
+                pivotValue,
+                range,
+                depth
+              });
+              left += 1;
+            } else {
+              ops.push({
+                type: 'quickLeftStop',
+                pivotIndex,
+                stopIndex: left,
+                pivotValue,
+                range,
+                depth
+              });
+              break;
+            }
+          }
+
+          while (left <= right) {
+            if (arr[right] >= pivotValue) {
+              ops.push({
+                type: 'quickRightCheckHide',
+                pivotIndex,
+                leftStopIndex: left,
+                checkedIndex: right,
+                pivotValue,
+                range,
+                depth
+              });
+              right -= 1;
+            } else {
+              ops.push({
+                type: 'quickRightStop',
+                pivotIndex,
+                leftStopIndex: left,
+                rightStopIndex: right,
+                pivotValue,
+                range,
+                depth
+              });
+              break;
+            }
+          }
+
+          if (left > right) {
+            ops.push({
+              type: 'quickPivotSwapReady',
+              pivotIndex,
+              rightIndex: right,
+              pivotValue,
+              range,
+              depth
+            });
+
+            [arr[pivotIndex], arr[right]] = [arr[right], arr[pivotIndex]];
+
+            ops.push({
+              type: 'quickPivotSwap',
+              indices: [pivotIndex, right],
+              pivotValue,
+              range,
+              depth
+            });
+
+            ops.push({
+              type: 'markSorted',
+              indices: [right]
+            });
+
+            const leftRange = makeRange(lo, right - 1);
+            const rightRange = makeRange(right + 1, hi);
+
+            if (leftRange.length > 0 || rightRange.length > 0) {
+              ops.push({
+                type: 'quickPrepareSubranges',
+                pivotIndex: right,
+                leftRange,
+                rightRange,
+                nextDepth: depth + 1,
+                message: '피벗 값 카드는 남겨두고, 아직 정렬되지 않은 카드들을 살짝 아래로 내려 다음 분할을 준비합니다.'
+              });
+            }
+
+            qs(lo, right - 1, depth + 1);
+            qs(right + 1, hi, depth + 1);
+            return;
+          }
+
+          ops.push({
+            type: 'quickSwapReady',
+            pivotIndex,
+            leftIndex: left,
+            rightIndex: right,
+            pivotValue,
+            range,
+            depth
+          });
+
+          [arr[left], arr[right]] = [arr[right], arr[left]];
+
+          ops.push({
+            type: 'quickSwap',
+            indices: [left, right],
+            pivotIndex,
+            pivotValue,
+            range,
+            depth
+          });
+
+          left += 1;
+          right -= 1;
+        }
+      }
+
+      qs(0, n - 1, 0);
+      return ops;
+    }
+
+    function getOperationsForAlgorithm(name, source) {
+      if (name === 'bubble_basic') return generateBubbleBasicOperations(source);
+      if (name === 'bubble_optimized') return generateBubbleOptimizedOperations(source);
+      if (name === 'selection') return generateSelectionOperations(source);
+      if (name === 'insertion') return generateInsertionOperations(source);
+      if (name === 'quick') return generateQuickOperations(source);
+      return [];
+    }
+
+    function algorithmLabel(name) {
+      if (name === 'selection') return '선택';
+      if (name === 'bubble_basic') return '버블(기본)';
+      if (name === 'bubble_optimized') return '버블(개선)';
+      if (name === 'insertion') return '삽입';
+      if (name === 'quick') return '퀵';
+      return '';
+    }
+
+    function dataModeLabel(name) {
+      if (name === 'sorted') return '정렬됨';
+      if (name === 'mostly_sorted_75') return '어느정도 정렬됨(75%)';
+      if (name === 'mostly_reverse_25') return '어느정도 역정렬됨(25%)';
+      if (name === 'reverse') return '역정렬';
+      return '무작위';
+    }
+
+    function updateLegend() {
+      const currentAlgorithm = algorithmSelect.value;
+      const items = legendEl.querySelectorAll('.legend-item');
+
+      items.forEach((item) => {
+        const supported = (item.dataset.legend || '')
+          .split(',')
+          .map((v) => v.trim());
+
+        item.style.display = supported.includes(currentAlgorithm) ? 'inline-flex' : 'none';
+      });
+    }
+
+    function isQuickHiddenByPartition(index) {
+      if (algorithmSelect.value !== 'quick') return false;
+      if (sortedIndices.includes(index)) return false;
+      if (pivotIndices.includes(index)) return false;
+      if (activeIndices.includes(index)) return false;
+      if (compareIndices.includes(index)) return false;
+      if (swapIndices.includes(index)) return false;
+      return (levelByIndex[index] || 0) > 0;
+    }
+
+    function shouldRevealCard(index) {
+      if (showFaceToggle.value === 'all') return true;
+      if (isQuickHiddenByPartition(index)) return false;
+      if (sortedIndices.includes(index)) return true;
+      if (pivotIndices.includes(index)) return true;
+      if (activeIndices.includes(index)) return true;
+      if (compareIndices.includes(index)) return true;
+      if (swapIndices.includes(index)) return true;
+      if (candidateIndices.includes(index)) return true;
+      if (insertionTargetIndices.includes(index)) return true;
+      if (algorithmSelect.value !== 'quick' && contextIndices.includes(index)) return true;
+      return false;
+    }
+
+    function resetHighlights() {
+      activeIndices = [];
+      compareIndices = [];
+      swapIndices = [];
+      contextIndices = [];
+      candidateIndices = [];
+      insertionTargetIndices = [];
+    }
+
+    function getVisualSegments(indices) {
+      const unique = uniqueSortedIndices(indices);
+      const segments = [];
+      let current = [];
+
+      unique.forEach((index) => {
+        if (current.length === 0) {
+          current.push(index);
+          return;
+        }
+
+        const prevIndex = current[current.length - 1];
+        const consecutive = index === prevIndex + 1;
+        const sameLevel = (levelByIndex[index] || 0) === (levelByIndex[prevIndex] || 0);
+
+        if (consecutive && sameLevel) {
+          current.push(index);
+        } else {
+          segments.push(current);
+          current = [index];
+        }
+      });
+
+      if (current.length > 0) segments.push(current);
+      return segments;
+    }
+
+    function drawOutlineForSegment(indices, kind) {
+      if (indices.length === 0) return;
+
+      const cards = indices
+        .map((index) => cardContainer.querySelector(`[data-index="${index}"]`))
+        .filter(Boolean);
+
+      if (cards.length === 0) return;
+
+      const stageRect = cardContainer.getBoundingClientRect();
+
+      let minLeft = Infinity;
+      let minTop = Infinity;
+      let maxRight = -Infinity;
+      let maxBottom = -Infinity;
+
+      cards.forEach((card) => {
+        const rect = card.getBoundingClientRect();
+        minLeft = Math.min(minLeft, rect.left - stageRect.left);
+        minTop = Math.min(minTop, rect.top - stageRect.top);
+        maxRight = Math.max(maxRight, rect.right - stageRect.left);
+        maxBottom = Math.max(maxBottom, rect.bottom - stageRect.top);
+      });
+
+      const outline = document.createElement('div');
+      outline.className = `group-outline ${kind}`;
+      outline.style.left = `${minLeft - 8}px`;
+      outline.style.top = `${minTop - 8}px`;
+      outline.style.width = `${maxRight - minLeft + 16}px`;
+      outline.style.height = `${maxBottom - minTop + 16}px`;
+      groupOverlay.appendChild(outline);
+    }
+
+    function renderGroupOutlines() {
+      groupOverlay.innerHTML = '';
+      if (algorithmSelect.value !== 'quick') return;
+      if (showFaceToggle.value === 'all') return;
+
+      getVisualSegments(checkedSmallIndices).forEach((segment) => drawOutlineForSegment(segment, 'small'));
+      getVisualSegments(checkedLargeIndices).forEach((segment) => drawOutlineForSegment(segment, 'large'));
+    }
+
+    function renderCards() {
+      cardContainer.innerHTML = '';
+
+      numbers.forEach((num, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.index = String(index);
+
+        if (sortedIndices.includes(index)) {
+          card.textContent = String(num);
+          card.classList.add('sorted');
+        } else if (!shouldRevealCard(index)) {
+          card.classList.add('hidden');
+          card.textContent = '뒷면';
+        } else {
+          card.textContent = String(num);
+        }
+
+        const level = levelByIndex[index] || 0;
+        card.style.marginTop = `${level * 22}px`;
+
+        if (level > 0 && !sortedIndices.includes(index)) card.classList.add('lowered');
+        if (pivotIndices.includes(index)) card.classList.add('pivot');
+        if (candidateIndices.includes(index)) card.classList.add('candidate');
+        if (insertionTargetIndices.includes(index)) card.classList.add('insertion-target');
+        if (lastSwapMarkerIndices.includes(index)) card.classList.add('last-swap');
+        if (activeIndices.includes(index)) card.classList.add('active');
+        if (compareIndices.includes(index)) card.classList.add('compare');
+        if (swapIndices.includes(index)) card.classList.add('swap');
+
+        cardContainer.appendChild(card);
+      });
+
+      algorithmInfoEl.textContent = algorithmLabel(algorithmSelect.value);
+      dataModeInfoEl.textContent = dataModeLabel(dataModeSelect.value);
+      stepInfoEl.textContent = String(stepIndex);
+      compareCountEl.textContent = String(compareCount);
+      moveCountEl.textContent = String(moveCount);
+      sortedCountEl.textContent = String(sortedIndices.length);
+
+      requestAnimationFrame(renderGroupOutlines);
     }
 
     function setStatus(message) {
       statusEl.innerHTML = message;
     }
 
-    function updateStats() {
-      currentSearchCountEl.textContent = String(currentSearchCount);
-
-      if (searchHistory.length === 0) {
-        avgSearchCountEl.textContent = '0';
-        minSearchCountEl.textContent = '0';
-        maxSearchCountEl.textContent = '0';
-        return;
-      }
-
-      const total = searchHistory.reduce((sum, value) => sum + value, 0);
-      const avg = (total / searchHistory.length).toFixed(2);
-      const min = Math.min(...searchHistory);
-      const max = Math.max(...searchHistory);
-
-      avgSearchCountEl.textContent = String(avg);
-      minSearchCountEl.textContent = String(min);
-      maxSearchCountEl.textContent = String(max);
+    function removeIndex(arr, value) {
+      return arr.filter((item) => item !== value);
     }
 
-    function renderCards() {
-      cardContainer.innerHTML = '';
-      setCardsLayout();
-
-      numbers.forEach((num, index) => {
-        const card = document.createElement('button');
-        card.className = 'card';
-        card.type = 'button';
-
-        if (!revealed[index]) {
-          card.classList.add('back');
-          card.textContent = '뒷면';
-        } else {
-          card.textContent = String(num);
-
-          if (finished && index === foundIndex) {
-            card.classList.add('found');
-          } else {
-            card.classList.add('wrong');
-          }
+    function setLevels(indices, level) {
+      indices.forEach((index) => {
+        if (!sortedIndices.includes(index)) {
+          levelByIndex[index] = level;
         }
-
-        if (finished && index !== foundIndex) {
-          card.classList.add('dimmed');
-        }
-
-        card.addEventListener('click', () => handleCardClick(index));
-        cardContainer.appendChild(card);
       });
-
-      updateStats();
     }
 
-    function startRound() {
-      cardCount = Number(cardCountSelect.value);
-      numbers = generateNumbersWithRangeLimit(cardCount);
-      revealed = Array(cardCount).fill(false);
-      currentSearchCount = 0;
-      finished = false;
-      resultEl.textContent = '';
+    function applyOperation(op) {
+      resetHighlights();
 
-      foundIndex = randInt(0, cardCount - 1);
-      targetNumber = numbers[foundIndex];
-
-      targetNumberEl.textContent = String(targetNumber);
-      setStatus('정렬된 카드에서 목표 숫자를 찾아보세요.');
-      renderCards();
-    }
-
-    function handleCardClick(index) {
-      if (finished) {
-        setStatus('이번 문제는 이미 끝났습니다. 새 문제를 눌러 다음 탐색을 시작하세요.');
+      if (op.type === 'setSelectionCandidate') {
+        candidateIndices = [op.candidateIndex];
+        activeIndices = [op.candidateIndex];
+        setStatus(op.message);
         return;
       }
 
-      if (revealed[index]) {
-        setStatus(`${index + 1}번 카드는 이미 공개되었습니다.`);
+      if (op.type === 'compare') {
+        compareCount += 1;
+        activeIndices = cloneArray(op.indices);
+        compareIndices = cloneArray(op.indices);
+        if (Number.isInteger(op.candidateIndex)) {
+          candidateIndices = [op.candidateIndex];
+        }
+        if (Number.isInteger(op.insertionTargetIndex)) {
+          insertionTargetIndices = [op.insertionTargetIndex];
+        }
+        contextIndices = cloneArray(op.contextIndices);
+        setStatus(`${op.indices[0] + 1}번 카드와 ${op.indices[1] + 1}번 카드를 비교합니다.`);
         return;
       }
 
-      revealed[index] = true;
-      currentSearchCount += 1;
+      if (op.type === 'swap') {
+        moveCount += 1;
+        const [a, b] = op.indices;
+        swapIndices = cloneArray(op.indices);
+        activeIndices = cloneArray(op.indices);
+        contextIndices = cloneArray(op.contextIndices);
+        if (Number.isInteger(op.insertionTargetIndex)) {
+          insertionTargetIndices = [op.insertionTargetIndex];
+        }
+        if (Number.isInteger(op.lastSwapIndex)) {
+          lastSwapMarkerIndices = [op.lastSwapIndex];
+        }
+        [numbers[a], numbers[b]] = [numbers[b], numbers[a]];
+        if (Number.isInteger(op.lastSwapIndex)) {
+          setStatus(`${a + 1}번 카드와 ${b + 1}번 카드의 위치를 교환합니다. 현재 마지막 바뀜 위치는 ${op.lastSwapIndex + 1}번 카드입니다.`);
+        } else {
+          setStatus(`${a + 1}번 카드와 ${b + 1}번 카드의 위치를 교환합니다.`);
+        }
+        return;
+      }
 
-      const clickedValue = numbers[index];
+      if (op.type === 'markSorted') {
+        sortedIndices = uniqueSortedIndices([...sortedIndices, ...op.indices]);
+        activeIndices = cloneArray(op.indices);
+        contextIndices = cloneArray(op.indices);
+        if (algorithmSelect.value === 'bubble_optimized' && op.indices.length > 0) {
+          lastSwapMarkerIndices = [];
+        }
+        if (Number.isInteger(op.insertionTargetIndex)) {
+          insertionTargetIndices = [op.insertionTargetIndex];
+        }
+        setStatus(`${op.indices.map((i) => i + 1).join(', ')}번 카드의 위치가 확정되었습니다.`);
+        return;
+      }
 
-      if (clickedValue === targetNumber) {
-        finished = true;
-        searchHistory.push(currentSearchCount);
+      if (op.type === 'focus') {
+        contextIndices = cloneArray(op.contextIndices || op.indices);
+        activeIndices = cloneArray(op.indices);
+        if (Number.isInteger(op.insertionTargetIndex)) {
+          insertionTargetIndices = [op.insertionTargetIndex];
+        }
+        setStatus(op.message || '현재 위치를 확인합니다.');
+        return;
+      }
+
+      if (op.type === 'setPivot') {
+        checkedSmallIndices = [];
+        checkedLargeIndices = [];
+        pivotIndices = [op.pivotIndex];
+        activeIndices = [op.pivotIndex];
+        contextIndices = [];
+        quickLeftStopIndex = null;
+        quickRightStopIndex = null;
+        levelByIndex[op.pivotIndex] = op.depth;
+        setStatus(`${op.pivotIndex + 1}번 카드를 뒤집고 피벗으로 설정합니다. (피벗 값: ${op.pivotValue})`);
+        return;
+      }
+
+      if (op.type === 'quickLeftCheckHide') {
+        compareCount += 1;
+        pivotIndices = [op.pivotIndex];
+        activeIndices = [op.checkedIndex];
+        compareIndices = [op.pivotIndex, op.checkedIndex];
+        contextIndices = [];
+        checkedSmallIndices = uniqueSortedIndices([...checkedSmallIndices, op.checkedIndex]);
+        setStatus(`${op.checkedIndex + 1}번 카드를 뒤집어 피벗(${op.pivotValue})과 비교합니다. 피벗보다 작거나 같으므로 확인된 작은 값 묶음에 넣고 다시 뒷면으로 돌립니다.`);
+        return;
+      }
+
+      if (op.type === 'quickLeftStop') {
+        compareCount += 1;
+        pivotIndices = [op.pivotIndex];
+        quickLeftStopIndex = op.stopIndex;
+        activeIndices = [op.stopIndex];
+        compareIndices = [op.pivotIndex, op.stopIndex];
+        contextIndices = [];
+        setStatus(`${op.stopIndex + 1}번 카드를 뒤집어 피벗(${op.pivotValue})과 비교합니다. 피벗보다 큰 값이므로 여기서 멈춥니다.`);
+        return;
+      }
+
+      if (op.type === 'quickRightCheckHide') {
+        compareCount += 1;
+        pivotIndices = [op.pivotIndex];
+        quickLeftStopIndex = op.leftStopIndex;
+        activeIndices = [op.checkedIndex, op.leftStopIndex];
+        compareIndices = [op.pivotIndex, op.checkedIndex, op.leftStopIndex];
+        contextIndices = [];
+        checkedLargeIndices = uniqueSortedIndices([...checkedLargeIndices, op.checkedIndex]);
+        setStatus(`${op.checkedIndex + 1}번 카드를 뒤집어 피벗(${op.pivotValue})과 비교합니다. 피벗보다 크거나 같으므로 확인된 큰 값 묶음에 넣고 다시 뒷면으로 돌립니다.`);
+        return;
+      }
+
+      if (op.type === 'quickRightStop') {
+        compareCount += 1;
+        pivotIndices = [op.pivotIndex];
+        quickLeftStopIndex = op.leftStopIndex;
+        quickRightStopIndex = op.rightStopIndex;
+        activeIndices = [op.leftStopIndex, op.rightStopIndex];
+        compareIndices = [op.pivotIndex, op.leftStopIndex, op.rightStopIndex];
+        contextIndices = [];
+        setStatus(`${op.rightStopIndex + 1}번 카드를 뒤집어 피벗(${op.pivotValue})과 비교합니다. 피벗보다 작은 값이므로 여기서 멈춥니다.`);
+        return;
+      }
+
+      if (op.type === 'quickSwapReady') {
+        pivotIndices = [op.pivotIndex];
+        quickLeftStopIndex = op.leftIndex;
+        quickRightStopIndex = op.rightIndex;
+        activeIndices = [op.leftIndex, op.rightIndex];
+        compareIndices = [op.pivotIndex, op.leftIndex, op.rightIndex];
+        contextIndices = [];
+        setStatus(`${op.leftIndex + 1}번 카드와 ${op.rightIndex + 1}번 카드를 서로 바꿉니다.`);
+        return;
+      }
+
+      if (op.type === 'quickSwap') {
+        moveCount += 1;
+        const [leftIndex, rightIndex] = op.indices;
+        [numbers[leftIndex], numbers[rightIndex]] = [numbers[rightIndex], numbers[leftIndex]];
+
+        checkedSmallIndices = uniqueSortedIndices([
+          ...removeIndex(checkedSmallIndices, rightIndex),
+          leftIndex
+        ]);
+        checkedLargeIndices = uniqueSortedIndices([
+          ...removeIndex(checkedLargeIndices, leftIndex),
+          rightIndex
+        ]);
+
+        pivotIndices = [op.pivotIndex];
+        swapIndices = [leftIndex, rightIndex];
+        activeIndices = [leftIndex, rightIndex];
+        contextIndices = [];
+        quickLeftStopIndex = null;
+        quickRightStopIndex = null;
+        setStatus(`${leftIndex + 1}번 카드와 ${rightIndex + 1}번 카드의 위치를 교환했습니다. 이제 다시 바깥쪽에서 안쪽으로 찾습니다.`);
+        return;
+      }
+
+      if (op.type === 'quickPivotSwapReady') {
+        pivotIndices = [op.pivotIndex];
+        activeIndices = [op.pivotIndex, op.rightIndex];
+        compareIndices = [op.pivotIndex, op.rightIndex];
+        contextIndices = [];
+        quickRightStopIndex = op.rightIndex;
+        setStatus(`왼쪽과 오른쪽 탐색이 엇갈렸습니다. 이제 피벗(${op.pivotValue})과 ${op.rightIndex + 1}번 카드를 바꿉니다.`);
+        return;
+      }
+
+      if (op.type === 'quickPivotSwap') {
+        moveCount += 1;
+        const [pivotIndex, rightIndex] = op.indices;
+        [numbers[pivotIndex], numbers[rightIndex]] = [numbers[rightIndex], numbers[pivotIndex]];
+
+        checkedSmallIndices = uniqueSortedIndices(makeRange(Math.min(...op.range), rightIndex - 1));
+        checkedLargeIndices = [];
+
+        pivotIndices = [rightIndex];
+        swapIndices = [pivotIndex, rightIndex];
+        activeIndices = [pivotIndex, rightIndex];
+        contextIndices = [];
+        quickLeftStopIndex = null;
+        quickRightStopIndex = null;
+        setStatus(`피벗 카드를 ${rightIndex + 1}번 자리로 보냈습니다. 작은 값 묶음의 테두리도 새 위치에 맞게 바뀌었습니다. 피벗의 자리가 확정되었습니다.`);
+        return;
+      }
+
+      if (op.type === 'quickPrepareSubranges') {
+        checkedSmallIndices = [];
+        checkedLargeIndices = [];
+        pivotIndices = [op.pivotIndex];
+        activeIndices = [];
+        compareIndices = [];
+        swapIndices = [];
+        contextIndices = [];
+        setLevels(op.leftRange, op.nextDepth);
+        setLevels(op.rightRange, op.nextDepth);
+        setStatus(op.message);
+        return;
+      }
+
+      if (op.type === 'quickSingle') {
+        checkedSmallIndices = [];
+        checkedLargeIndices = [];
+        pivotIndices = [];
+        activeIndices = [op.index];
+        contextIndices = [];
+        levelByIndex[op.index] = op.depth;
+        sortedIndices = uniqueSortedIndices([...sortedIndices, op.index]);
+        setStatus(`${op.index + 1}번 카드는 혼자 남았으므로 이 자리로 확정됩니다.`);
+      }
+    }
+
+    function buildResultSummary() {
+      const modeText = dataModeLabel(dataModeSelect.value);
+      const algorithmText = algorithmLabel(algorithmSelect.value);
+
+      if (!isSorted(numbers)) {
+        return `${algorithmText} 정렬 단계는 끝났지만 정렬 결과를 다시 확인해 주세요.`;
+      }
+
+      return `${algorithmText} 정렬 완료! ${modeText} 데이터에서 비교 ${compareCount}회, 교환/이동 ${moveCount}회가 발생했습니다.`;
+    }
+
+    function finishIfDone() {
+      if (stepIndex < operations.length) return;
+
+      isDone = true;
+      stopAutoPlay();
+      nextBtn.disabled = true;
+
+      resetHighlights();
+      checkedSmallIndices = [];
+      checkedLargeIndices = [];
+      pivotIndices = [];
+
+      if (algorithmSelect.value === 'quick') {
         renderCards();
-        setStatus(`${index + 1}번 카드에서 목표 숫자 <b>${targetNumber}</b>를 찾았습니다.`);
-        resultEl.textContent = `${currentSearchCount}번 만에 탐색 성공!`;
+        resultEl.textContent = buildResultSummary();
+        setStatus('모든 분할이 끝났습니다. 새 게임을 누르면 다시 시작할 수 있습니다.');
         return;
       }
 
+      sortedIndices = makeRange(0, numbers.length - 1);
       renderCards();
-      setStatus(`${index + 1}번 카드의 숫자는 <b>${clickedValue}</b>입니다. 목표 숫자 <b>${targetNumber}</b>가 아닙니다.`);
+      resultEl.textContent = buildResultSummary();
+      setStatus('모든 단계가 끝났습니다. 새 게임을 누르면 다시 시작할 수 있습니다.');
     }
 
-    hideBtn.addEventListener('click', () => {
-      if (finished) {
-        setStatus('정답을 찾은 뒤에는 결과를 유지합니다. 새 문제를 시작하세요.');
+    function initGame() {
+      stopAutoPlay();
+      initialNumbers = createNumbersByMode(Number(cardCountSelect.value), dataModeSelect.value);
+      numbers = cloneArray(initialNumbers);
+      operations = getOperationsForAlgorithm(algorithmSelect.value, initialNumbers);
+      stepIndex = 0;
+      compareCount = 0;
+      moveCount = 0;
+      activeIndices = [];
+      compareIndices = [];
+      swapIndices = [];
+      sortedIndices = [];
+      contextIndices = [];
+      pivotIndices = [];
+      checkedSmallIndices = [];
+      checkedLargeIndices = [];
+      candidateIndices = [];
+      insertionTargetIndices = [];
+      lastSwapMarkerIndices = [];
+      levelByIndex = Array(numbers.length).fill(0);
+      quickLeftStopIndex = null;
+      quickRightStopIndex = null;
+      isDone = false;
+      nextBtn.disabled = false;
+      resultEl.textContent = '';
+      setStatus(`${dataModeLabel(dataModeSelect.value)} 데이터로 준비되었습니다. ${isAutoMode ? '시작 버튼을 누르면 자동으로 진행됩니다.' : '시작하려면 다음 버튼을 누르세요.'}`);
+      updateLegend();
+      updatePlayModeUI();
+      renderCards();
+    }
+
+    nextBtn.addEventListener('click', () => {
+      if (isDone) return;
+
+      if (isAutoMode) {
+        if (autoTimer) {
+          stopAutoPlay();
+          setStatus('자동 실행을 멈췄습니다. 다시 시작 버튼을 누르면 이어서 진행합니다.');
+          nextBtn.textContent = '시작';
+          return;
+        }
+        nextBtn.textContent = '정지';
+        setStatus('자동 실행을 시작합니다. 새 게임을 누르거나 정지 버튼을 누르면 멈춥니다.');
+        scheduleAutoPlay();
         return;
       }
 
-      revealed = revealed.map(() => false);
-      renderCards();
-      setStatus('모든 카드를 다시 뒷면으로 돌렸습니다.');
+      runNextStep();
     });
 
-    newRoundBtn.addEventListener('click', () => {
-      startRound();
+    resetBtn.addEventListener('click', () => {
+      lastSwapMarkerIndices = [];
+      initGame();
     });
-
-    resetStatsBtn.addEventListener('click', () => {
-      searchHistory = [];
-      currentSearchCount = 0;
-      updateStats();
-      resultEl.textContent = '';
-      setStatus('누적 통계를 초기화했습니다.');
+    playModeRadios.forEach((radio) => {
+      radio.addEventListener('change', () => {
+        stopAutoPlay();
+        updatePlayModeUI();
+        setStatus(isAutoMode ? '자동 모드입니다. 시작 버튼을 누르면 자동으로 진행합니다.' : '수동 모드입니다. 다음 버튼을 누를 때마다 한 단계씩 진행합니다.');
+      });
     });
-
-    cardCountSelect.addEventListener('change', () => {
-      startRound();
+    speedSlider.addEventListener('input', () => {
+      updateSpeedDisplay();
+      if (isAutoMode && autoTimer) {
+        scheduleAutoPlay();
+      }
     });
+    algorithmSelect.addEventListener('change', initGame);
+    cardCountSelect.addEventListener('change', initGame);
+    dataModeSelect.addEventListener('change', initGame);
+    showFaceToggle.addEventListener('change', renderCards);
+    window.addEventListener('resize', () => requestAnimationFrame(renderGroupOutlines));
 
     function runTests() {
-      for (let t = 0; t < 50; t++) {
-        const sample = generateNumbersWithRangeLimit(10);
-        const min = Math.min(...sample);
-        const max = Math.max(...sample);
+      console.assert(isSorted([1, 2, 3, 4]) === true, 'Test failed: sorted array should return true');
+      console.assert(isSorted([1, 3, 2, 4]) === false, 'Test failed: unsorted array should return false');
 
-        console.assert(sample.length === 10, '카드 개수 오류');
-        console.assert(sample.every((n) => n >= 1 && n <= 1000), '값 범위 오류');
-        console.assert(new Set(sample).size === sample.length, '중복 값 오류');
-        console.assert(max - min <= 500, '최소값/최대값 차이 오류');
+      const bubbleBasicOps = generateBubbleBasicOperations([3, 2, 1]);
+      const bubbleOptimizedOps = generateBubbleOptimizedOperations([1, 2, 3, 4]);
+      console.assert(bubbleBasicOps.some((op) => op.type === 'compare'), 'Test failed: basic bubble sort should include compare steps');
+      console.assert(bubbleBasicOps.some((op) => op.type === 'swap'), 'Test failed: basic bubble sort should include swap steps');
+      console.assert(bubbleOptimizedOps.some((op) => op.type === 'markSorted'), 'Test failed: optimized bubble sort should mark sorted cards early');
+      console.assert(bubbleOptimizedOps.every((op) => op.type !== 'swap'), 'Test failed: optimized bubble sort should avoid swaps on sorted input');
 
-        for (let i = 0; i < sample.length - 1; i++) {
-          console.assert(sample[i] <= sample[i + 1], '정렬 오류');
-        }
-      }
+      const selectionOps = generateSelectionOperations([3, 1, 2]);
+      console.assert(selectionOps.some((op) => op.type === 'markSorted'), 'Test failed: selection sort should mark sorted cards');
+      console.assert(selectionOps.some((op) => op.type === 'setSelectionCandidate' && op.candidateIndex === 1), 'Test failed: selection sort should update current min candidate');
+
+      const insertionOps = generateInsertionOperations([10, 32, 43, 27]);
+      console.assert(insertionOps.some((op) => op.type === 'swap'), 'Test failed: insertion sort should include movement steps');
+      console.assert(insertionOps.some((op) => op.type === 'compare' && Number.isInteger(op.insertionTargetIndex)), 'Test failed: insertion sort should track current insertion target');
+
+      const quickOps = generateQuickOperations([30, 10, 20, 40, 50, 5]);
+      console.assert(quickOps.some((op) => op.type === 'setPivot'), 'Test failed: quick sort should set pivot');
+      console.assert(quickOps.some((op) => op.type === 'quickSwap'), 'Test failed: quick sort should swap inner cards');
+      console.assert(quickOps.some((op) => op.type === 'quickPivotSwap'), 'Test failed: quick sort should place pivot');
+      console.assert(quickOps.some((op) => op.type === 'quickPrepareSubranges'), 'Test failed: quick sort should lower subranges');
+      console.assert(quickOps.some((op) => op.type === 'quickSingle'), 'Test failed: quick sort should resolve single-card partitions');
+
+      const sample = shuffledNumbers(10);
+      console.assert(sample.length === 10, 'Test failed: should generate requested number of cards');
+      console.assert(new Set(sample).size === 10, 'Test failed: generated cards should be unique');
+      console.assert(sample.every((n) => n >= 1 && n <= 100), 'Test failed: generated numbers should stay within range');
+
+      const sortedSample = createNumbersByMode(10, 'sorted');
+      console.assert(isSorted(sortedSample) === true, 'Test failed: sorted mode should be ascending');
+
+      const mostlySortedSample = createNumbersByMode(10, 'mostly_sorted_75');
+      console.assert(mostlySortedSample.length === 10, 'Test failed: mostly sorted mode should generate requested size');
+
+      const reverseSample = createNumbersByMode(10, 'reverse');
+      console.assert(reverseSample.every((v, i) => i === 0 || reverseSample[i - 1] >= v), 'Test failed: reverse mode should be descending');
+
+      const mostlyReverseSample = createNumbersByMode(10, 'mostly_reverse_25');
+      console.assert(mostlyReverseSample.length === 10, 'Test failed: mostly reverse mode should generate requested size');
+
+      const randomSample = createNumbersByMode(10, 'random');
+      console.assert(randomSample.length === 10, 'Test failed: random mode should generate requested size');
+
+      const originalAlgorithm = algorithmSelect.value;
+
+      sortedIndices = [0, 1];
+      contextIndices = [];
+      activeIndices = [];
+      compareIndices = [];
+      swapIndices = [];
+      pivotIndices = [];
+      candidateIndices = [];
+      insertionTargetIndices = [];
+      levelByIndex = Array(10).fill(0);
+      levelByIndex[3] = 1;
+      showFaceToggle.value = 'step';
+      algorithmSelect.value = 'quick';
+      console.assert(shouldRevealCard(0) === true, 'Test failed: sorted cards should stay revealed in step mode');
+      console.assert(shouldRevealCard(3) === false, 'Test failed: lowered quick-sort target cards should stay hidden in step mode');
+
+      algorithmSelect.value = originalAlgorithm;
     }
 
     runTests();
-    startRound();
+    algorithmSelect.value = 'selection';
+    dataModeSelect.value = 'random';
+    updateSpeedDisplay();
+    updatePlayModeUI();
+    initGame();
   </script>
 </body>
 </html>
