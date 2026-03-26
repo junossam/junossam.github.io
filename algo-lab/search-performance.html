@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>탐색 알고리즘 카드 실습</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    .wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 32px;
+    }
+
+    .desc {
+      margin: 0 0 20px;
+      color: #4b5563;
+      line-height: 1.7;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      margin-bottom: 20px;
+    }
+
+    .top-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+
+    .field label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #374151;
+    }
+
+    select {
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 15px;
+      background: white;
+      color: #111827;
+    }
+
+    .target-box {
+      margin-top: 14px;
+      padding: 18px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      border: 1px solid #93c5fd;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .target-label {
+      font-size: 14px;
+      color: #1d4ed8;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .target-number {
+      font-size: 36px;
+      font-weight: 800;
+      color: #1e3a8a;
+    }
+
+    .cards {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .card {
+      min-height: 110px;
+      border: 3px solid #d1d5db;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      background: linear-gradient(135deg, #ffffff, #eef2ff);
+      color: #111827;
+      padding: 8px;
+    }
+
+    .card:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .card.back {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      font-size: 22px;
+      letter-spacing: 1px;
+    }
+
+    .card.found {
+      background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+      color: #065f46;
+      border-color: #10b981;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18);
+    }
+
+    .card.wrong {
+      background: linear-gradient(135deg, #fff7ed, #ffedd5);
+      color: #9a3412;
+      border-color: #fb923c;
+    }
+
+    .card.dimmed {
+      opacity: 0.7;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+      align-items: center;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #111827;
+      color: white;
+    }
+
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #f9fafb;
+      color: #374151;
+      line-height: 1.6;
+      min-height: 56px;
+    }
+
+    .info {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .info-box {
+      background: #f9fafb;
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .label {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+
+    .value {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .result {
+      margin-top: 14px;
+      font-weight: 700;
+      color: #065f46;
+      min-height: 24px;
+    }
+
+    .copyright {
+      margin-top: 28px;
+      padding: 18px 8px 8px;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #6b7280;
+    }
+
+    .copyright strong {
+      display: block;
+      color: #4b5563;
+      font-size: 14px;
+      margin-bottom: 2px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 1100px) {
+      .cards {
+        grid-template-columns: repeat(5, minmax(90px, 1fr)) !important;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .info {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .card {
+        min-height: 95px;
+        font-size: 24px;
+      }
+
+      .cards {
+        grid-template-columns: repeat(3, minmax(90px, 1fr)) !important;
+      }
+
+      .target-number {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>탐색 알고리즘 카드 실습</h1>
+    <p class="desc">
+      정렬된 카드 데이터 중에서 <b>찾아야 하는 숫자</b>를 찾아보세요.
+      카드는 처음에 모두 뒷면으로 보이며, 카드를 클릭하면 숫자가 공개됩니다.
+      목표 숫자를 찾으면 이번 탐색이 종료되고, 하단 통계가 갱신됩니다.
+    </p>
+
+    <div class="panel">
+      <div class="top-controls">
+        <div class="field">
+          <label for="cardCountSelect">카드 개수</label>
+          <select id="cardCountSelect">
+            <option value="10">10장</option>
+            <option value="20" selected>20장</option>
+            <option value="50">50장</option>
+            <option value="100">100장</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="target-box">
+        <div>
+          <div class="target-label">찾아야 하는 숫자</div>
+          <div class="target-number" id="targetNumber">-</div>
+        </div>
+      </div>
+
+      <div class="cards" id="cards"></div>
+
+      <div class="controls">
+        <button id="newRoundBtn">새 문제</button>
+        <button id="hideBtn" class="secondary">다시 뒷면으로</button>
+        <button id="resetStatsBtn" class="secondary">통계 초기화</button>
+      </div>
+
+      <div class="status" id="status">새 문제를 시작한 뒤 카드를 클릭하세요.</div>
+
+      <div class="info">
+        <div class="info-box">
+          <div class="label">현재 탐색 횟수</div>
+          <div class="value" id="currentSearchCount">0</div>
+        </div>
+        <div class="info-box">
+          <div class="label">평균 탐색 횟수</div>
+          <div class="value" id="avgSearchCount">0</div>
+        </div>
+        <div class="info-box">
+          <div class="label">최소 탐색 횟수</div>
+          <div class="value" id="minSearchCount">0</div>
+        </div>
+        <div class="info-box">
+          <div class="label">최대 탐색 횟수</div>
+          <div class="value" id="maxSearchCount">0</div>
+        </div>
+      </div>
+
+      <div class="result" id="result"></div>
+    </div>
+
+    <div class="copyright">
+      <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong>
+      본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
+    </div>
+  </div>
+
+  <script>
+    const cardContainer = document.getElementById('cards');
+    const cardCountSelect = document.getElementById('cardCountSelect');
+    const targetNumberEl = document.getElementById('targetNumber');
+    const newRoundBtn = document.getElementById('newRoundBtn');
+    const hideBtn = document.getElementById('hideBtn');
+    const resetStatsBtn = document.getElementById('resetStatsBtn');
+    const statusEl = document.getElementById('status');
+    const currentSearchCountEl = document.getElementById('currentSearchCount');
+    const avgSearchCountEl = document.getElementById('avgSearchCount');
+    const minSearchCountEl = document.getElementById('minSearchCount');
+    const maxSearchCountEl = document.getElementById('maxSearchCount');
+    const resultEl = document.getElementById('result');
+
+    let cardCount = 10;
+    let numbers = [];
+    let revealed = [];
+    let targetNumber = null;
+    let foundIndex = -1;
+    let currentSearchCount = 0;
+    let finished = false;
+    let searchHistory = [];
+
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function shuffle(arr) {
+      const copied = [...arr];
+      for (let i = copied.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copied[i], copied[j]] = [copied[j], copied[i]];
+      }
+      return copied;
+    }
+
+    function generateNumbersWithRangeLimit(count) {
+      while (true) {
+        const start = randInt(1, 500);
+        const end = randInt(start, Math.min(1000, start + 500));
+
+        const pool = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+
+        if (pool.length < count) {
+          continue;
+        }
+
+        const shuffledPool = shuffle(pool);
+        const selected = shuffledPool
+          .slice(0, count)
+          .sort((a, b) => a - b);
+
+        const min = Math.min(...selected);
+        const max = Math.max(...selected);
+
+        if (max - min <= 500) {
+          return selected;
+        }
+      }
+    }
+
+    function setCardsLayout() {
+      const currentCount = Number(cardCountSelect.value);
+
+      if (currentCount <= 5) {
+        cardContainer.style.gridTemplateColumns = `repeat(${currentCount}, minmax(90px, 1fr))`;
+      } else if (currentCount === 10) {
+        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(90px, 1fr))';
+      } else if (currentCount === 15) {
+        cardContainer.style.gridTemplateColumns = 'repeat(15, minmax(70px, 1fr))';
+      } else if (currentCount === 20) {
+        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(70px, 1fr))';
+      } else {
+        cardContainer.style.gridTemplateColumns = `repeat(${currentCount}, minmax(90px, 1fr))`;
+      }
+    }
+
+    function setStatus(message) {
+      statusEl.innerHTML = message;
+    }
+
+    function updateStats() {
+      currentSearchCountEl.textContent = String(currentSearchCount);
+
+      if (searchHistory.length === 0) {
+        avgSearchCountEl.textContent = '0';
+        minSearchCountEl.textContent = '0';
+        maxSearchCountEl.textContent = '0';
+        return;
+      }
+
+      const total = searchHistory.reduce((sum, value) => sum + value, 0);
+      const avg = (total / searchHistory.length).toFixed(2);
+      const min = Math.min(...searchHistory);
+      const max = Math.max(...searchHistory);
+
+      avgSearchCountEl.textContent = String(avg);
+      minSearchCountEl.textContent = String(min);
+      maxSearchCountEl.textContent = String(max);
+    }
+
+    function renderCards() {
+      cardContainer.innerHTML = '';
+      setCardsLayout();
+
+      numbers.forEach((num, index) => {
+        const card = document.createElement('button');
+        card.className = 'card';
+        card.type = 'button';
+
+        if (!revealed[index]) {
+          card.classList.add('back');
+          card.textContent = '뒷면';
+        } else {
+          card.textContent = String(num);
+
+          if (finished && index === foundIndex) {
+            card.classList.add('found');
+          } else {
+            card.classList.add('wrong');
+          }
+        }
+
+        if (finished && index !== foundIndex) {
+          card.classList.add('dimmed');
+        }
+
+        card.addEventListener('click', () => handleCardClick(index));
+        cardContainer.appendChild(card);
+      });
+
+      updateStats();
+    }
+
+    function startRound() {
+      cardCount = Number(cardCountSelect.value);
+      numbers = generateNumbersWithRangeLimit(cardCount);
+      revealed = Array(cardCount).fill(false);
+      currentSearchCount = 0;
+      finished = false;
+      resultEl.textContent = '';
+
+      foundIndex = randInt(0, cardCount - 1);
+      targetNumber = numbers[foundIndex];
+
+      targetNumberEl.textContent = String(targetNumber);
+      setStatus('정렬된 카드에서 목표 숫자를 찾아보세요.');
+      renderCards();
+    }
+
+    function handleCardClick(index) {
+      if (finished) {
+        setStatus('이번 문제는 이미 끝났습니다. 새 문제를 눌러 다음 탐색을 시작하세요.');
+        return;
+      }
+
+      if (revealed[index]) {
+        setStatus(`${index + 1}번 카드는 이미 공개되었습니다.`);
+        return;
+      }
+
+      revealed[index] = true;
+      currentSearchCount += 1;
+
+      const clickedValue = numbers[index];
+
+      if (clickedValue === targetNumber) {
+        finished = true;
+        searchHistory.push(currentSearchCount);
+        renderCards();
+        setStatus(`${index + 1}번 카드에서 목표 숫자 <b>${targetNumber}</b>를 찾았습니다.`);
+        resultEl.textContent = `${currentSearchCount}번 만에 탐색 성공!`;
+        return;
+      }
+
+      renderCards();
+      setStatus(`${index + 1}번 카드의 숫자는 <b>${clickedValue}</b>입니다. 목표 숫자 <b>${targetNumber}</b>가 아닙니다.`);
+    }
+
+    hideBtn.addEventListener('click', () => {
+      if (finished) {
+        setStatus('정답을 찾은 뒤에는 결과를 유지합니다. 새 문제를 시작하세요.');
+        return;
+      }
+
+      revealed = revealed.map(() => false);
+      renderCards();
+      setStatus('모든 카드를 다시 뒷면으로 돌렸습니다.');
+    });
+
+    newRoundBtn.addEventListener('click', () => {
+      startRound();
+    });
+
+    resetStatsBtn.addEventListener('click', () => {
+      searchHistory = [];
+      currentSearchCount = 0;
+      updateStats();
+      resultEl.textContent = '';
+      setStatus('누적 통계를 초기화했습니다.');
+    });
+
+    cardCountSelect.addEventListener('change', () => {
+      startRound();
+    });
+
+    function runTests() {
+      for (let t = 0; t < 50; t++) {
+        const sample = generateNumbersWithRangeLimit(10);
+        const min = Math.min(...sample);
+        const max = Math.max(...sample);
+
+        console.assert(sample.length === 10, '카드 개수 오류');
+        console.assert(sample.every((n) => n >= 1 && n <= 1000), '값 범위 오류');
+        console.assert(new Set(sample).size === sample.length, '중복 값 오류');
+        console.assert(max - min <= 500, '최소값/최대값 차이 오류');
+
+        for (let i = 0; i < sample.length - 1; i++) {
+          console.assert(sample[i] <= sample[i + 1], '정렬 오류');
+        }
+      }
+    }
+
+    runTests();
+    startRound();
+  </script>
+</body>
+</html>

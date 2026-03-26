@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Algorithm Lab</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      background: #f5f7fb;
+      text-align: center;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    /* 🔹 브랜드 영역 */
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .logo {
+      width: 120px;
+      mix-blend-mode: multiply; /* 배경 자연스럽게 */
+    }
+
+    .brand-text {
+      font-size: 34px;
+      font-weight: 800;
+      color: #374151;
+      letter-spacing: 0.5px;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      font-size: 36px;
+    }
+
+    .desc {
+      color: #555;
+      margin-bottom: 40px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.12);
+    }
+
+    .card h2 {
+      margin-bottom: 10px;
+      font-size: 22px;
+    }
+
+    .card p {
+      color: #666;
+      font-size: 15px;
+    }
+
+    @media (max-width: 700px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .brand-text {
+        font-size: 26px;
+      }
+
+      .logo {
+        width: 90px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <!-- 🔹 로고 + 브랜드 -->
+    <div class="brand">
+      <img src="logo.png" class="logo" alt="Junossam 로고">
+      <div class="brand-text">Junossam</div>
+    </div>
+
+    <h1>알고리즘 실습실</h1>
+    <p class="desc">탐색과 정렬 알고리즘을 직접 만들고 비교해보는 공간</p>
+
+    <div class="grid">
+
+      <div class="card" onclick="location.href='sort-builder.html'">
+        <h2>정렬 알고리즘 만들기</h2>
+        <p>정렬 과정을 직접 구현하고 확인</p>
+      </div>
+
+      <div class="card" onclick="location.href='sort-performance.html'">
+        <h2>정렬 알고리즘 비교</h2>
+        <p>속도와 효율성 비교</p>
+      </div>
+
+      <div class="card" onclick="location.href='search-builder.html'">
+        <h2>탐색 알고리즘 만들기</h2>
+        <p>순차 / 이진 탐색 과정 이해</p>
+      </div>
+
+      <div class="card" onclick="location.href='search-performance.html'">
+        <h2>탐색 알고리즘 비교</h2>
+        <p>탐색 횟수와 성능 분석</p>
+      </div>
+
+    </div>
+
+  </div>
+</body>
+</html>
