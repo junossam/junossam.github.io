@@ -141,6 +141,7 @@
 
     .cards {
       display: grid;
+      grid-template-columns: repeat(10, minmax(var(--card-min, 60px), 1fr));
       gap: 12px;
       margin-top: 18px;
     }
@@ -453,6 +454,10 @@
     }
 
     @media (max-width: 1200px) {
+      .cards {
+        grid-template-columns: repeat(5, minmax(var(--card-min, 60px), 1fr));
+      }
+
       .info {
         grid-template-columns: repeat(3, minmax(120px, 1fr));
       }
@@ -463,6 +468,10 @@
     }
 
     @media (max-width: 800px) {
+      .cards {
+        grid-template-columns: repeat(3, minmax(var(--card-min, 60px), 1fr));
+      }
+
       .info {
         grid-template-columns: repeat(2, minmax(120px, 1fr));
       }
@@ -751,16 +760,14 @@
     function setCardsLayout() {
       const count = Number(cardCountSelect.value);
 
-      if (count === 10) {
-        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(70px, 1fr))';
-      } else if (count === 20) {
-        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(70px, 1fr))';
+      if (count <= 20) {
+        cardContainer.style.setProperty('--card-min', '70px');
       } else if (count === 50) {
-        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(60px, 1fr))';
+        cardContainer.style.setProperty('--card-min', '60px');
       } else if (count === 100) {
-        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(54px, 1fr))';
+        cardContainer.style.setProperty('--card-min', '54px');
       } else {
-        cardContainer.style.gridTemplateColumns = 'repeat(10, minmax(60px, 1fr))';
+        cardContainer.style.setProperty('--card-min', '60px');
       }
     }
 
