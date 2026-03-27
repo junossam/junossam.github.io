@@ -255,6 +255,55 @@
       width: 100%;
     }
 
+    .card-expected {
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: 6px;
+      font-size: 11px;
+      line-height: 1.2;
+      font-weight: 700;
+      color: #2563eb;
+      background: rgba(219, 234, 254, 0.88);
+      border: 1px solid rgba(147, 197, 253, 0.9);
+      border-radius: 10px;
+      padding: 4px 6px;
+      pointer-events: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card.back .card-expected {
+      color: #dbeafe;
+      background: rgba(30, 41, 59, 0.26);
+      border-color: rgba(219, 234, 254, 0.28);
+    }
+
+    .card.active .card-expected {
+      color: #6d28d9;
+      background: rgba(237, 233, 254, 0.95);
+      border-color: rgba(167, 139, 250, 0.45);
+    }
+
+    .card.found .card-expected {
+      color: #047857;
+      background: rgba(209, 250, 229, 0.95);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    .card.checked .card-expected {
+      color: #c2410c;
+      background: rgba(255, 237, 213, 0.95);
+      border-color: rgba(251, 146, 60, 0.35);
+    }
+
+    .card.excluded .card-expected {
+      color: #6b7280;
+      background: rgba(243, 244, 246, 0.95);
+      border-color: rgba(209, 213, 219, 0.85);
+    }
+
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -496,7 +545,7 @@
     <h1>탐색 알고리즘 카드 실습</h1>
     <p class="desc">
       정렬된 카드 데이터에서 목표 숫자를 찾는 과정을 단계별로 확인해 보세요.
-      <b>순차 탐색</b>과 <b>이진 탐색</b>을 선택할 수 있으며,
+      <b>순차 탐색</b>, <b>이진 탐색</b>, <b>보간 탐색</b>을 선택할 수 있으며,
       진행 방식을 <b>수동</b> 또는 <b>자동</b>으로 바꿔 단계별 흐름을 확인할 수 있습니다.
     </p>
 
@@ -507,6 +556,7 @@
           <select id="algorithmSelect">
             <option value="linear" selected>순차 탐색</option>
             <option value="binary">이진 탐색</option>
+            <option value="interpolation">보간 탐색</option>
           </select>
         </div>
 
@@ -646,15 +696,18 @@
     let finished = false;
     let autoTimer = null;
     let isAutoMode = false;
+    let currentInterpolationGuide = null;
 
     const historyByAlgorithm = {
       linear: [],
-      binary: []
+      binary: [],
+      interpolation: []
     };
 
     const roundCountByAlgorithm = {
       linear: 0,
-      binary: 0
+      binary: 0,
+      interpolation: 0
     };
 
     function randInt(min, max) {
@@ -692,7 +745,33 @@
     }
 
     function algorithmLabel(value) {
-      return value === 'binary' ? '이진' : '순차';
+      if (value === 'binary') return '이진';
+      if (value === 'interpolation') return '보간';
+      return '순차';
+    }
+
+
+    function getInterpolationGuide(left, right) {
+      if (left < 0 || right < 0 || left >= numbers.length || right >= numbers.length || left > right) {
+        return null;
+      }
+
+      return {
+        left,
+        right,
+        leftValue: numbers[left],
+        rightValue: numbers[right]
+      };
+    }
+
+    function getExpectedValueForCard(index, guide) {
+      if (!guide) return null;
+      const { left, right, leftValue, rightValue } = guide;
+      if (index < left || index > right) return null;
+      if (left === right) return leftValue;
+
+      const ratio = (index - left) / (right - left);
+      return Math.round(leftValue + (rightValue - leftValue) * ratio);
     }
 
     function getSelectedPlayMode() {
@@ -841,6 +920,17 @@
 
         card.appendChild(indexLabel);
         card.appendChild(content);
+
+        if (algorithmSelect.value === 'interpolation') {
+          const expectedValue = getExpectedValueForCard(index, currentInterpolationGuide);
+          if (expectedValue !== null) {
+            const expectedLabel = document.createElement('div');
+            expectedLabel.className = 'card-expected';
+            expectedLabel.textContent = `예상값 ≈ ${expectedValue}`;
+            card.appendChild(expectedLabel);
+          }
+        }
+
         cardContainer.appendChild(card);
       });
 
@@ -854,6 +944,7 @@
       foundIndices = [];
       excludedIndices = [];
       rangeIndices = [];
+      currentInterpolationGuide = null;
     }
 
     function makeRange(start, end) {
@@ -1043,15 +1134,270 @@
       return ops;
     }
 
+    function buildInterpolationStatusCard(data) {
+      const {
+        rangeText,
+        remainCount,
+        leftInfo,
+        rightInfo,
+        estimatedText,
+        selectedText,
+        formulaText,
+        formulaResultText,
+        stateText,
+        stateClass
+      } = data;
+
+      return `
+        <span class="status-title">현재 단계</span>
+        <div class="status-grid">
+          <div class="status-box">
+            <div class="status-label">현재 탐색 범위</div>
+            <div class="status-value">${escapeHtml(rangeText)}</div>
+          </div>
+          <div class="status-box">
+            <div class="status-label">총 남은 카드 개수</div>
+            <div class="status-value">${escapeHtml(remainCount)}</div>
+          </div>
+          <div class="status-box">
+            <div class="status-label">왼쪽 기준</div>
+            <div class="status-value small">${escapeHtml(leftInfo)}</div>
+          </div>
+          <div class="status-box">
+            <div class="status-label">오른쪽 기준</div>
+            <div class="status-value small">${escapeHtml(rightInfo)}</div>
+          </div>
+          <div class="status-box">
+            <div class="status-label">예상 위치</div>
+            <div class="status-value">${escapeHtml(estimatedText)}</div>
+          </div>
+          <div class="status-box">
+            <div class="status-label">선택 카드</div>
+            <div class="status-value">${escapeHtml(selectedText)}</div>
+          </div>
+          <div class="status-box wide">
+            <div class="status-label">현재 상태</div>
+            <div class="status-value small ${stateClass}">${stateText}</div>
+          </div>
+          <div class="status-box wide">
+            <div class="status-label">예상 위치 계산식</div>
+            <div class="status-value small">${escapeHtml(formulaText)}</div>
+          </div>
+          <div class="status-box wide">
+            <div class="status-label">계산 결과</div>
+            <div class="status-value small">${escapeHtml(formulaResultText)}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function buildInterpolationRangeExplanation(left, right) {
+      if (left < 0 || right < 0 || left >= numbers.length || right >= numbers.length || left > right) {
+        return '';
+      }
+
+      const remainCount = right - left + 1;
+      const firstValue = numbers[left];
+      const lastValue = numbers[right];
+      const approxGap = remainCount > 1 ? ((lastValue - firstValue) / (remainCount - 1)).toFixed(2) : '0';
+
+      return (
+        `${left + 1}번째 카드 값은 ${firstValue}이고 ${right + 1}번째 카드 값은 ${lastValue}입니다. ` +
+        `총 ${remainCount}장의 카드가 남아 있으므로 카드마다 약 ${approxGap}의 값 차이가 발생합니다. ` +
+        `이제 각 카드의 예상값을 참고하여 목표 숫자 ${targetNumber}가 어디쯤 있을지 살펴봅니다.`
+      );
+    }
+
+    function buildInterpolationOperations() {
+      const ops = [];
+      let left = 0;
+      let right = numbers.length - 1;
+
+      if (left <= right) {
+        const introText = buildInterpolationRangeExplanation(left, right);
+
+        ops.push({
+          type: 'interpolationGuide',
+          range: makeRange(left, right),
+          interpolationGuide: getInterpolationGuide(left, right),
+          statusHtml: buildInterpolationStatusCard({
+            rangeText: `${left + 1}번 ~ ${right + 1}번`,
+            remainCount: `${right - left + 1}장`,
+            leftInfo: `${left + 1}번 (${numbers[left]})`,
+            rightInfo: `${right + 1}번 (${numbers[right]})`,
+            estimatedText: '계산 준비',
+            selectedText: '아직 선택 전',
+            formulaText: '예상 위치 = 왼쪽 위치 + (목표값 - 왼쪽 값) ÷ (오른쪽 값 - 왼쪽 값) × (오른쪽 위치 - 왼쪽 위치)',
+            formulaResultText: '카드마다 표시된 예상값을 보고 목표 숫자와 가장 가까운 위치를 짐작할 수 있습니다.',
+            stateText: introText,
+            stateClass: 'state-wait'
+          })
+        });
+      }
+
+      while (left <= right && targetNumber >= numbers[left] && targetNumber <= numbers[right]) {
+        let probe;
+        let formulaText = '';
+        let formulaResultText = '';
+
+        if (numbers[left] === numbers[right]) {
+          probe = left;
+          formulaText = `왼쪽 값과 오른쪽 값이 모두 ${numbers[left]}로 같으므로 비율을 계산하지 않고 ${left + 1}번 카드를 바로 선택합니다.`;
+          formulaResultText = `예상 위치 = ${left + 1}번`;
+        } else {
+          const ratio = (targetNumber - numbers[left]) / (numbers[right] - numbers[left]);
+          const rawProbe = left + (right - left) * ratio;
+          probe = left + Math.floor((right - left) * ratio);
+          formulaText = `예상 위치 = 왼쪽 위치 + (목표값 - 왼쪽 값) ÷ (오른쪽 값 - 왼쪽 값) × (오른쪽 위치 - 왼쪽 위치)`;
+          formulaResultText = `${left + 1} + (${targetNumber} - ${numbers[left]}) ÷ (${numbers[right]} - ${numbers[left]}) × (${right + 1} - ${left + 1}) = ${rawProbe.toFixed(2)} → ${probe + 1}번`;
+        }
+
+        probe = Math.max(left, Math.min(probe, right));
+
+        const rangeText = `${left + 1}번 ~ ${right + 1}번`;
+        const remainCount = `${right - left + 1}장`;
+        const leftInfo = `${left + 1}번 (${numbers[left]})`;
+        const rightInfo = `${right + 1}번 (${numbers[right]})`;
+        const estimatedText = `${probe + 1}번`;
+        const selectedText = `${probe + 1}번`;
+        const selectedValue = numbers[probe];
+
+        if (selectedValue === targetNumber) {
+          ops.push({
+            type: 'found',
+            index: probe,
+            range: [probe],
+            interpolationGuide: getInterpolationGuide(probe, probe),
+            statusHtml: buildInterpolationStatusCard({
+              rangeText,
+              remainCount,
+              leftInfo,
+              rightInfo,
+              estimatedText,
+              selectedText,
+              formulaText,
+              formulaResultText,
+              stateText:
+                `${probe + 1}번 카드를 예상 위치로 선택했습니다. ` +
+                `값은 ${selectedValue}이고 목표 숫자 ${targetNumber}와 같으므로 찾기에 성공했습니다.`,
+              stateClass: 'state-success'
+            })
+          });
+          break;
+        }
+
+        if (selectedValue < targetNumber) {
+          const excluded = makeRange(left, probe);
+          const newRange = makeRange(probe + 1, right);
+          const excludedText = `${left + 1}번 ~ ${probe + 1}번`;
+
+          ops.push({
+            type: 'binaryMiss',
+            index: probe,
+            excluded,
+            range: newRange,
+            direction: 'right',
+            interpolationGuide: getInterpolationGuide(probe + 1, right),
+            statusHtml: buildInterpolationStatusCard({
+              rangeText,
+              remainCount,
+              leftInfo,
+              rightInfo,
+              estimatedText,
+              selectedText,
+              formulaText,
+              formulaResultText,
+              stateText:
+                `${probe + 1}번 카드를 예상 위치로 선택했습니다. ` +
+                `값은 ${selectedValue}이고 목표 숫자 ${targetNumber}보다 작습니다. ` +
+                `따라서 ${excludedText} 카드를 제외하고 오른쪽 범위만 계속 탐색합니다. ` +
+                buildInterpolationRangeExplanation(probe + 1, right),
+              stateClass: 'state-right'
+            })
+          });
+
+          left = probe + 1;
+        } else {
+          const excluded = makeRange(probe, right);
+          const newRange = makeRange(left, probe - 1);
+          const excludedText = `${probe + 1}번 ~ ${right + 1}번`;
+
+          ops.push({
+            type: 'binaryMiss',
+            index: probe,
+            excluded,
+            range: newRange,
+            direction: 'left',
+            interpolationGuide: getInterpolationGuide(left, probe - 1),
+            statusHtml: buildInterpolationStatusCard({
+              rangeText,
+              remainCount,
+              leftInfo,
+              rightInfo,
+              estimatedText,
+              selectedText,
+              formulaText,
+              formulaResultText,
+              stateText:
+                `${probe + 1}번 카드를 예상 위치로 선택했습니다. ` +
+                `값은 ${selectedValue}이고 목표 숫자 ${targetNumber}보다 큽니다. ` +
+                `따라서 ${excludedText} 카드를 제외하고 왼쪽 범위만 계속 탐색합니다. ` +
+                buildInterpolationRangeExplanation(left, probe - 1),
+              stateClass: 'state-left'
+            })
+          });
+
+          right = probe - 1;
+        }
+      }
+
+      if (ops.length === 0) {
+        ops.push({
+          type: 'found',
+          index: targetIndex,
+          range: [targetIndex],
+          interpolationGuide: getInterpolationGuide(targetIndex, targetIndex),
+          statusHtml: buildInterpolationStatusCard({
+            rangeText: `${targetIndex + 1}번 ~ ${targetIndex + 1}번`,
+            remainCount: '1장',
+            leftInfo: `${targetIndex + 1}번 (${numbers[targetIndex]})`,
+            rightInfo: `${targetIndex + 1}번 (${numbers[targetIndex]})`,
+            estimatedText: `${targetIndex + 1}번`,
+            selectedText: `${targetIndex + 1}번`,
+            formulaText: `카드가 1장만 남았으므로 계산 없이 그 카드를 바로 선택합니다.`,
+            formulaResultText: `예상 위치 = ${targetIndex + 1}번`,
+            stateText:
+              `${targetIndex + 1}번 카드만 남았으므로 바로 확인합니다. ` +
+              `값은 ${numbers[targetIndex]}이고 목표 숫자 ${targetNumber}와 같으므로 찾기에 성공했습니다.`,
+            stateClass: 'state-success'
+          })
+        });
+      }
+
+      return ops;
+    }
+
     function buildOperations() {
-      return algorithmSelect.value === 'binary'
-        ? buildBinaryOperations()
-        : buildLinearOperations();
+      if (algorithmSelect.value === 'binary') return buildBinaryOperations();
+      if (algorithmSelect.value === 'interpolation') return buildInterpolationOperations();
+      return buildLinearOperations();
     }
 
     function applyOperation(op) {
       activeIndices = [];
       foundIndices = [];
+
+      if (algorithmSelect.value === 'interpolation') {
+        currentInterpolationGuide = op.interpolationGuide || null;
+      } else {
+        currentInterpolationGuide = null;
+      }
+
+      if (op.type === 'interpolationGuide') {
+        rangeIndices = [...op.range];
+        setStatus(op.statusHtml);
+        return;
+      }
 
       if (op.type === 'miss') {
         currentProblemSearchCount += 1;
@@ -1132,6 +1478,7 @@
       operations = buildOperations();
 
       rangeIndices = makeRange(0, numbers.length - 1);
+      currentInterpolationGuide = null;
 
       nextBtn.disabled = false;
       setStatus(`${algorithmLabel(algorithmSelect.value)} 탐색이 준비되었습니다. ${isAutoMode ? '시작 버튼을 누르면 자동으로 진행됩니다.' : '다음 단계 버튼을 누르면 한 단계씩 진행됩니다.'}`);
@@ -1194,13 +1541,15 @@
       clearAutoTimer();
       historyByAlgorithm.linear = [];
       historyByAlgorithm.binary = [];
+      historyByAlgorithm.interpolation = [];
       roundCountByAlgorithm.linear = 0;
       roundCountByAlgorithm.binary = 0;
+      roundCountByAlgorithm.interpolation = 0;
       currentProblemSearchCount = 0;
       resultEl.textContent = '';
       updateStats();
       updatePlayModeUI();
-      setStatus('순차 탐색과 이진 탐색의 누적 통계를 초기화했습니다.');
+      setStatus('순차 탐색, 이진 탐색, 보간 탐색의 누적 통계를 초기화했습니다.');
     });
 
     algorithmSelect.addEventListener('change', () => {
@@ -1250,9 +1599,11 @@
       targetNumber = 40;
       let linearOps = buildLinearOperations();
       let binaryOps = buildBinaryOperations();
+      let interpolationOps = buildInterpolationOperations();
 
       console.assert(linearOps.some((op) => op.type === 'found' && op.index === 3), '순차 탐색 동작 오류');
       console.assert(binaryOps.some((op) => op.type === 'found' && op.index === 3), '이진 탐색 동작 오류');
+      console.assert(interpolationOps.some((op) => op.type === 'found' && op.index === 3), '보간 탐색 동작 오류');
       console.assert(linearOps.filter((op) => op.type === 'miss').length === 3, '순차 탐색 miss 단계 오류');
     }
 
