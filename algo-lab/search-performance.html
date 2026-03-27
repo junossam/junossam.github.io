@@ -262,6 +262,53 @@
       align-items: center;
     }
 
+    .auto-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f9fafb;
+    }
+
+    .mode-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      color: #374151;
+      flex-wrap: wrap;
+    }
+
+    .mode-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+
+    .speed-wrap {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      min-width: 280px;
+    }
+
+    .speed-wrap.visible {
+      display: inline-flex;
+    }
+
+    .speed-wrap input[type="range"] {
+      width: 220px;
+    }
+
+    .speed-hint {
+      display: none;
+    }
+
     button {
       border: none;
       border-radius: 12px;
@@ -441,7 +488,7 @@
     <p class="desc">
       정렬된 카드 데이터에서 목표 숫자를 찾는 과정을 단계별로 확인해 보세요.
       <b>순차 탐색</b>과 <b>이진 탐색</b>을 선택할 수 있으며,
-      자동 애니메이션을 체크하면 새 문제를 만들자마자 자동으로 진행됩니다.
+      진행 방식을 <b>수동</b> 또는 <b>자동</b>으로 바꿔 단계별 흐름을 확인할 수 있습니다.
     </p>
 
     <div class="panel">
@@ -464,23 +511,6 @@
           </select>
         </div>
 
-        <div class="field">
-          <label class="checkbox-wrap" for="autoPlayCheck">
-            <input type="checkbox" id="autoPlayCheck" />
-            자동 애니메이션
-          </label>
-        </div>
-
-        <div class="field">
-          <label for="speedSelect">자동 속도</label>
-          <select id="speedSelect">
-            <option value="300">매우 빠름</option>
-            <option value="600">빠름</option>
-            <option value="1000" selected>보통</option>
-            <option value="1500">느림</option>
-            <option value="2200">매우 느림</option>
-          </select>
-        </div>
       </div>
 
       <div class="target-box">
@@ -511,6 +541,20 @@
         <button id="nextBtn">다음 단계</button>
         <button id="newRoundBtn" class="secondary">새 문제</button>
         <button id="resetStatsBtn" class="secondary">통계 초기화</button>
+      </div>
+
+      <div class="auto-controls">
+        <div class="mode-group" aria-label="진행 방식 선택">
+          <span>진행 방식</span>
+          <label class="mode-option"><input type="radio" name="playMode" value="manual" checked> 수동</label>
+          <label class="mode-option"><input type="radio" name="playMode" value="auto"> 자동</label>
+        </div>
+        <div class="speed-wrap" id="speedWrap">
+          <label for="speedSlider"><strong>자동 속도</strong></label>
+          <input type="range" id="speedSlider" min="1" max="100" step="1" value="45">
+          <span id="speedValue">보통</span>
+          <span class="speed-hint" id="speedHint" aria-hidden="true"></span>
+        </div>
       </div>
 
       <div class="status" id="status">새 문제를 만들면 바로 탐색이 준비됩니다.</div>
@@ -555,8 +599,11 @@
     const cardContainer = document.getElementById('cards');
     const algorithmSelect = document.getElementById('algorithmSelect');
     const cardCountSelect = document.getElementById('cardCountSelect');
-    const autoPlayCheck = document.getElementById('autoPlayCheck');
-    const speedSelect = document.getElementById('speedSelect');
+    const playModeRadios = document.querySelectorAll("input[name='playMode']");
+    const speedWrap = document.getElementById('speedWrap');
+    const speedSlider = document.getElementById('speedSlider');
+    const speedValueEl = document.getElementById('speedValue');
+    const speedHintEl = document.getElementById('speedHint');
     const targetNumberEl = document.getElementById('targetNumber');
     const nextBtn = document.getElementById('nextBtn');
     const newRoundBtn = document.getElementById('newRoundBtn');
@@ -589,6 +636,7 @@
     let started = false;
     let finished = false;
     let autoTimer = null;
+    let isAutoMode = false;
 
     const historyByAlgorithm = {
       linear: [],
@@ -638,14 +686,52 @@
       return value === 'binary' ? '이진' : '순차';
     }
 
+    function getSelectedPlayMode() {
+      const selected = [...playModeRadios].find((radio) => radio.checked);
+      return selected ? selected.value : 'manual';
+    }
+
+    function updateSpeedDisplay() {
+      const value = Number(speedSlider.value);
+      let label = '보통';
+
+      if (value <= 20) {
+        label = '매우 느림';
+      } else if (value <= 40) {
+        label = '느림';
+      } else if (value <= 60) {
+        label = '보통';
+      } else if (value <= 80) {
+        label = '빠름';
+      } else {
+        label = '매우 빠름';
+      }
+
+      speedValueEl.textContent = label;
+      speedHintEl.textContent = '';
+    }
+
     function getAutoDelay() {
-      return Number(speedSelect.value);
+      const minDelay = 25;
+      const maxDelay = 1200;
+      const ratio = (100 - Number(speedSlider.value)) / 99;
+      return Math.round(minDelay + ratio * (maxDelay - minDelay));
     }
 
     function clearAutoTimer() {
       if (autoTimer) {
         clearTimeout(autoTimer);
         autoTimer = null;
+      }
+    }
+
+    function updatePlayModeUI() {
+      isAutoMode = getSelectedPlayMode() === 'auto';
+      speedWrap.classList.toggle('visible', isAutoMode);
+      if (isAutoMode) {
+        nextBtn.textContent = autoTimer ? '정지' : (finished ? '완료' : '시작');
+      } else {
+        nextBtn.textContent = '다음 단계';
       }
     }
 
@@ -1008,7 +1094,7 @@
     function scheduleNextAutoStep() {
       clearAutoTimer();
 
-      if (autoPlayCheck.checked && started && !finished && stepIndex < operations.length) {
+      if (isAutoMode && started && !finished && stepIndex < operations.length) {
         autoTimer = setTimeout(runNextStep, getAutoDelay());
       }
     }
@@ -1041,12 +1127,10 @@
       rangeIndices = makeRange(0, numbers.length - 1);
 
       nextBtn.disabled = false;
-      setStatus(`${algorithmLabel(algorithmSelect.value)} 탐색이 준비되었습니다.`);
+      setStatus(`${algorithmLabel(algorithmSelect.value)} 탐색이 준비되었습니다. ${isAutoMode ? '시작 버튼을 누르면 자동으로 진행됩니다.' : '다음 단계 버튼을 누르면 한 단계씩 진행됩니다.'}`);
       renderCards();
 
-      if (autoPlayCheck.checked) {
-        runNextStep();
-      }
+      updatePlayModeUI();
     }
 
     function startRound() {
@@ -1075,6 +1159,23 @@
     }
 
     nextBtn.addEventListener('click', () => {
+      if (!started || finished) return;
+
+      if (isAutoMode) {
+        if (autoTimer) {
+          clearAutoTimer();
+          updatePlayModeUI();
+          setStatus('자동 실행을 멈췄습니다. 다시 시작 버튼을 누르면 이어서 진행합니다.');
+          return;
+        }
+
+        updatePlayModeUI();
+        nextBtn.textContent = '정지';
+        setStatus('자동 실행을 시작합니다. 새 문제를 누르거나 정지 버튼을 누르면 멈춥니다.');
+        scheduleNextAutoStep();
+        return;
+      }
+
       runNextStep();
     });
 
@@ -1091,6 +1192,7 @@
       currentProblemSearchCount = 0;
       resultEl.textContent = '';
       updateStats();
+      updatePlayModeUI();
       setStatus('순차 탐색과 이진 탐색의 누적 통계를 초기화했습니다.');
     });
 
@@ -1102,16 +1204,17 @@
       startRound();
     });
 
-    autoPlayCheck.addEventListener('change', () => {
-      clearAutoTimer();
-
-      if (autoPlayCheck.checked && started && !finished && stepIndex < operations.length) {
-        scheduleNextAutoStep();
-      }
+    playModeRadios.forEach((radio) => {
+      radio.addEventListener('change', () => {
+        clearAutoTimer();
+        updatePlayModeUI();
+        setStatus(isAutoMode ? '자동 모드입니다. 시작 버튼을 누르면 자동으로 진행합니다.' : '수동 모드입니다. 다음 단계 버튼을 누를 때마다 한 단계씩 진행합니다.');
+      });
     });
 
-    speedSelect.addEventListener('change', () => {
-      if (autoPlayCheck.checked && started && !finished && stepIndex < operations.length) {
+    speedSlider.addEventListener('input', () => {
+      updateSpeedDisplay();
+      if (isAutoMode && started && !finished && autoTimer) {
         scheduleNextAutoStep();
       }
     });
@@ -1147,6 +1250,8 @@
     }
 
     runTests();
+    updateSpeedDisplay();
+    updatePlayModeUI();
     startRound();
   </script>
 </body>
