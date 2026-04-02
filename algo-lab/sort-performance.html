@@ -474,7 +474,7 @@
           <div class="value" id="dataModeInfo">무작위</div>
         </div>
         <div class="info-box">
-          <div class="label">현재 단계</div>
+          <div class="label">총 연산 횟수</div>
           <div class="value" id="stepInfo">0</div>
         </div>
         <div class="info-box">
@@ -1192,7 +1192,7 @@
 
       algorithmInfoEl.textContent = algorithmLabel(algorithmSelect.value);
       dataModeInfoEl.textContent = dataModeLabel(dataModeSelect.value);
-      stepInfoEl.textContent = String(stepIndex);
+      stepInfoEl.textContent = String(compareCount + moveCount);
       compareCountEl.textContent = String(compareCount);
       moveCountEl.textContent = String(moveCount);
       sortedCountEl.textContent = String(sortedIndices.length);
