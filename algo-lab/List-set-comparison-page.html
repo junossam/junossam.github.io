@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>리스트와 집합 비교</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Noto Sans KR", Arial, sans-serif;
+      background: #f7f8fc;
+      color: #1f2937;
+    }
+    .app {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .title h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+    .title p {
+      margin: 0;
+      color: #4b5563;
+      line-height: 1.6;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .mode-group {
+      display: flex;
+      gap: 8px;
+      background: white;
+      padding: 8px;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
+    }
+    .mode-btn, .action-btn {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+    .mode-btn {
+      background: #eef2ff;
+      color: #3730a3;
+      font-weight: 700;
+    }
+    .mode-btn.active {
+      background: #4f46e5;
+      color: white;
+    }
+    .action-btn {
+      background: white;
+      color: #111827;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
+      font-weight: 600;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1.1fr 160px 1.1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    .panel {
+      background: white;
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 10px 35px rgba(15, 23, 42, 0.08);
+    }
+    .panel h2 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+    .panel p {
+      margin: 0 0 16px;
+      color: #4b5563;
+    }
+    .slots {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      min-height: 120px;
+    }
+    .slot {
+      min-height: 110px;
+      border: 2px dashed #c7d2fe;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8faff;
+      position: relative;
+      transition: 0.2s ease;
+      padding: 8px;
+    }
+    .slot.drag-over {
+      border-color: #4f46e5;
+      background: #eef2ff;
+      transform: translateY(-1px);
+    }
+    .slot-label {
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 700;
+    }
+    .slot.empty::after {
+      content: "여기에 놓기";
+      font-size: 13px;
+      color: #9ca3af;
+      text-align: center;
+    }
+    .chip {
+      width: 100%;
+      max-width: 100px;
+      min-height: 54px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      font-weight: 800;
+      font-size: 18px;
+      cursor: grab;
+      user-select: none;
+      box-shadow: 0 12px 24px rgba(79, 70, 229, 0.22);
+    }
+    .chip:active { cursor: grabbing; }
+    .status {
+      align-self: stretch;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .status-card {
+      width: 100%;
+      background: white;
+      border-radius: 24px;
+      padding: 20px 16px;
+      text-align: center;
+      box-shadow: 0 10px 35px rgba(15, 23, 42, 0.08);
+      position: sticky;
+      top: 24px;
+    }
+    .status-card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: #4b5563;
+    }
+    .symbol {
+      font-size: 56px;
+      font-weight: 900;
+      line-height: 1.1;
+      margin: 8px 0;
+    }
+    .symbol.equal { color: #059669; }
+    .symbol.not-equal { color: #dc2626; }
+    .reason {
+      color: #4b5563;
+      line-height: 1.6;
+      font-size: 14px;
+      min-height: 44px;
+    }
+    .pool {
+      margin-top: 20px;
+      background: white;
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 10px 35px rgba(15, 23, 42, 0.08);
+    }
+    .pool h2 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+    .pool p {
+      margin: 0 0 16px;
+      color: #4b5563;
+    }
+    .pool-grid {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(70px, 1fr));
+      gap: 12px;
+    }
+    .pool-slot {
+      min-height: 90px;
+      border: 2px dashed #e5e7eb;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fafafa;
+      padding: 8px;
+    }
+    .pool-slot.drag-over {
+      border-color: #4f46e5;
+      background: #eef2ff;
+    }
+    .legend {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #4b5563;
+      line-height: 1.7;
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 14px 16px;
+    }
+    .expr {
+      margin-top: 16px;
+      padding: 14px 16px;
+      background: #f8fafc;
+      border-radius: 16px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      line-height: 1.7;
+      color: #111827;
+      white-space: pre-wrap;
+      word-break: keep-all;
+      min-height: 58px;
+    }
+    .copyright {
+      margin-top: 24px;
+      padding: 20px 16px 8px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .copyright strong {
+      display: block;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+    @media (max-width: 1100px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .status-card { position: static; }
+      .pool-grid { grid-template-columns: repeat(5, minmax(70px, 1fr)); }
+    }
+    @media (max-width: 640px) {
+      .slots { grid-template-columns: repeat(2, 1fr); }
+      .pool-grid { grid-template-columns: repeat(4, minmax(60px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="title">
+        <h1>리스트와 집합 비교하기</h1>
+        <p>아래의 요소를 드래그하여 왼쪽과 오른쪽 칸에 놓아 보세요. 선택한 자료형에 따라 같음과 다름이 자동으로 표시됩니다.</p>
+      </div>
+      <div class="controls">
+        <div class="mode-group" aria-label="자료형 선택">
+          <button class="mode-btn active" data-mode="list">리스트</button>
+          <button class="mode-btn" data-mode="set">집합</button>
+        </div>
+        <button class="action-btn" id="shuffleBtn">값 다시 섞기</button>
+        <button class="action-btn" id="resetBtn">모두 비우기</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <section class="panel">
+        <h2>구성 A</h2>
+        <p>순서대로 5칸까지 놓을 수 있습니다.</p>
+        <div class="slots" id="leftSlots"></div>
+        <div class="expr" id="leftExpr">a = [ ]</div>
+      </section>
+
+      <div class="status">
+        <div class="status-card">
+          <h3 id="modeTitle">리스트 비교</h3>
+          <div class="symbol not-equal" id="symbol">≠</div>
+          <div class="reason" id="reason">드래그할 때마다 바로 비교합니다. 원소 개수가 다르면 같지 않습니다.</div>
+        </div>
+      </div>
+
+      <section class="panel">
+        <h2>구성 B</h2>
+        <p>순서대로 5칸까지 놓을 수 있습니다.</p>
+        <div class="slots" id="rightSlots"></div>
+        <div class="expr" id="rightExpr">b = [ ]</div>
+      </section>
+    </div>
+
+    <section class="pool">
+      <h2>요소 보관함</h2>
+      <p>같은 값이 2개씩, 총 10세트 20개가 준비되어 있습니다. 원하는 칸으로 끌어다 놓아 비교해 보세요.</p>
+      <div class="pool-grid" id="pool"></div>
+      <div class="legend">
+        <strong>리스트</strong>에서는 값과 순서가 모두 같아야 같습니다.<br>
+        <strong>집합</strong>에서는 순서를 보지 않으며, 같은 값이 여러 번 들어가도 하나로 봅니다.
+      </div>
+    </section>
+
+    <div class="copyright">
+      <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong>
+      본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
+    </div>
+  </div>
+
+  <script>
+    const leftSlotsEl = document.getElementById('leftSlots');
+    const rightSlotsEl = document.getElementById('rightSlots');
+    const poolEl = document.getElementById('pool');
+    const symbolEl = document.getElementById('symbol');
+    const reasonEl = document.getElementById('reason');
+    const leftExprEl = document.getElementById('leftExpr');
+    const rightExprEl = document.getElementById('rightExpr');
+    const modeTitleEl = document.getElementById('modeTitle');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const modeButtons = document.querySelectorAll('.mode-btn');
+
+    let mode = 'list';
+    const slotCount = 5;
+    const initialValues = ['A', 'A', 'B', 'B', 'C', 'C', 'D', 'D', 'E', 'E', 'F', 'F', 'G', 'G', 'H', 'H', 'I', 'I', 'J', 'J'];
+    const poolCount = initialValues.length;
+    const storageKey = 'list-set-comparison-state-v1';
+
+    const defaultState = {
+      left: Array(slotCount).fill(null),
+      right: Array(slotCount).fill(null),
+      pool: [...initialValues],
+      dragging: null,
+    };
+
+    function cloneDefaultState() {
+      return {
+        left: [...defaultState.left],
+        right: [...defaultState.right],
+        pool: [...defaultState.pool],
+        dragging: null,
+      };
+    }
+
+    function loadSavedState() {
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (!raw) return cloneDefaultState();
+
+        const saved = JSON.parse(raw);
+        const left = Array.isArray(saved.left) && saved.left.length === slotCount ? saved.left : [...defaultState.left];
+        const right = Array.isArray(saved.right) && saved.right.length === slotCount ? saved.right : [...defaultState.right];
+        const pool = Array.isArray(saved.pool) && saved.pool.length === initialValues.length ? saved.pool : [...defaultState.pool];
+        return { left, right, pool, dragging: null };
+      } catch (error) {
+        return cloneDefaultState();
+      }
+    }
+
+    const state = loadSavedState();
+
+    function createSlots(container, side) {
+      container.innerHTML = '';
+      for (let i = 0; i < slotCount; i += 1) {
+        const slot = document.createElement('div');
+        slot.className = 'slot empty';
+        slot.dataset.side = side;
+        slot.dataset.index = String(i);
+
+        const label = document.createElement('div');
+        label.className = 'slot-label';
+        label.textContent = `${i + 1}번 칸`;
+        slot.appendChild(label);
+
+        attachDropEvents(slot);
+        container.appendChild(slot);
+      }
+    }
+
+    function createPoolSlots() {
+      poolEl.innerHTML = '';
+      for (let i = 0; i < poolCount; i += 1) {
+        const slot = document.createElement('div');
+        slot.className = 'pool-slot';
+        slot.dataset.side = 'pool';
+        slot.dataset.index = String(i);
+        attachDropEvents(slot);
+        poolEl.appendChild(slot);
+      }
+    }
+
+    function attachDropEvents(target) {
+      target.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        target.classList.add('drag-over');
+      });
+
+      target.addEventListener('dragleave', () => {
+        target.classList.remove('drag-over');
+      });
+
+      target.addEventListener('drop', (event) => {
+        event.preventDefault();
+        target.classList.remove('drag-over');
+        handleDrop(target.dataset.side, Number(target.dataset.index));
+      });
+    }
+
+    function createChip(value, sourceSide, sourceIndex) {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.draggable = true;
+      chip.textContent = value;
+      chip.dataset.value = value;
+      chip.dataset.sourceSide = sourceSide;
+      chip.dataset.sourceIndex = String(sourceIndex);
+
+      chip.addEventListener('dragstart', () => {
+        state.dragging = { value, sourceSide, sourceIndex };
+      });
+
+      chip.addEventListener('dragend', () => {
+        state.dragging = null;
+        document.querySelectorAll('.drag-over').forEach((element) => {
+          element.classList.remove('drag-over');
+        });
+      });
+
+      return chip;
+    }
+
+    function clearSource(side, index) {
+      if (side === 'left' || side === 'right') {
+        state[side][index] = null;
+      } else if (side === 'pool') {
+        state.pool[index] = null;
+      }
+    }
+
+    function setTarget(side, index, value) {
+      if (side === 'left' || side === 'right') {
+        state[side][index] = value;
+      } else if (side === 'pool') {
+        state.pool[index] = value;
+      }
+    }
+
+    function handleDrop(targetSide, targetIndex) {
+      if (!state.dragging) return;
+
+      const { sourceSide, sourceIndex } = state.dragging;
+      if (sourceSide === targetSide && sourceIndex === targetIndex) return;
+
+      const sourceValue = sourceSide === 'pool' ? state.pool[sourceIndex] : state[sourceSide][sourceIndex];
+      const targetValue = targetSide === 'pool' ? state.pool[targetIndex] : state[targetSide][targetIndex];
+
+      if (sourceValue == null) return;
+
+      clearSource(sourceSide, sourceIndex);
+      setTarget(targetSide, targetIndex, sourceValue);
+
+      if (targetValue != null) {
+        setTarget(sourceSide, sourceIndex, targetValue);
+      }
+
+      render();
+    }
+
+    function renderSide(side, container) {
+      const slots = container.querySelectorAll(side === 'pool' ? '.pool-slot' : '.slot');
+      const values = state[side];
+
+      slots.forEach((slot, index) => {
+        const oldChip = slot.querySelector('.chip');
+        if (oldChip) oldChip.remove();
+
+        const value = values[index];
+        if (side !== 'pool') {
+          slot.classList.toggle('empty', value == null);
+        }
+
+        if (value != null) {
+          slot.appendChild(createChip(value, side, index));
+        }
+      });
+    }
+
+    function arraysEqual(a, b) {
+      return a.length === b.length && a.every((value, index) => value === b[index]);
+    }
+
+    function setEqual(a, b) {
+      const setA = [...new Set(a)];
+      const setB = [...new Set(b)];
+      if (setA.length !== setB.length) return false;
+      return setA.every((value) => setB.includes(value));
+    }
+
+    function formatList(arr) {
+      const filtered = arr.filter((value) => value != null);
+      return `[${filtered.map((value) => `'${value}'`).join(', ')}]`;
+    }
+
+    function formatSet(arr) {
+      const unique = [...new Set(arr.filter((value) => value != null))];
+      return `{${unique.map((value) => `'${value}'`).join(', ')}}`;
+    }
+
+    function updateStatus() {
+      const left = state.left;
+      const right = state.right;
+      const leftItems = left.filter((value) => value != null);
+      const rightItems = right.filter((value) => value != null);
+      const sameCount = leftItems.length === rightItems.length;
+
+      modeTitleEl.textContent = mode === 'list' ? '리스트 비교' : '집합 비교';
+
+      if (mode === 'list') {
+        leftExprEl.textContent = `a = ${formatList(left)}`;
+        rightExprEl.textContent = `b = ${formatList(right)}`;
+      } else {
+        leftExprEl.textContent = `a = ${formatSet(left)}`;
+        rightExprEl.textContent = `b = ${formatSet(right)}`;
+      }
+
+      if (!sameCount) {
+        symbolEl.textContent = '≠';
+        symbolEl.className = 'symbol not-equal';
+        reasonEl.textContent = 'a와 b의 원소 개수가 다르므로 같지 않습니다.';
+        return;
+      }
+
+      if (leftItems.length === 0 && rightItems.length === 0) {
+        symbolEl.textContent = '=';
+        symbolEl.className = 'symbol equal';
+        reasonEl.textContent = 'a와 b가 모두 비어 있으므로 같습니다.';
+        return;
+      }
+
+      let equal = false;
+      if (mode === 'list') {
+        equal = arraysEqual(leftItems, rightItems);
+        reasonEl.textContent = equal
+          ? '리스트는 현재 값과 순서가 모두 같습니다.'
+          : '리스트는 원소 개수가 같더라도 값이나 순서가 다르면 같지 않습니다.';
+      } else {
+        equal = setEqual(leftItems, rightItems);
+        reasonEl.textContent = equal
+          ? '집합은 현재 순서를 보지 않고, 중복은 하나로 취급하므로 같습니다.'
+          : '집합은 원소 개수가 같더라도 원소의 종류가 다르면 같지 않습니다.';
+      }
+
+      symbolEl.textContent = equal ? '=' : '≠';
+      symbolEl.className = equal ? 'symbol equal' : 'symbol not-equal';
+    }
+
+    function shuffleValues() {
+      const letters = [...initialValues];
+      for (let i = letters.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [letters[i], letters[j]] = [letters[j], letters[i]];
+      }
+      state.left = Array(slotCount).fill(null);
+      state.right = Array(slotCount).fill(null);
+      state.pool = letters;
+      render();
+    }
+
+    function resetAll() {
+      state.left = Array(slotCount).fill(null);
+      state.right = Array(slotCount).fill(null);
+      state.pool = [...initialValues];
+      render();
+    }
+
+    function saveState() {
+      localStorage.setItem(storageKey, JSON.stringify({
+        left: state.left,
+        right: state.right,
+        pool: state.pool,
+      }));
+    }
+
+    function runSelfTests() {
+      console.assert(arraysEqual(['A', 'B'], ['A', 'B']) === true, 'arraysEqual should return true for same ordered arrays');
+      console.assert(arraysEqual(['A', 'B'], ['B', 'A']) === false, 'arraysEqual should return false when order differs');
+      console.assert(setEqual(['A', 'A', 'B'], ['B', 'A']) === true, 'setEqual should ignore duplicates and order');
+      console.assert(setEqual(['A', 'B'], ['A', 'C']) === false, 'setEqual should detect different elements');
+      console.assert(formatList(['A', null, 'B']) === "['A', 'B']", 'formatList should omit empty positions');
+      console.assert(formatSet(['A', null, 'A', 'B']) === "{'A', 'B'}", 'formatSet should remove duplicates and nulls');
+    }
+
+    function render() {
+      renderSide('left', leftSlotsEl);
+      renderSide('right', rightSlotsEl);
+      renderSide('pool', poolEl);
+      updateStatus();
+      saveState();
+    }
+
+    modeButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        mode = button.dataset.mode;
+        modeButtons.forEach((btn) => btn.classList.toggle('active', btn === button));
+        render();
+      });
+    });
+
+    shuffleBtn.addEventListener('click', shuffleValues);
+    resetBtn.addEventListener('click', resetAll);
+
+    createSlots(leftSlotsEl, 'left');
+    createSlots(rightSlotsEl, 'right');
+    createPoolSlots();
+    runSelfTests();
+    render();
+  </script>
+</body>
+</html>
