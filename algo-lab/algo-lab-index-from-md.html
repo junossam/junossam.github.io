@@ -6,102 +6,157 @@
 <title>Algorithm Lab</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial, "Noto Sans KR", sans-serif;
-  background: #f5f7fb;
-  color: #111827;
-}
+  * { box-sizing: border-box; }
 
-.wrap {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 40px 20px;
-}
+  body {
+    margin: 0;
+    font-family: Arial, "Noto Sans KR", sans-serif;
+    background: #f5f7fb;
+    color: #111827;
+  }
 
-h1 {
-  text-align: center;
-  margin-bottom: 8px;
-}
+  .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
 
-.desc {
-  text-align: center;
-  color: #6b7280;
-  margin-bottom: 30px;
-}
+  /* 🔥 로고 영역 */
+  .brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
 
-/* 리스트 카드 */
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
+  .logo {
+    width: 90px;
+    max-width: 30vw;
+  }
 
-.list-item {
-  display: block;
-  padding: 20px 22px;
-  border-radius: 18px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  text-decoration: none;
-  color: inherit;
-  transition: 0.2s;
-}
+  .brand-text {
+    font-size: 26px;
+    font-weight: 800;
+    color: #374151;
+  }
 
-.list-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
-}
+  h1 {
+    margin: 0 0 8px;
+    text-align: center;
+    font-size: 34px;
+  }
 
-.title {
-  font-size: 18px;
-  font-weight: 800;
-  margin-bottom: 6px;
-}
+  .page-desc {
+    text-align: center;
+    color: #6b7280;
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
 
-.desc-item {
-  font-size: 14px;
-  color: #4b5563;
-  margin-bottom: 10px;
-}
+  /* 리스트 */
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
 
-.tags {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
+  .list-item {
+    display: block;
+    padding: 20px 22px;
+    border-radius: 18px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
 
-.tag {
-  font-size: 12px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background: #eef2ff;
-  color: #3730a3;
-  font-weight: 600;
-}
+  .list-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  }
 
-.copyright {
-  margin-top: 30px;
-  padding-top: 16px;
-  text-align: center;
-  font-size: 13px;
-  color: #6b7280;
-  border-top: 1px solid #e5e7eb;
-}
+  .title-line {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+
+  .main-title {
+    font-size: 19px;
+    font-weight: 800;
+  }
+
+  .sub-title {
+    font-size: 13px;
+    color: #6b7280;
+  }
+
+  .sub-title::before {
+    content: "—";
+    margin-right: 6px;
+  }
+
+  .tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .tag {
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #3730a3;
+    font-weight: 600;
+  }
+
+  .empty, .error {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 20px;
+    color: #4b5563;
+    line-height: 1.7;
+  }
+
+  .copyright {
+    margin-top: 30px;
+    padding-top: 16px;
+    text-align: center;
+    font-size: 13px;
+    color: #6b7280;
+    border-top: 1px solid #e5e7eb;
+    line-height: 1.7;
+  }
 </style>
 </head>
 
 <body>
 <div class="wrap">
-  <h1 id="title">알고리즘 실습실</h1>
-  <div class="desc" id="desc">불러오는 중...</div>
 
-  <div id="app"></div>
+  <!-- 🔥 로고 -->
+  <div class="brand">
+    <img src="logo.png" class="logo" alt="Junossam 로고">
+    <div class="brand-text">Junossam</div>
+  </div>
+
+  <h1 id="pageTitle">알고리즘 실습실</h1>
+  <div class="page-desc" id="pageDesc">불러오는 중...</div>
+
+  <div id="app">
+    <div class="empty">목록을 불러오는 중입니다.</div>
+  </div>
 
   <div class="copyright">
     <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong><br>
     본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
   </div>
+
 </div>
 
 <script>
@@ -115,55 +170,56 @@ function escapeHtml(text) {
 }
 
 function parseMarkdown(md) {
-  const lines = md.split(/\r?\n/);
-  let title = "";
-  let desc = "";
+  const lines = md.split(/\\r?\\n/);
+
+  let pageTitle = "알고리즘 실습실";
+  let pageDesc = "";
   const items = [];
   let current = null;
 
-  for (const line of lines) {
-    const t = line.trim();
-    if (!t) continue;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
 
-    if (t.startsWith("# ")) {
-      title = t.slice(2);
+    if (line.startsWith("# ")) {
+      pageTitle = line.slice(2);
       continue;
     }
 
-    if (t.startsWith("> ")) {
-      desc = t.slice(2);
+    if (line.startsWith("> ")) {
+      pageDesc = line.slice(2);
       continue;
     }
 
-    if (t.startsWith("### ")) {
-      if (current) items.push(current);
-      current = { title: t.slice(4), filename: "", purpose: "", tags: [] };
+    if (line.startsWith("### ")) {
+      if (current && current.filename) items.push(current);
+      current = { title: line.slice(4), filename: "", purpose: "", tags: [] };
       continue;
     }
 
     if (!current) continue;
 
-    if (t.startsWith("- 파일명:")) {
-      current.filename = t.replace("- 파일명:", "").trim();
+    if (line.startsWith("- 파일명:")) {
+      current.filename = line.replace("- 파일명:", "").trim();
     }
 
-    if (t.startsWith("- 용도:")) {
-      current.purpose = t.replace("- 용도:", "").trim();
+    if (line.startsWith("- 용도:")) {
+      current.purpose = line.replace("- 용도:", "").trim();
     }
 
-    if (t.startsWith("- 태그:")) {
-      current.tags = t.replace("- 태그:", "").split(",").map(s => s.trim());
+    if (line.startsWith("- 태그:")) {
+      current.tags = line.replace("- 태그:", "").split(",").map(t => t.trim());
     }
   }
 
-  if (current) items.push(current);
+  if (current && current.filename) items.push(current);
 
-  return { title, desc, items };
+  return { pageTitle, pageDesc, items };
 }
 
 function render(data) {
-  document.getElementById("title").textContent = data.title;
-  document.getElementById("desc").textContent = data.desc;
+  document.getElementById("pageTitle").textContent = data.pageTitle;
+  document.getElementById("pageDesc").textContent = data.pageDesc;
 
   const app = document.getElementById("app");
 
@@ -171,8 +227,11 @@ function render(data) {
     <div class="list">
       ${data.items.map(item => `
         <a class="list-item" href="${item.filename}">
-          <div class="title">${escapeHtml(item.title)}</div>
-          <div class="desc-item">${escapeHtml(item.purpose)}</div>
+          <div class="title-line">
+            <span class="main-title">${escapeHtml(item.title)}</span>
+            <span class="sub-title">${escapeHtml(item.purpose)}</span>
+          </div>
+
           <div class="tags">
             ${item.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
           </div>
@@ -186,7 +245,7 @@ fetch(DATA_FILE)
   .then(res => res.text())
   .then(md => render(parseMarkdown(md)))
   .catch(() => {
-    document.getElementById("app").innerHTML = "MD 파일을 불러올 수 없습니다.";
+    document.getElementById("app").innerHTML = "README.md를 불러올 수 없습니다.";
   });
 </script>
 
