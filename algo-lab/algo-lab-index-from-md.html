@@ -1,321 +1,345 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Junossam Lab</title>
-<style>
-  * { box-sizing: border-box; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Junossam Lab</title>
 
-  body {
-    margin: 0;
-    font-family: Arial, "Noto Sans KR", sans-serif;
-    background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
-    color: #111827;
-  }
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-  .wrap {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 40px 20px;
-  }
+    body {
+      margin: 0;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+      color: #111827;
+    }
 
-  .hero {
-    background: rgba(255, 255, 255, 0.78);
-    backdrop-filter: blur(8px);
-    border: 1px solid #e5e7eb;
-    border-radius: 28px;
-    padding: 28px 24px;
-    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
-    margin-bottom: 24px;
-  }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
 
-  .brand {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-
-  .logo {
-    width: 92px;
-    max-width: 30vw;
-    display: block;
-    mix-blend-mode: multiply;
-  }
-
-  .brand-text {
-    font-size: 26px;
-    font-weight: 800;
-    color: #374151;
-    letter-spacing: 0.2px;
-  }
-
-  h1 {
-    margin: 0 0 8px;
-    text-align: center;
-    font-size: 34px;
-  }
-
-  .page-desc {
-    text-align: center;
-    color: #6b7280;
-    margin-bottom: 4px;
-    line-height: 1.7;
-    font-size: 16px;
-  }
-
-  .list {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .list-item {
-    display: block;
-    padding: 20px 22px;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid #e5e7eb;
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
-  }
-
-  .list-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.09);
-    border-color: #cbd5e1;
-  }
-
-  .title-line {
-    display: flex;
-    gap: 10px;
-    align-items: baseline;
-    flex-wrap: wrap;
-    line-height: 1.5;
-  }
-
-  .main-title {
-    font-size: 19px;
-    font-weight: 800;
-    color: #111827;
-  }
-
-  .sub-title {
-    font-size: 13px;
-    color: #6b7280;
-  }
-
-  .sub-title::before {
-    content: "—";
-    margin-right: 6px;
-  }
-
-  .tags {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-  }
-
-  .tag {
-    font-size: 12px;
-    padding: 5px 10px;
-    border-radius: 999px;
-    background: #eef2ff;
-    color: #3730a3;
-    font-weight: 600;
-  }
-
-  .empty, .error {
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid #e5e7eb;
-    border-radius: 18px;
-    padding: 20px;
-    color: #4b5563;
-    line-height: 1.7;
-  }
-
-  .copyright {
-    margin-top: 30px;
-    padding-top: 16px;
-    text-align: center;
-    font-size: 13px;
-    color: #6b7280;
-    border-top: 1px solid #dbe2ea;
-    line-height: 1.7;
-  }
-
-  @media (max-width: 640px) {
     .hero {
-      padding: 22px 18px;
-      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(8px);
+      border: 1px solid #e5e7eb;
+      border-radius: 28px;
+      padding: 28px 24px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+      margin-bottom: 24px;
     }
 
-    h1 {
-      font-size: 28px;
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
     }
 
-    .main-title {
-      font-size: 17px;
-    }
-
-    .sub-title {
-      font-size: 12px;
-    }
-
-    .list-item {
-      padding: 18px;
+    .logo {
+      width: 92px;
+      max-width: 30vw;
+      display: block;
+      mix-blend-mode: multiply;
     }
 
     .brand-text {
-      font-size: 23px;
+      font-size: 26px;
+      font-weight: 800;
+      color: #374151;
     }
-  }
-</style>
+
+    h1 {
+      margin: 0 0 8px;
+      text-align: center;
+      font-size: 34px;
+    }
+
+    .page-desc {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 4px;
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .list-item {
+      display: block;
+      padding: 20px 22px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #e5e7eb;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+    }
+
+    .list-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.09);
+      border-color: #cbd5e1;
+    }
+
+    .title-line {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      flex-wrap: wrap;
+    }
+
+    .main-title {
+      font-size: 19px;
+      font-weight: 800;
+    }
+
+    .sub-title {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .sub-title::before {
+      content: "—";
+      margin-right: 6px;
+    }
+
+    .tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .tag {
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-weight: 600;
+    }
+
+    .empty,
+    .error {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 20px;
+      color: #4b5563;
+      line-height: 1.7;
+    }
+
+    .copyright {
+      margin-top: 30px;
+      padding-top: 16px;
+      text-align: center;
+      font-size: 13px;
+      color: #6b7280;
+      border-top: 1px solid #e5e7eb;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 640px) {
+      .hero {
+        padding: 22px 18px;
+        border-radius: 22px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      .main-title {
+        font-size: 17px;
+      }
+
+      .sub-title {
+        font-size: 12px;
+      }
+
+      .list-item {
+        padding: 18px;
+      }
+
+      .brand-text {
+        font-size: 23px;
+      }
+    }
+  </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="hero">
       <div class="brand">
-        <img src="logo.png" class="logo" alt="Junossam 로고">
+        <img src="logo.png" class="logo" alt="Junossam 로고" />
         <div class="brand-text">Junossam</div>
       </div>
 
       <h1>알고리즘 실습실</h1>
-      <div class="page-desc">파이썬, 알고리즘, 자료구조를 쉽게 이해하고 체험하는 학습 공간</div>
+      <div class="page-desc">
+        파이썬, 알고리즘, 자료구조를 쉽게 이해하고 체험하는 학습 공간
+      </div>
     </div>
 
     <div id="app">
-      <div class="empty">목록을 불러오는 중입니다.</div>
+      <div class="empty">불러오는 중...</div>
     </div>
 
     <div class="copyright">
-      <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong><br>
+      <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong><br />
       본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
     </div>
   </div>
 
-<script>
-  const RAW_MD_URL = "https://raw.githubusercontent.com/junossam/junossam.github.io/main/algo-lab/README.md";
-  const LOCAL_MD_URL = "README.md";
+  <script>
+    const RAW_MD_URL =
+      "https://raw.githubusercontent.com/junossam/junossam.github.io/main/algo-lab/README.md";
 
-  function escapeHtml(text) {
-    return String(text ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
+    function escapeHtml(text) {
+      return String(text || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
 
-  function normalizeMarkdown(md) {
-    return md
-      .replace(/\\r/g, "\\n")
-      .replace(/---/g, "\\n---\\n")
-      .replace(/(###\\s+)/g, "\\n$1")
-      .replace(/(-\\s*파일명:)/g, "\\n$1")
-      .replace(/(-\\s*용도:)/g, "\\n$1")
-      .replace(/(-\\s*태그:)/g, "\\n$1")
-      .replace(/\\n{2,}/g, "\\n")
-      .trim();
-  }
+    function normalizeMarkdown(md) {
+      return md
+        .replace(/\r/g, "\n")
+        .replace(/---/g, "\n---\n")
+        .replace(/(###\s+)/g, "\n$1")
+        .replace(/(-\s*파일명:)/g, "\n$1")
+        .replace(/(-\s*용도:)/g, "\n$1")
+        .replace(/(-\s*태그:)/g, "\n$1")
+        .replace(/\n{2,}/g, "\n")
+        .trim();
+    }
 
-  function parseMarkdown(md) {
-    const normalized = normalizeMarkdown(md);
-    const blocks = normalized.split(/\\n(?=###\\s+)/);
-    const items = [];
+    function parseMarkdown(md) {
+      const normalized = normalizeMarkdown(md);
+      const blocks = normalized.split(/\n(?=###\s+)/);
+      const items = [];
 
-    for (const block of blocks) {
-      const titleMatch = block.match(/###\\s+(.+)/);
-      const fileMatch = block.match(/-\\s*파일명:\\s*(.+)/);
-      const purposeMatch = block.match(/-\\s*용도:\\s*(.+)/);
-      const tagMatch = block.match(/-\\s*태그:\\s*(.+)/);
+      for (const block of blocks) {
+        const titleMatch = block.match(/###\s+(.+)/);
+        const fileMatch = block.match(/-\s*파일명:\s*(.+)/);
+        const purposeMatch = block.match(/-\s*용도:\s*(.+)/);
+        const tagMatch = block.match(/-\s*태그:\s*(.+)/);
 
-      if (!titleMatch || !fileMatch) continue;
+        if (!titleMatch || !fileMatch) {
+          continue;
+        }
 
-      const title = titleMatch[1].trim();
-      const filename = fileMatch[1].trim();
-      const purpose = purposeMatch ? purposeMatch[1].trim() : "";
-      const tags = tagMatch
-        ? tagMatch[1].split(",").map(v => v.trim()).filter(Boolean)
-        : [];
+        const title = titleMatch[1].trim();
+        const filename = fileMatch[1].trim();
+        const purpose = purposeMatch ? purposeMatch[1].trim() : "";
+        const tags = tagMatch
+          ? tagMatch[1]
+              .split(",")
+              .map((value) => value.trim())
+              .filter(Boolean)
+          : [];
 
-      if (title && filename && filename !== "new-page.html") {
-        items.push({ title, filename, purpose, tags });
+        if (title && filename && filename !== "new-page.html") {
+          items.push({
+            title,
+            file: filename,
+            purpose,
+            tags,
+          });
+        }
+      }
+
+      return items;
+    }
+
+    function render(items) {
+      const app = document.getElementById("app");
+
+      if (!items.length) {
+        app.innerHTML = `
+          <div class="empty">
+            데이터가 없습니다.<br />
+            README.md 안의 카드 형식을 확인해 주세요.
+          </div>
+        `;
+        return;
+      }
+
+      app.innerHTML = `
+        <div class="list">
+          ${items
+            .map(
+              (item) => `
+                <a class="list-item" href="${item.file}">
+                  <div class="title-line">
+                    <span class="main-title">${escapeHtml(item.title)}</span>
+                    ${
+                      item.purpose
+                        ? `<span class="sub-title">${escapeHtml(item.purpose)}</span>`
+                        : ""
+                    }
+                  </div>
+
+                  ${
+                    item.tags.length
+                      ? `
+                        <div class="tags">
+                          ${item.tags
+                            .map(
+                              (tag) => `<span class="tag">${escapeHtml(tag)}</span>`
+                            )
+                            .join("")}
+                        </div>
+                      `
+                      : ""
+                  }
+                </a>
+              `
+            )
+            .join("")}
+        </div>
+      `;
+    }
+
+    async function init() {
+      const app = document.getElementById("app");
+
+      try {
+        const response = await fetch(`${RAW_MD_URL}?v=${Date.now()}`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error(`README.md를 불러오지 못했습니다. (${response.status})`);
+        }
+
+        const markdown = await response.text();
+        const items = parseMarkdown(markdown);
+        render(items);
+      } catch (error) {
+        app.innerHTML = `
+          <div class="error">
+            <strong>목록을 불러오지 못했습니다.</strong><br />
+            ${escapeHtml(error.message)}
+          </div>
+        `;
       }
     }
 
-    return items;
-  }
-
-  function render(items) {
-    const app = document.getElementById("app");
-
-    if (!items.length) {
-      app.innerHTML = `
-        <div class="empty">
-          표시할 항목이 없습니다.<br>
-          README.md 안에 카드 항목이 있는지 확인해 주세요.
-        </div>
-      `;
-      return;
-    }
-
-    app.innerHTML = `
-      <div class="list">
-        ${items.map(item => `
-          <a class="list-item" href="${encodeURI(item.filename)}">
-            <div class="title-line">
-              <span class="main-title">${escapeHtml(item.title)}</span>
-              ${item.purpose ? `<span class="sub-title">${escapeHtml(item.purpose)}</span>` : ""}
-            </div>
-            ${item.tags.length ? `
-              <div class="tags">
-                ${item.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
-              </div>
-            ` : ""}
-          </a>
-        `).join("")}
-      </div>
-    `;
-  }
-
-  async function fetchMarkdown() {
-    try {
-      const rawRes = await fetch(RAW_MD_URL + `?v=${Date.now()}`, { cache: "no-store" });
-      if (rawRes.ok) return await rawRes.text();
-    } catch (e) {}
-
-    const localRes = await fetch(LOCAL_MD_URL + `?v=${Date.now()}`, { cache: "no-store" });
-    if (!localRes.ok) {
-      throw new Error(`README.md를 불러오지 못했습니다. (${localRes.status})`);
-    }
-    return await localRes.text();
-  }
-
-  async function init() {
-    const app = document.getElementById("app");
-
-    try {
-      const md = await fetchMarkdown();
-      const items = parseMarkdown(md);
-      render(items);
-    } catch (error) {
-      app.innerHTML = `
-        <div class="error">
-          <strong>목록을 불러오지 못했습니다.</strong><br>
-          ${escapeHtml(error.message)}
-        </div>
-      `;
-    }
-  }
-
-  init();
-</script>
+    init();
+  </script>
 </body>
 </html>
