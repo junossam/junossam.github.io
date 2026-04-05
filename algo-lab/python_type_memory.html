@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>자료형 메모리 애니메이션</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f5f7fb;
+    color: #1f2937;
+  }
+  .wrap {
+    max-width: 980px;
+    margin: 28px auto;
+    padding: 20px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+  }
+  h1 {
+    margin: 0 0 10px;
+    font-size: 30px;
+  }
+  .desc {
+    color: #4b5563;
+    line-height: 1.7;
+    margin-bottom: 22px;
+  }
+  .controls {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+  .input-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  select, input, button {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    font-size: 16px;
+    background: white;
+  }
+  button {
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .hint {
+    margin-top: 10px;
+    color: #6b7280;
+    line-height: 1.6;
+    font-size: 14px;
+  }
+  .examples {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+  .example-btn {
+    width: auto;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 14px;
+  }
+  .error {
+    display: none;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    line-height: 1.6;
+  }
+  .grid {
+    margin-top: 22px;
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 18px;
+  }
+  .panel {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 18px;
+  }
+  .panel h2 {
+    margin: 0 0 12px;
+    font-size: 22px;
+  }
+  .memory-rack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 180px;
+    align-content: flex-start;
+  }
+  .cell {
+    width: 58px;
+    height: 72px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    background: #eef2ff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: Consolas, monospace;
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+    animation: stackIn 0.38s ease forwards;
+  }
+  .cell .top {
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 6px;
+  }
+  .cell .main {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+  }
+  .cell .sub {
+    font-size: 10px;
+    color: #475569;
+    margin-top: 5px;
+  }
+  .cell.one { background: #dcfce7; }
+  .cell.zero { background: #e0e7ff; }
+  .cell.byte2 { background: #fde68a; }
+  .cell.byte3 { background: #bfdbfe; }
+  .cell.byte4 { background: #fecaca; }
+  .cell.sign { background: #f3e8ff; }
+  .cell.exp { background: #fef3c7; }
+  .cell.mant { background: #ccfbf1; }
+  .cell.char { background: #dbeafe; }
+
+  .cell.char2 { background: #ede9fe; }
+  .cell.char3 { background: #fce7f3; }
+  .cell.char4 { background: #fef9c3; }
+  .cell.char5 { background: #e0f2fe; }
+  .cell.bool { background: #fee2e2; }
+  .legend {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 6px 10px;
+  }
+  .swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  .sw-zero { background: #e0e7ff; }
+  .sw-one { background: #dcfce7; }
+  .sw-sign { background: #f3e8ff; }
+  .sw-exp { background: #fef3c7; }
+  .sw-mant { background: #ccfbf1; }
+  .sw-char { background: #dbeafe; }
+  .sw-bool { background: #fee2e2; }
+  .summary {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px;
+    line-height: 1.7;
+    margin-top: 14px;
+  }
+  .mono {
+    font-family: Consolas, monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .info-item {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .k {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 6px;
+  }
+  .v {
+    font-size: 16px;
+    font-weight: 700;
+    word-break: break-word;
+  }
+  @keyframes stackIn {
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  @media (max-width: 820px) {
+    .controls, .grid, .info {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>자료형 메모리 애니메이션</h1>
+    <p class="desc">
+      같은 입력값이라도 자료형이 다르면 메모리에 저장되는 모양이 달라집니다.
+      아래에서 값을 입력한 뒤 <strong>메모리 쌓기</strong>를 누르면, 저장 칸이 차례대로 쌓이는 모습을 볼 수 있습니다.
+    </p>
+
+    <div class="controls">
+      <div>
+        <label for="typeSelect">자료형</label>
+        <select id="typeSelect">
+          <option value="int">정수 (int)</option>
+          <option value="float">실수 (float)</option>
+          <option value="str">문자열 (str)</option>
+          <option value="bool">부울 (bool)</option>
+        </select>
+      </div>
+      <div>
+        <label for="valueInput">값</label>
+        <div class="input-wrap">
+          <input id="valueInput" type="text" value="10" />
+          <div class="hint" id="hintText"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="examples" id="examples"></div>
+    <div class="error" id="errorBox"></div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2>메모리 칸</h2>
+        <div id="memoryRack" class="memory-rack"></div>
+        <div id="legend" class="legend"></div>
+      </div>
+
+      <div class="panel">
+        <h2>설명</h2>
+        <div id="summary" class="summary"></div>
+        <div id="info" class="info"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const typeSelect = document.getElementById("typeSelect");
+const valueInput = document.getElementById("valueInput");
+const hintText = document.getElementById("hintText");
+const examples = document.getElementById("examples");
+const errorBox = document.getElementById("errorBox");
+const memoryRack = document.getElementById("memoryRack");
+const legend = document.getElementById("legend");
+const summary = document.getElementById("summary");
+const info = document.getElementById("info");
+
+const config = {
+  int: {
+    defaultValue: "10",
+    hint: "정수를 입력하세요. 예: 10, -7",
+    samples: ["10", "-7", "25", "0", "127"]
+  },
+  float: {
+    defaultValue: "10.5",
+    hint: "실수를 입력하세요. 예: 10.5, 0.1",
+    samples: ["10.5", "0.1", "-3.25", "3.14", "100.01"]
+  },
+  str: {
+    defaultValue: "ABC",
+    hint: "문자열을 입력하세요. 영어, 숫자, 기호, 한글 모두 가능합니다. 예: ABC, A7!, 안녕",
+    samples: ["ABC", "A7!", "안녕", "가", "Hello!"]
+  },
+  bool: {
+    defaultValue: "True",
+    hint: "True, False, 1, 0 중 하나를 입력하세요.",
+    samples: ["True", "False"]
+  }
+};
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function unsignedBits(n, width = 8) {
+  let bits = n.toString(2);
+  if (bits.length > width) width = bits.length;
+  return bits.padStart(width, "0");
+}
+
+function twosComplement(n, width = 8) {
+  const max = 2 ** width;
+  return (max + n).toString(2).slice(-width).padStart(width, "0");
+}
+
+function float64Bits(num) {
+  const buffer = new ArrayBuffer(8);
+  const dv = new DataView(buffer);
+  dv.setFloat64(0, num, false);
+  let out = "";
+  for (let i = 0; i < 8; i++) {
+    out += dv.getUint8(i).toString(2).padStart(8, "0");
+  }
+  return out;
+}
+
+function parseBool(raw) {
+  const s = raw.trim();
+  if (s === "True" || s === "1") return { text: "True", bit: "1" };
+  if (s === "False" || s === "0" || s === "") return { text: "False", bit: "0" };
+  throw new Error("부울은 True, False, 1, 0만 입력할 수 있습니다.");
+}
+
+function makeCell(top, main, sub, cls, delay) {
+  const div = document.createElement("div");
+  div.className = "cell " + cls;
+  div.style.animationDelay = delay + "ms";
+  div.innerHTML = `
+    <div class="top">${top}</div>
+    <div class="main">${main}</div>
+    <div class="sub">${sub}</div>
+  `;
+  return div;
+}
+
+function renderExamples(type) {
+  examples.innerHTML = "";
+  config[type].samples.forEach(sample => {
+    const btn = document.createElement("button");
+    btn.className = "example-btn";
+    btn.textContent = sample;
+    btn.addEventListener("click", () => {
+      valueInput.value = sample;
+      render();
+    });
+    examples.appendChild(btn);
+  });
+}
+
+function renderLegend(items) {
+  legend.innerHTML = items.map(item => `
+    <div class="legend-item">
+      <span class="swatch ${item.swatch}"></span>${item.text}
+    </div>
+  `).join("");
+}
+
+function renderInfo(items) {
+  info.innerHTML = items.map(([k, v]) => `
+    <div class="info-item">
+      <div class="k">${escapeHtml(k)}</div>
+      <div class="v">${escapeHtml(v)}</div>
+    </div>
+  `).join("");
+}
+
+function buildIntView(raw) {
+  if (!/^[-+]?\d+$/.test(raw.trim())) {
+    throw new Error("정수는 소수점 없는 숫자만 입력할 수 있습니다.");
+  }
+  const n = Number(raw.trim());
+
+  function chooseByteWidth(num) {
+    if (num >= 0) {
+      if (num <= 255) return 8;
+      if (num <= 65535) return 16;
+      if (num <= 4294967295) return 32;
+      return Math.ceil(num.toString(2).length / 8) * 8;
+    } else {
+      if (num >= -128) return 8;
+      if (num >= -32768) return 16;
+      if (num >= -2147483648) return 32;
+      const absBits = Math.ceil((Math.abs(num) + 1).toString(2).length / 8) * 8;
+      return Math.max(8, absBits);
+    }
+  }
+
+  const width = chooseByteWidth(n);
+  const bits = n >= 0 ? unsignedBits(n, width) : twosComplement(n, width);
+  const byteClasses = ["one","byte2","byte3","byte4"];
+  const cells = [...bits].map((b, i) => {
+    const byteIndex = Math.floor(i / 8);
+    const cls = byteClasses[byteIndex % byteClasses.length];
+    return makeCell("bit" + i, b, "", cls, i * 70);
+  });
+  return {
+    cells,
+    legend: [
+      { swatch: "sw-one", text: "1 비트" },
+      { swatch: "sw-zero", text: "0 비트" }
+    ],
+    summary: `
+      <strong>정수</strong>는 숫자를 2진수로 바꾸어 저장합니다.<br>
+      입력한 값 <strong>${n}</strong>은 <span class="mono">${bits}</span> 형태로 설명할 수 있습니다.<br>
+      이 페이지에서는 <strong>8비트(1바이트) 단위</strong>로 묶어서 보여줍니다.
+      음수는 보통 2의 보수 방식으로 표현합니다.
+    `,
+    info: [
+      ["입력값", n],
+      ["2진수", bits],
+      ["공간 예시", width + "비트 (" + (width / 8) + "바이트)"],
+      ["핵심", "숫자를 2진수로 저장"]
+    ]
+  };
+}
+
+function buildFloatView(raw) {
+  if (raw.trim() === "" || Number.isNaN(Number(raw.trim()))) {
+    throw new Error("실수는 숫자 형태로 입력해야 합니다.");
+  }
+  const n = Number(raw.trim());
+  const bits = float64Bits(n);
+  const sign = bits.slice(0, 1);
+  const exp = bits.slice(1, 12);
+  const mant = bits.slice(12);
+
+  const cells = [];
+  [...sign].forEach((b, i) => cells.push(makeCell("sign", b, "", "sign", i * 50)));
+  [...exp].forEach((b, i) => cells.push(makeCell("exp", b, "", "exp", (i + 1) * 50)));
+  [...mant].forEach((b, i) => cells.push(makeCell("mant", b, "", "mant", (i + 12) * 35)));
+
+  return {
+    cells,
+    legend: [
+      { swatch: "sw-sign", text: "부호" },
+      { swatch: "sw-exp", text: "지수" },
+      { swatch: "sw-mant", text: "가수" }
+    ],
+    summary: `
+      <strong>실수</strong>는 정수처럼 단순하지 않고, <strong>부호 + 지수 + 가수</strong> 구조로 저장합니다.<br>
+      그래서 소수를 표현할 수 있지만, 어떤 값은 정확한 값이 아니라 <strong>가까운 근사값</strong>으로 저장됩니다.
+    `,
+    info: [
+      ["입력값", n],
+      ["부호", sign],
+      ["지수", exp],
+      ["가수", mant],
+      ["공간 예시", "64비트"]
+    ]
+  };
+}
+
+function buildStringView(raw) {
+  if (raw.length === 0) {
+    throw new Error("문자열은 한 글자 이상 입력해 주세요.");
+  }
+  const cells = [];
+  const infos = [];
+  let delay = 0;
+
+  const charClasses = ["char", "char2", "char3", "char4", "char5"];
+
+  for (let idx = 0; idx < raw.length; idx++) {
+    const ch = raw[idx];
+    const codePoint = ch.codePointAt(0);
+    let bits = codePoint.toString(2);
+    let width = 8;
+    if (codePoint > 255) width = 16;
+    if (codePoint > 65535) width = 21;
+    bits = bits.padStart(width, "0");
+
+    infos.push([`문자 ${idx + 1}`, `'${ch}' → ${codePoint}`]);
+
+    const charClass = charClasses[idx % charClasses.length];
+    [...bits].forEach((b, i) => {
+      cells.push(makeCell(ch, b, String(codePoint), charClass, delay + i * 45));
+    });
+    delay += bits.length * 45 + 120;
+  }
+
+  return {
+    cells,
+    legend: [
+      { swatch: "sw-char", text: "문자별로 배경색 구분" }
+    ],
+    summary: `
+      <strong>문자열</strong>은 한 덩어리로 저장되는 것이 아니라, <strong>문자 하나씩</strong> 코드값으로 바뀌어 저장됩니다.<br>
+      영어뿐 아니라 <strong>한글도 유니코드 코드값</strong>으로 저장됩니다.<br>
+      즉, 문자열 <strong>${escapeHtml(raw)}</strong>는 각 문자의 코드가 차례대로 메모리에 쌓이는 모습으로 이해할 수 있습니다.
+    `,
+    info: [
+      ["입력값", raw],
+      ["문자 수", raw.length],
+      ["핵심", "문자열 = 문자들의 코드 집합"],
+      ["저장 방식", "각 문자를 유니코드 코드로 바꾸어 저장"]
+    ].concat(infos.slice(0, 4))
+  };
+}
+
+function buildBoolView(raw) {
+  const data = parseBool(raw);
+  const cells = [makeCell("bool", data.bit, data.text, "bool", 0)];
+  return {
+    cells,
+    legend: [
+      { swatch: "sw-bool", text: "참/거짓 비트" }
+    ],
+    summary: `
+      <strong>부울</strong>은 참(True)과 거짓(False)만 구분하면 됩니다.<br>
+      교육용으로는 <strong>1 = True, 0 = False</strong>로 설명하는 것이 가장 쉽습니다.
+    `,
+    info: [
+      ["입력값", data.text],
+      ["개념적 저장값", data.bit],
+      ["공간 설명", "1비트 개념"],
+      ["핵심", "참/거짓만 저장"]
+    ]
+  };
+}
+
+function getView(type, raw) {
+  if (type === "int") return buildIntView(raw);
+  if (type === "float") return buildFloatView(raw);
+  if (type === "str") return buildStringView(raw);
+  return buildBoolView(raw);
+}
+
+function render() {
+  const type = typeSelect.value;
+  hintText.textContent = config[type].hint;
+  renderExamples(type);
+
+  try {
+    errorBox.style.display = "none";
+    errorBox.textContent = "";
+
+    const view = getView(type, valueInput.value);
+    memoryRack.innerHTML = "";
+    view.cells.forEach(cell => memoryRack.appendChild(cell));
+    renderLegend(view.legend);
+    summary.innerHTML = view.summary;
+    renderInfo(view.info);
+  } catch (e) {
+    memoryRack.innerHTML = "";
+    legend.innerHTML = "";
+    summary.innerHTML = "입력 형식을 확인해 주세요.";
+    info.innerHTML = "";
+    errorBox.textContent = e.message;
+    errorBox.style.display = "block";
+  }
+}
+
+typeSelect.addEventListener("change", () => {
+  render();
+});
+valueInput.addEventListener("input", render);
+
+render();
+</script>
+</body>
+</html>
