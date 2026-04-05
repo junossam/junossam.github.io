@@ -114,8 +114,7 @@
     font-weight: 600;
   }
 
-  .empty,
-  .error {
+  .empty, .error {
     background: white;
     border: 1px solid #e5e7eb;
     border-radius: 18px;
@@ -149,8 +148,8 @@
       <div class="brand-text">Junossam</div>
     </div>
 
-    <h1 id="pageTitle">알고리즘 실습실</h1>
-    <div class="page-desc" id="pageDesc">탐색과 정렬 알고리즘을 직접 만들고 비교해보는 공간</div>
+    <h1>알고리즘 실습실</h1>
+    <div class="page-desc">탐색과 정렬 알고리즘을 직접 만들고 비교해보는 공간</div>
 
     <div id="app">
       <div class="empty">목록을 불러오는 중입니다.</div>
@@ -163,11 +162,7 @@
   </div>
 
 <script>
-  const REPO_OWNER = "junossam";
-  const REPO_NAME = "junossam.github.io";
-  const REPO_BRANCH = "main";
-  const FOLDER_PATH = "algo-lab";
-  const RAW_MD_URL = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}/${FOLDER_PATH}/README.md`;
+  const RAW_MD_URL = "https://raw.githubusercontent.com/junossam/junossam.github.io/main/algo-lab/README.md";
   const LOCAL_MD_URL = "README.md";
 
   function escapeHtml(text) {
@@ -179,54 +174,44 @@
       .replace(/'/g, "&#039;");
   }
 
+  function normalizeMarkdown(md) {
+    return md
+      .replace(/\r/g, "\n")
+      .replace(/---/g, "\n---\n")
+      .replace(/(###\s+)/g, "\n$1")
+      .replace(/(-\s*파일명:)/g, "\n$1")
+      .replace(/(-\s*용도:)/g, "\n$1")
+      .replace(/(-\s*태그:)/g, "\n$1")
+      .replace(/\n{2,}/g, "\n")
+      .trim();
+  }
+
   function parseMarkdown(md) {
-    const lines = md.split(/\\r?\\n/);
+    const normalized = normalizeMarkdown(md);
+    const blocks = normalized.split(/\n(?=###\s+)/);
     const items = [];
-    let current = null;
 
-    for (const rawLine of lines) {
-      const line = rawLine.trim();
-      if (!line) continue;
+    for (const block of blocks) {
+      const titleMatch = block.match(/###\s+(.+)/);
+      const fileMatch = block.match(/-\s*파일명:\s*(.+)/);
+      const purposeMatch = block.match(/-\s*용도:\s*(.+)/);
+      const tagMatch = block.match(/-\s*태그:\s*(.+)/);
 
-      if (line.startsWith("### ")) {
-        if (current && current.title && current.filename) {
-          items.push(current);
-        }
-        current = {
-          title: line.slice(4).trim(),
-          filename: "",
-          purpose: "",
-          tags: []
-        };
-        continue;
-      }
+      if (!titleMatch || !fileMatch) continue;
 
-      if (!current) continue;
+      const title = titleMatch[1].trim();
+      const filename = fileMatch[1].trim();
+      const purpose = purposeMatch ? purposeMatch[1].trim() : "";
+      const tags = tagMatch
+        ? tagMatch[1].split(",").map(v => v.trim()).filter(Boolean)
+        : [];
 
-      if (line.startsWith("- 파일명:")) {
-        current.filename = line.replace("- 파일명:", "").trim();
-        continue;
-      }
-
-      if (line.startsWith("- 용도:")) {
-        current.purpose = line.replace("- 용도:", "").trim();
-        continue;
-      }
-
-      if (line.startsWith("- 태그:")) {
-        current.tags = line
-          .replace("- 태그:", "")
-          .split(",")
-          .map(v => v.trim())
-          .filter(Boolean);
+      if (title && filename) {
+        items.push({ title, filename, purpose, tags });
       }
     }
 
-    if (current && current.title && current.filename) {
-      items.push(current);
-    }
-
-    return items;
+    return items.filter(item => item.filename !== "new-page.html");
   }
 
   function render(items) {
@@ -236,7 +221,7 @@
       app.innerHTML = `
         <div class="empty">
           표시할 항목이 없습니다.<br>
-          README.md 안에 <strong>### 제목</strong>, <strong>- 파일명:</strong>, <strong>- 용도:</strong> 형식의 블록이 있는지 확인해 주세요.
+          README.md 안에 카드 항목이 있는지 확인해 주세요.
         </div>
       `;
       return;
@@ -248,7 +233,7 @@
           <a class="list-item" href="${encodeURI(item.filename)}">
             <div class="title-line">
               <span class="main-title">${escapeHtml(item.title)}</span>
-              <span class="sub-title">${escapeHtml(item.purpose || "")}</span>
+              ${item.purpose ? `<span class="sub-title">${escapeHtml(item.purpose)}</span>` : ""}
             </div>
 
             ${item.tags.length ? `
