@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Algorithm Lab</title>
-
 <style>
   * { box-sizing: border-box; }
 
@@ -21,7 +20,6 @@
     padding: 40px 20px;
   }
 
-  /* 🔥 로고 영역 */
   .brand {
     display: flex;
     align-items: center;
@@ -54,7 +52,6 @@
     line-height: 1.6;
   }
 
-  /* 리스트 */
   .list {
     display: flex;
     flex-direction: column;
@@ -82,11 +79,13 @@
     gap: 10px;
     align-items: baseline;
     flex-wrap: wrap;
+    line-height: 1.5;
   }
 
   .main-title {
     font-size: 19px;
     font-weight: 800;
+    color: #111827;
   }
 
   .sub-title {
@@ -115,7 +114,8 @@
     font-weight: 600;
   }
 
-  .empty, .error {
+  .empty,
+  .error {
     background: white;
     border: 1px solid #e5e7eb;
     border-radius: 18px;
@@ -133,121 +133,168 @@
     border-top: 1px solid #e5e7eb;
     line-height: 1.7;
   }
+
+  @media (max-width: 640px) {
+    h1 { font-size: 28px; }
+    .main-title { font-size: 17px; }
+    .sub-title { font-size: 12px; }
+    .list-item { padding: 18px; }
+  }
 </style>
 </head>
-
 <body>
-<div class="wrap">
+  <div class="wrap">
+    <div class="brand">
+      <img src="logo.png" class="logo" alt="Junossam 로고">
+      <div class="brand-text">Junossam</div>
+    </div>
 
-  <!-- 🔥 로고 -->
-  <div class="brand">
-    <img src="logo.png" class="logo" alt="Junossam 로고">
-    <div class="brand-text">Junossam</div>
+    <h1 id="pageTitle">알고리즘 실습실</h1>
+    <div class="page-desc" id="pageDesc">탐색과 정렬 알고리즘을 직접 만들고 비교해보는 공간</div>
+
+    <div id="app">
+      <div class="empty">목록을 불러오는 중입니다.</div>
+    </div>
+
+    <div class="copyright">
+      <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong><br>
+      본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
+    </div>
   </div>
-
-  <h1 id="pageTitle">알고리즘 실습실</h1>
-  <div class="page-desc" id="pageDesc">불러오는 중...</div>
-
-  <div id="app">
-    <div class="empty">목록을 불러오는 중입니다.</div>
-  </div>
-
-  <div class="copyright">
-    <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong><br>
-    본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
-  </div>
-
-</div>
 
 <script>
-const DATA_FILE = "README.md";
+  const REPO_OWNER = "junossam";
+  const REPO_NAME = "junossam.github.io";
+  const REPO_BRANCH = "main";
+  const FOLDER_PATH = "algo-lab";
+  const RAW_MD_URL = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}/${FOLDER_PATH}/README.md`;
+  const LOCAL_MD_URL = "README.md";
 
-function escapeHtml(text) {
-  return String(text ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
+  function escapeHtml(text) {
+    return String(text ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 
-function parseMarkdown(md) {
-  const lines = md.split(/\\r?\\n/);
+  function parseMarkdown(md) {
+    const lines = md.split(/\\r?\\n/);
+    const items = [];
+    let current = null;
 
-  let pageTitle = "알고리즘 실습실";
-  let pageDesc = "";
-  const items = [];
-  let current = null;
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line) continue;
 
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (!line) continue;
+      if (line.startsWith("### ")) {
+        if (current && current.title && current.filename) {
+          items.push(current);
+        }
+        current = {
+          title: line.slice(4).trim(),
+          filename: "",
+          purpose: "",
+          tags: []
+        };
+        continue;
+      }
 
-    if (line.startsWith("# ")) {
-      pageTitle = line.slice(2);
-      continue;
+      if (!current) continue;
+
+      if (line.startsWith("- 파일명:")) {
+        current.filename = line.replace("- 파일명:", "").trim();
+        continue;
+      }
+
+      if (line.startsWith("- 용도:")) {
+        current.purpose = line.replace("- 용도:", "").trim();
+        continue;
+      }
+
+      if (line.startsWith("- 태그:")) {
+        current.tags = line
+          .replace("- 태그:", "")
+          .split(",")
+          .map(v => v.trim())
+          .filter(Boolean);
+      }
     }
 
-    if (line.startsWith("> ")) {
-      pageDesc = line.slice(2);
-      continue;
+    if (current && current.title && current.filename) {
+      items.push(current);
     }
 
-    if (line.startsWith("### ")) {
-      if (current && current.filename) items.push(current);
-      current = { title: line.slice(4), filename: "", purpose: "", tags: [] };
-      continue;
+    return items;
+  }
+
+  function render(items) {
+    const app = document.getElementById("app");
+
+    if (!items.length) {
+      app.innerHTML = `
+        <div class="empty">
+          표시할 항목이 없습니다.<br>
+          README.md 안에 <strong>### 제목</strong>, <strong>- 파일명:</strong>, <strong>- 용도:</strong> 형식의 블록이 있는지 확인해 주세요.
+        </div>
+      `;
+      return;
     }
 
-    if (!current) continue;
+    app.innerHTML = `
+      <div class="list">
+        ${items.map(item => `
+          <a class="list-item" href="${encodeURI(item.filename)}">
+            <div class="title-line">
+              <span class="main-title">${escapeHtml(item.title)}</span>
+              <span class="sub-title">${escapeHtml(item.purpose || "")}</span>
+            </div>
 
-    if (line.startsWith("- 파일명:")) {
-      current.filename = line.replace("- 파일명:", "").trim();
+            ${item.tags.length ? `
+              <div class="tags">
+                ${item.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
+              </div>
+            ` : ""}
+          </a>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  async function fetchMarkdown() {
+    try {
+      const rawRes = await fetch(RAW_MD_URL + `?v=${Date.now()}`, { cache: "no-store" });
+      if (rawRes.ok) {
+        return await rawRes.text();
+      }
+    } catch (e) {}
+
+    const localRes = await fetch(LOCAL_MD_URL + `?v=${Date.now()}`, { cache: "no-store" });
+    if (!localRes.ok) {
+      throw new Error(`README.md를 불러오지 못했습니다. (${localRes.status})`);
     }
+    return await localRes.text();
+  }
 
-    if (line.startsWith("- 용도:")) {
-      current.purpose = line.replace("- 용도:", "").trim();
-    }
+  async function init() {
+    const app = document.getElementById("app");
 
-    if (line.startsWith("- 태그:")) {
-      current.tags = line.replace("- 태그:", "").split(",").map(t => t.trim());
+    try {
+      const md = await fetchMarkdown();
+      const items = parseMarkdown(md);
+      render(items);
+    } catch (error) {
+      app.innerHTML = `
+        <div class="error">
+          <strong>목록을 불러오지 못했습니다.</strong><br>
+          ${escapeHtml(error.message)}
+        </div>
+      `;
     }
   }
 
-  if (current && current.filename) items.push(current);
-
-  return { pageTitle, pageDesc, items };
-}
-
-function render(data) {
-  document.getElementById("pageTitle").textContent = data.pageTitle;
-  document.getElementById("pageDesc").textContent = data.pageDesc;
-
-  const app = document.getElementById("app");
-
-  app.innerHTML = `
-    <div class="list">
-      ${data.items.map(item => `
-        <a class="list-item" href="${item.filename}">
-          <div class="title-line">
-            <span class="main-title">${escapeHtml(item.title)}</span>
-            <span class="sub-title">${escapeHtml(item.purpose)}</span>
-          </div>
-
-          <div class="tags">
-            ${item.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
-          </div>
-        </a>
-      `).join("")}
-    </div>
-  `;
-}
-
-fetch(DATA_FILE)
-  .then(res => res.text())
-  .then(md => render(parseMarkdown(md)))
-  .catch(() => {
-    document.getElementById("app").innerHTML = "README.md를 불러올 수 없습니다.";
-  });
+  init();
 </script>
-
 </body>
 </html>
