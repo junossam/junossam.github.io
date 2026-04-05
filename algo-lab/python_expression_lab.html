@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>파이썬식 연산 테스트 페이지</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fb; color: #1f2937; }
+    .wrap { max-width: 1120px; margin: 28px auto; padding: 20px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 18px; padding: 22px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); }
+    h1 { margin: 0 0 10px; font-size: 30px; }
+    .desc { margin: 0 0 18px; color: #4b5563; line-height: 1.7; }
+    .panel { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 16px; padding: 16px; margin-top: 16px; }
+    .panel h2 { margin: 0 0 12px; font-size: 22px; }
+    .grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 18px; margin-top: 18px; }
+
+    .drop-zone {
+      min-height: 120px; border: 2px dashed #94a3b8; border-radius: 16px; background: #fff;
+      padding: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-content: flex-start;
+    }
+    .drop-zone.drag-over { background: #eff6ff; border-color: #3b82f6; }
+
+    .token, .maker {
+      border: 1px solid #cbd5e1; border-radius: 12px; padding: 10px 14px; background: white;
+      user-select: none; font-weight: 700;
+    }
+    .maker { cursor: pointer; text-align: center; }
+    .token { display: inline-flex; align-items: center; gap: 8px; cursor: grab; }
+    .token .x { color: #b91c1c; cursor: pointer; font-weight: 700; }
+
+    .value-token {
+      display: inline-flex; align-items: center; gap: 4px; background: #ffffff;
+      border: 1px solid #cbd5e1; border-radius: 12px; padding: 8px 10px; cursor: grab;
+    }
+    .value-token input {
+      width: 88px; min-width: 88px; max-width: 170px;
+      border: none; outline: none; background: transparent; font-size: 16px;
+      text-align: center; padding: 4px 2px;
+    }
+    .string-wrap {
+      display: inline-flex; align-items: center; gap: 2px; color: #1d4ed8; font-weight: 700;
+    }
+    .string-wrap input {
+      width: 92px; min-width: 92px; max-width: 170px;
+      border: none; outline: none; background: #eff6ff; border-radius: 8px;
+      padding: 4px 6px; text-align: center; font-size: 16px;
+    }
+
+    label { display: block; font-weight: 700; margin-bottom: 8px; }
+    button {
+      width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 12px;
+      font-size: 16px; background: white; cursor: pointer; font-weight: 700;
+    }
+    .btn-row { display: flex; gap: 10px; margin-top: 10px; }
+    .maker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 10px; }
+
+    .code-wrap { position: relative; }
+    .code, .result, .error {
+      margin-top: 14px; border-radius: 14px; padding: 16px; font-family: Consolas, monospace;
+      white-space: pre-wrap; word-break: break-word; line-height: 1.7;
+    }
+    .code { background: #0f172a; color: #e5e7eb; }
+    .result { background: #f8fafc; border: 1px solid #e5e7eb; min-height: 90px; }
+    .error { display: none; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+
+    .hint { color: #6b7280; font-size: 14px; line-height: 1.6; margin-top: 8px; }
+    .note {
+      background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a;
+      border-radius: 12px; padding: 12px 14px; margin-top: 12px; line-height: 1.6; font-size: 14px;
+    }
+    .insert-marker { width: 6px; min-height: 42px; background: #3b82f6; border-radius: 999px; align-self: stretch; }
+
+    .copy-icon {
+      position: absolute; top: 10px; right: 10px; width: 42px; height: 42px; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px; z-index: 2;
+    }
+    .copy-icon:hover { background: rgba(255,255,255,0.16); }
+    .copy-squares { position: relative; width: 22px; height: 22px; display: inline-block; }
+    .copy-squares span {
+      position: absolute; width: 16px; height: 16px; border: 2.5px solid #f3f4f6;
+      border-radius: 5px; background: transparent;
+    }
+    .copy-squares span:first-child { left: 2px; top: 8px; }
+    .copy-squares span:last-child { left: 9px; top: 2px; }
+
+    .flow-link-btn {
+      width: auto; margin-top: 14px; padding: 10px 14px; border-radius: 10px;
+      border: 1px solid #cbd5e1; background: #ffffff; color: #1f2937; cursor: pointer; font-weight: 700;
+    }
+    .flow-link-btn:hover { background: #f8fafc; }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5);
+      display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal {
+      width: min(760px, calc(100vw - 32px)); background: white; border-radius: 18px;
+      border: 1px solid #e5e7eb; box-shadow: 0 20px 60px rgba(0,0,0,0.2); padding: 20px;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .modal-title { font-size: 22px; font-weight: 700; }
+    .close-btn { width: auto; padding: 8px 12px; border-radius: 10px; }
+    .step-box {
+      margin-top: 16px; background: #0f172a; color: #e5e7eb; border-radius: 14px; padding: 18px;
+      min-height: 110px; font-family: Consolas, monospace; line-height: 1.9; font-size: 20px;
+    }
+    .hl-group {
+      display: inline-block; padding: 0 6px; border: 2px solid #f59e0b;
+      border-radius: 8px; background: rgba(245,158,11,0.15);
+    }
+    .modal-desc {
+      margin-top: 14px; background: #f8fafc; border: 1px solid #e5e7eb;
+      border-radius: 12px; padding: 14px; line-height: 1.7;
+    }
+    .step-count { margin-top: 10px; color: #64748b; font-size: 14px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .modal-actions button { width: auto; min-width: 96px; }
+
+    @media (max-width: 860px) {
+      .grid, .maker-grid { grid-template-columns: 1fr; }
+      .btn-row, .modal-actions { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>파이썬식 연산 테스트 페이지</h1>
+      <p class="desc">숫자 빈칸과 문자열 빈칸을 식 안에 넣고, 연산 기호를 조합해서 파이썬식 계산을 확인할 수 있습니다.</p>
+
+      <div class="panel">
+        <h2>식 만들기</h2>
+        <div id="dropZone" class="drop-zone"><div class="hint">버튼을 눌러 빈칸을 추가하거나, 연산 기호를 클릭/드래그하세요</div></div>
+        <div class="btn-row">
+          <button id="runBtn">실행</button>
+          <button id="clearBtn">전체 지우기</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <div class="panel">
+            <h2>토큰 추가</h2>
+            <div class="btn-row">
+              <button id="addNumberBtn">숫자 토큰 만들기</button>
+              <button id="addTextBtn">문자 토큰 만들기</button>
+            </div>
+            <label style="margin-top:14px;">연산 기호</label>
+            <div id="ops" class="maker-grid"></div>
+            <div class="note">
+              숫자 토큰은 식 안에 <strong>빈 숫자칸</strong>을 넣습니다.<br>
+              문자 토큰은 <strong>"빈칸"</strong> 모양으로 넣습니다.<br>
+              연산 기호는 클릭만 해도 추가됩니다.<br>
+              숫자 빈칸 하나에 식 전체를 입력해도 자동으로 토큰으로 나눕니다.
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>실행 결과</h2>
+          <div class="code-wrap">
+            <button id="copyBtn" class="copy-icon" aria-label="코드 복사" title="코드 복사">
+              <span class="copy-squares"><span></span><span></span></span>
+            </button>
+            <div id="codeBox" class="code">temp = ?
+print(temp)
+print(type(temp))</div>
+          </div>
+          <div id="resultBox" class="result">실행 결과가 여기에 표시됩니다.</div>
+          <div id="errorBox" class="error"></div>
+          <button id="flowLink" class="flow-link-btn">계산 과정을 단계별로 보기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">계산 과정</div>
+        <button id="closeModalBtn" class="close-btn">닫기</button>
+      </div>
+      <div id="stepBox" class="step-box"></div>
+      <div id="stepDesc" class="modal-desc"></div>
+      <div id="stepCount" class="step-count"></div>
+      <div class="modal-actions">
+        <button id="prevStepBtn">이전</button>
+        <button id="nextStepBtn">다음</button>
+      </div>
+    </div>
+  
+
+</div>
+
+  <script>
+    const dropZone = document.getElementById("dropZone");
+    const ops = document.getElementById("ops");
+    const addNumberBtn = document.getElementById("addNumberBtn");
+    const addTextBtn = document.getElementById("addTextBtn");
+    const runBtn = document.getElementById("runBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const codeBox = document.getElementById("codeBox");
+    const resultBox = document.getElementById("resultBox");
+    const errorBox = document.getElementById("errorBox");
+    const copyBtn = document.getElementById("copyBtn");
+    const flowLink = document.getElementById("flowLink");
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const closeModalBtn = document.getElementById("closeModalBtn");
+    const stepBox = document.getElementById("stepBox");
+    const stepDesc = document.getElementById("stepDesc");
+    const stepCount = document.getElementById("stepCount");
+    const prevStepBtn = document.getElementById("prevStepBtn");
+    const nextStepBtn = document.getElementById("nextStepBtn");
+
+    const expression = [];
+    let tokenId = 0;
+    const operatorList = ["+", "-", "*", "/", "**", "//", "%", "(", ")"];
+    let insertIndex = null;
+    let flowSteps = [];
+    let flowIndex = 0;
+
+    function pyRepr(v) { return v.kind === "string" ? JSON.stringify(v.value) : String(v.value); }
+    function makeValue(kind, value) { return { kind, value }; }
+    function isNumberText(v) { return v.trim() !== "" && /^[-+]?(?:\d+\.?\d*|\.\d+)$/.test(v.trim()); }
+    function parseNumber(text) {
+      const v = text.trim();
+      if (!isNumberText(v)) throw new Error("숫자 형식이 아닙니다.");
+      return v.includes(".") ? makeValue("float", Number(v)) : makeValue("int", Number(v));
+    }
+
+    function tokenizeExpressionString(raw) {
+      const s = raw.trim();
+      const items = [];
+      let i = 0;
+      while (i < s.length) {
+        const ch = s[i];
+
+        if (/\s/.test(ch)) { i += 1; continue; }
+
+        if (s.startsWith("**", i) || s.startsWith("//", i)) {
+          const op = s.slice(i, i + 2);
+          items.push({ kind: "op", display: op, code: op });
+          i += 2;
+          continue;
+        }
+
+        if ("+-*/%()".includes(ch)) {
+          items.push({ kind: "op", display: ch, code: ch });
+          i += 1;
+          continue;
+        }
+
+        if (ch === '"' || ch === "'") {
+          const quote = ch;
+          i += 1;
+          let buf = "";
+          while (i < s.length && s[i] !== quote) {
+            if (s[i] === "\\" && i + 1 < s.length) {
+              buf += s[i + 1];
+              i += 2;
+            } else {
+              buf += s[i];
+              i += 1;
+            }
+          }
+          if (i >= s.length) throw new Error("SyntaxError: 문자열 따옴표가 닫히지 않았습니다.");
+          i += 1;
+          items.push({ kind: "value", valueKind: "string", value: buf, display: JSON.stringify(buf), code: JSON.stringify(buf) });
+          continue;
+        }
+
+        const numMatch = s.slice(i).match(/^\d+(\.\d+)?|^\.\d+/);
+        if (numMatch) {
+          const rawNum = numMatch[0];
+          const parsed = parseNumber(rawNum);
+          items.push({ kind: "value", valueKind: parsed.kind, value: parsed.value, display: String(parsed.value), code: String(parsed.value) });
+          i += rawNum.length;
+          continue;
+        }
+
+        throw new Error("식을 해석할 수 없습니다.");
+      }
+      return items;
+    }
+
+    function createDraggableMaker(text, payload) {
+      const div = document.createElement("div");
+      div.className = "maker";
+      div.textContent = text;
+      div.draggable = true;
+      div.dataset.payload = JSON.stringify(payload);
+      div.addEventListener("dragstart", (e) => e.dataTransfer.setData("text/plain", div.dataset.payload));
+      div.addEventListener("click", () => addTokenToExpression(payload));
+      return div;
+    }
+
+    function initOperators() {
+      ops.innerHTML = "";
+      operatorList.forEach(op => ops.appendChild(createDraggableMaker(op, { kind: "op", display: op, code: op })));
+    }
+
+    function createEditableValueToken(type) {
+      return {
+        id: tokenId++,
+        kind: "editable",
+        valueKind: type, // int or string
+        raw: "",
+        display: type === "string" ? "\"\"" : "",
+        code: type === "string" ? '""' : "",
+      };
+    }
+
+    function addEditableToken(type) {
+      expression.push(createEditableValueToken(type));
+      renderExpression();
+    }
+
+    function addTokenToExpression(payload, index = expression.length) {
+      expression.splice(index, 0, { id: tokenId++, ...payload });
+      renderExpression();
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function createInsertMarker() {
+      const marker = document.createElement("div");
+      marker.className = "insert-marker";
+      return marker;
+    }
+
+    function updateEditableItem(id, raw) {
+      const item = expression.find(x => x.id === id);
+      if (!item) return;
+      item.raw = raw;
+
+      if (item.valueKind === "string") {
+        item.display = `"${raw}"`;
+        item.code = JSON.stringify(raw);
+      } else {
+        item.display = raw;
+        item.code = raw;
+      }
+    }
+
+    function renderEditableToken(item, idx) {
+      const wrap = document.createElement("div");
+      wrap.className = "value-token token";
+      wrap.draggable = true;
+      wrap.dataset.index = String(idx);
+      wrap.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("text/plain", JSON.stringify({ source: "expression", index: idx, payload: item }));
+      });
+
+      if (item.valueKind === "string") {
+        wrap.innerHTML = `
+          <span class="string-wrap">
+            <span>"</span>
+            <input type="text" placeholder="빈칸" value="${escapeHtml(item.raw)}" data-id="${item.id}">
+            <span>"</span>
+          </span>
+          <span class="x" data-index="${idx}">×</span>
+        `;
+      } else {
+        wrap.innerHTML = `
+          <input type="text" placeholder="숫자 또는 식" value="${escapeHtml(item.raw)}" data-id="${item.id}">
+          <span class="x" data-index="${idx}">×</span>
+        `;
+      }
+      return wrap;
+    }
+
+    function renderNormalToken(item, idx) {
+      const div = document.createElement("div");
+      div.className = "token";
+      div.draggable = true;
+      div.dataset.index = String(idx);
+      div.innerHTML = `<span>${escapeHtml(item.display)}</span><span class="x" data-index="${idx}">×</span>`;
+      div.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("text/plain", JSON.stringify({ source: "expression", index: idx, payload: item }));
+      });
+      return div;
+    }
+
+    function renderExpression() {
+      dropZone.innerHTML = "";
+      if (expression.length === 0) {
+        const note = document.createElement("div");
+        note.className = "hint";
+        note.textContent = "버튼을 눌러 빈칸을 추가하거나, 연산 기호를 클릭/드래그하세요";
+        dropZone.appendChild(note);
+      } else {
+        expression.forEach((item, idx) => {
+          if (insertIndex === idx) dropZone.appendChild(createInsertMarker());
+          const el = item.kind === "editable" ? renderEditableToken(item, idx) : renderNormalToken(item, idx);
+          dropZone.appendChild(el);
+        });
+        if (insertIndex === expression.length) dropZone.appendChild(createInsertMarker());
+      }
+      updateCode(false);
+    }
+
+    function currentCode() {
+      return expression.map(item => item.code).join(" ");
+    }
+
+    function updateCode(showPrompt = true) {
+      const codeExpr = currentCode();
+      codeBox.textContent = "temp = " + (codeExpr || "?") + "\nprint(temp)\nprint(type(temp))";
+      if (showPrompt) {
+        resultBox.textContent = "실행 결과가 여기에 표시됩니다.";
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
+      }
+    }
+
+    function expandSingleExpressionInput(items) {
+      if (items.length !== 1) return items;
+      const first = items[0];
+      if (first.kind !== "editable" || first.valueKind !== "int") return items;
+      const raw = first.raw.trim();
+      if (!raw) return items;
+      if (!/[+\-*/%()]/.test(raw)) return items;
+      return tokenizeExpressionString(raw);
+    }
+
+    function itemToEvalToken(item) {
+      if (item.kind === "op") return { type: "op", value: item.code };
+      if (item.kind === "editable") {
+        if (item.valueKind === "string") return { type: "value", value: makeValue("string", item.raw) };
+        return { type: "value", value: parseNumber(item.raw) };
+      }
+      return { type: "value", value: makeValue(item.valueKind, item.value) };
+    }
+
+    function tokenizeForEval(items) {
+      return items.map(itemToEvalToken);
+    }
+
+    function precedence(op) {
+      if (op === "u-") return 4;
+      if (op === "**") return 5;
+      if (["*", "/", "//", "%"].includes(op)) return 3;
+      if (["+", "-"].includes(op)) return 2;
+      return 0;
+    }
+
+    function isRightAssociative(op) { return op === "**" || op === "u-"; }
+
+    function toRPN(tokens) {
+      const output = [];
+      const stack = [];
+      let expectValue = true;
+      for (const token of tokens) {
+        if (token.type === "value") {
+          output.push(token);
+          expectValue = false;
+          continue;
+        }
+        const op = token.value;
+        if (op === "(") { stack.push(op); expectValue = true; continue; }
+        if (op === ")") {
+          while (stack.length && stack[stack.length - 1] !== "(") output.push({ type: "op", value: stack.pop() });
+          if (!stack.length) throw new Error("SyntaxError: 괄호가 맞지 않습니다.");
+          stack.pop();
+          expectValue = false;
+          continue;
+        }
+        let effectiveOp = op;
+        if (op === "-" && expectValue) effectiveOp = "u-";
+        while (stack.length) {
+          const top = stack[stack.length - 1];
+          if (top === "(") break;
+          const p1 = precedence(effectiveOp);
+          const p2 = precedence(top);
+          if ((isRightAssociative(effectiveOp) && p1 < p2) || (!isRightAssociative(effectiveOp) && p1 <= p2)) {
+            output.push({ type: "op", value: stack.pop() });
+          } else break;
+        }
+        stack.push(effectiveOp);
+        expectValue = true;
+      }
+      while (stack.length) {
+        const top = stack.pop();
+        if (top === "(") throw new Error("SyntaxError: 괄호가 맞지 않습니다.");
+        output.push({ type: "op", value: top });
+      }
+      return output;
+    }
+
+    function typeName(v) { return v.kind === "string" ? "str" : v.kind === "int" ? "int" : v.kind === "float" ? "float" : "unknown"; }
+    function ensureNumber(v, op) {
+      if (v.kind !== "int" && v.kind !== "float") throw new Error(`TypeError: unsupported operand type(s) for ${op}: '${typeName(v)}'`);
+    }
+    function pyFloorDiv(a, b) { return Math.floor(a / b); }
+    function pyMod(a, b) { return a - pyFloorDiv(a, b) * b; }
+    function promoteNumber(a, b, n) { return (a.kind === "float" || b.kind === "float") ? makeValue("float", n) : makeValue("int", n); }
+    function unaryMinus(v) { ensureNumber(v, "-"); return makeValue(v.kind, -v.value); }
+
+    function binOp(a, b, op) {
+      if (op === "+") {
+        if (a.kind === "string" && b.kind === "string") return makeValue("string", a.value + b.value);
+        if ((a.kind === "int" || a.kind === "float") && (b.kind === "int" || b.kind === "float")) return promoteNumber(a, b, a.value + b.value);
+        throw new Error(`TypeError: unsupported operand type(s) for +: '${typeName(a)}' and '${typeName(b)}'`);
+      }
+      if (op === "-") { ensureNumber(a, "-"); ensureNumber(b, "-"); return promoteNumber(a, b, a.value - b.value); }
+      if (op === "*") {
+        if (a.kind === "string" && b.kind === "int") return makeValue("string", a.value.repeat(b.value));
+        if (a.kind === "int" && b.kind === "string") return makeValue("string", b.value.repeat(a.value));
+        ensureNumber(a, "*"); ensureNumber(b, "*");
+        return promoteNumber(a, b, a.value * b.value);
+      }
+      if (op === "/") {
+        ensureNumber(a, "/"); ensureNumber(b, "/");
+        if (b.value === 0) throw new Error("ZeroDivisionError: division by zero");
+        return makeValue("float", a.value / b.value);
+      }
+      if (op === "//") {
+        ensureNumber(a, "//"); ensureNumber(b, "//");
+        if (b.value === 0) throw new Error("ZeroDivisionError: integer division or modulo by zero");
+        return makeValue((a.kind === "float" || b.kind === "float") ? "float" : "int", pyFloorDiv(a.value, b.value));
+      }
+      if (op === "%") {
+        ensureNumber(a, "%"); ensureNumber(b, "%");
+        if (b.value === 0) throw new Error("ZeroDivisionError: integer division or modulo by zero");
+        return makeValue((a.kind === "float" || b.kind === "float") ? "float" : "int", pyMod(a.value, b.value));
+      }
+      if (op === "**") {
+        if (a.kind === "string" || b.kind === "string") throw new Error(`TypeError: unsupported operand type(s) for **: '${typeName(a)}' and '${typeName(b)}'`);
+        return promoteNumber(a, b, a.value ** b.value);
+      }
+      throw new Error("지원하지 않는 연산입니다.");
+    }
+
+    function evalRPN(rpn) {
+      const stack = [];
+      for (const token of rpn) {
+        if (token.type === "value") { stack.push(token.value); continue; }
+        if (token.value === "u-") {
+          if (stack.length < 1) throw new Error("SyntaxError: 잘못된 식입니다.");
+          stack.push(unaryMinus(stack.pop()));
+          continue;
+        }
+        if (stack.length < 2) throw new Error("SyntaxError: 잘못된 식입니다.");
+        const b = stack.pop();
+        const a = stack.pop();
+        stack.push(binOp(a, b, token.value));
+      }
+      if (stack.length !== 1) throw new Error("SyntaxError: 잘못된 식입니다.");
+      return stack[0];
+    }
+
+    function analyzeFlow(tokens) {
+      let list = tokens.map(t => t.type === "value"
+        ? { kind: "value", value: t.value, text: pyRepr(t.value) }
+        : { kind: "op", op: t.value, text: t.value });
+
+      const steps = [];
+      function snapshot(highlightStart, highlightEnd, desc) {
+        steps.push({ items: list.map((x, i) => ({ text: x.text, highlight: i >= highlightStart && i <= highlightEnd })), desc });
+      }
+      function replaceRange(start, end, item) { list.splice(start, end - start + 1, item); }
+      function findParenPair() {
+        let start = -1;
+        for (let i = 0; i < list.length; i++) {
+          if (list[i].kind === "op" && list[i].op === "(") start = i;
+          if (list[i].kind === "op" && list[i].op === ")" && start !== -1) return [start, i];
+        }
+        return null;
+      }
+      function evaluateSpan(start, end) {
+        for (let i = start; i <= end; i++) {
+          if (list[i] && list[i].kind === "op" && list[i].op === "-" &&
+              (i === start || (list[i-1] && list[i-1].kind === "op" && list[i-1].op !== ")")) &&
+              list[i+1] && list[i+1].kind === "value") {
+            snapshot(i, i+1, "먼저 음수를 만듭니다.");
+            const res = unaryMinus(list[i+1].value);
+            replaceRange(i, i+1, { kind: "value", value: res, text: pyRepr(res) });
+            return true;
+          }
+        }
+        for (let i = start; i <= end; i++) {
+          if (list[i] && list[i].kind === "op" && list[i].op === "**" &&
+              list[i-1] && list[i-1].kind === "value" && list[i+1] && list[i+1].kind === "value") {
+            snapshot(i-1, i+1, "거듭제곱을 먼저 계산합니다.");
+            const res = binOp(list[i-1].value, list[i+1].value, "**");
+            replaceRange(i-1, i+1, { kind: "value", value: res, text: pyRepr(res) });
+            return true;
+          }
+        }
+        for (let i = start; i <= end; i++) {
+          if (list[i] && list[i].kind === "op" && ["*", "/", "//", "%"].includes(list[i].op) &&
+              list[i-1] && list[i-1].kind === "value" && list[i+1] && list[i+1].kind === "value") {
+            const explainMap = { "*": "곱셈을 계산합니다.", "/": "나눗셈을 계산합니다.", "//": "몫(//)을 계산합니다.", "%": "나머지(%)를 계산합니다." };
+            snapshot(i-1, i+1, explainMap[list[i].op]);
+            const res = binOp(list[i-1].value, list[i+1].value, list[i].op);
+            replaceRange(i-1, i+1, { kind: "value", value: res, text: pyRepr(res) });
+            return true;
+          }
+        }
+        for (let i = start; i <= end; i++) {
+          if (list[i] && list[i].kind === "op" && ["+", "-"].includes(list[i].op) &&
+              list[i-1] && list[i-1].kind === "value" && list[i+1] && list[i+1].kind === "value") {
+            const explainMap = { "+": "덧셈을 계산합니다.", "-": "뺄셈을 계산합니다." };
+            snapshot(i-1, i+1, explainMap[list[i].op]);
+            const res = binOp(list[i-1].value, list[i+1].value, list[i].op);
+            replaceRange(i-1, i+1, { kind: "value", value: res, text: pyRepr(res) });
+            return true;
+          }
+        }
+        return false;
+      }
+
+      while (true) {
+        const pair = findParenPair();
+        if (!pair) break;
+        const [l, r] = pair;
+        snapshot(l, r, "괄호 안을 먼저 계산합니다.");
+        while (evaluateSpan(l + 1, r - 1)) {}
+        if (!(list[l+1] && list[l+1].kind === "value")) throw new Error("SyntaxError: 잘못된 식입니다.");
+        const inner = list[l+1];
+        replaceRange(l, l+2, inner);
+      }
+      while (evaluateSpan(0, list.length - 1)) {}
+      if (!(list.length === 1 && list[0].kind === "value")) throw new Error("SyntaxError: 잘못된 식입니다.");
+      steps.push({ items: list.map(x => ({ text: x.text, highlight: false })), desc: "최종 결과입니다." });
+      return { steps };
+    }
+
+    function openFlowModal() {
+      if (expression.length === 0) {
+        alert("먼저 식을 만들어 주세요.");
+        return;
+      }
+      try {
+        const expanded = expandSingleExpressionInput(expression);
+        const tokens = tokenizeForEval(expanded);
+        const analysis = analyzeFlow(tokens);
+        flowSteps = analysis.steps;
+        flowIndex = 0;
+        renderFlowStep();
+        modalBackdrop.style.display = "flex";
+      } catch (e) {
+        alert("계산 과정을 만들 수 없습니다: " + e.message);
+      }
+    }
+
+    function renderFlowStep() {
+      if (!flowSteps.length) return;
+      const step = flowSteps[flowIndex];
+      let htmlParts = [];
+      let i = 0;
+      while (i < step.items.length) {
+        if (step.items[i].highlight) {
+          let grouped = [];
+          while (i < step.items.length && step.items[i].highlight) {
+            grouped.push(escapeHtml(step.items[i].text));
+            i += 1;
+          }
+          htmlParts.push(`<span class="hl-group">${grouped.join(" ")}</span>`);
+        } else {
+          htmlParts.push(`<span>${escapeHtml(step.items[i].text)}</span>`);
+          i += 1;
+        }
+      }
+      stepBox.innerHTML = htmlParts.join(" ");
+      stepDesc.textContent = step.desc;
+      stepCount.textContent = `${flowIndex + 1} / ${flowSteps.length}`;
+      prevStepBtn.disabled = flowIndex === 0;
+      nextStepBtn.disabled = flowIndex === flowSteps.length - 1;
+    }
+
+    function closeFlowModal() { modalBackdrop.style.display = "none"; }
+
+    function getInsertIndexFromPointer(clientX) {
+      const tokens = [...dropZone.querySelectorAll(".token")];
+      if (tokens.length === 0) return 0;
+      for (let i = 0; i < tokens.length; i++) {
+        const rect = tokens[i].getBoundingClientRect();
+        const mid = rect.left + rect.width / 2;
+        if (clientX < mid) return i;
+      }
+      return tokens.length;
+    }
+
+    dropZone.addEventListener("input", (e) => {
+      const input = e.target.closest("input[data-id]");
+      if (!input) return;
+      updateEditableItem(Number(input.dataset.id), input.value);
+      updateCode(false);
+    });
+
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("drag-over");
+      insertIndex = getInsertIndexFromPointer(e.clientX);
+      renderExpression();
+    });
+
+    dropZone.addEventListener("dragleave", (e) => {
+      if (!dropZone.contains(e.relatedTarget)) {
+        dropZone.classList.remove("drag-over");
+        insertIndex = null;
+        renderExpression();
+      }
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("drag-over");
+      const raw = e.dataTransfer.getData("text/plain");
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      const targetIndex = insertIndex == null ? expression.length : insertIndex;
+      if (data.source === "expression") {
+        const fromIndex = data.index;
+        const moved = expression.splice(fromIndex, 1)[0];
+        let adjustedIndex = targetIndex;
+        if (fromIndex < targetIndex) adjustedIndex -= 1;
+        expression.splice(adjustedIndex, 0, moved);
+      } else {
+        expression.splice(targetIndex, 0, { id: tokenId++, ...data });
+      }
+      insertIndex = null;
+      renderExpression();
+    });
+
+    dropZone.addEventListener("click", (e) => {
+      const btn = e.target.closest(".x");
+      if (!btn) return;
+      const idx = Number(btn.dataset.index);
+      expression.splice(idx, 1);
+      renderExpression();
+    });
+
+    addNumberBtn.addEventListener("click", () => addEditableToken("int"));
+    addTextBtn.addEventListener("click", () => addEditableToken("string"));
+
+    runBtn.addEventListener("click", () => {
+      try {
+        const expanded = expandSingleExpressionInput(expression);
+        if (expanded !== expression) {
+          expression.length = 0;
+          expanded.forEach(item => expression.push({ id: tokenId++, ...item }));
+          renderExpression();
+        }
+
+        const expr = currentCode();
+        codeBox.textContent = "temp = " + (expr || "?") + "\nprint(temp)\nprint(type(temp))";
+        if (expression.length === 0) {
+          resultBox.textContent = "실행 결과가 여기에 표시됩니다.";
+          errorBox.style.display = "none";
+          errorBox.textContent = "";
+          return;
+        }
+
+        const tokens = tokenizeForEval(expression);
+        const rpn = toRPN(tokens);
+        const result = evalRPN(rpn);
+        const resultText = result.kind === "string" ? result.value : pyRepr(result);
+        resultBox.innerText = resultText + "\n<class '" + typeName(result) + "'>";
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
+      } catch (e) {
+        resultBox.textContent = "";
+        errorBox.textContent = "오류: " + e.message;
+        errorBox.style.display = "block";
+      }
+    });
+
+    clearBtn.addEventListener("click", () => {
+      expression.length = 0;
+      insertIndex = null;
+      renderExpression();
+      resultBox.textContent = "실행 결과가 여기에 표시됩니다.";
+      errorBox.style.display = "none";
+      errorBox.textContent = "";
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(codeBox.textContent);
+        copyBtn.style.borderColor = "#86efac";
+        copyBtn.style.background = "rgba(134,239,172,0.18)";
+        setTimeout(() => {
+          copyBtn.style.borderColor = "rgba(255,255,255,0.18)";
+          copyBtn.style.background = "rgba(255,255,255,0.08)";
+        }, 900);
+      } catch (e) {
+        copyBtn.style.borderColor = "#fca5a5";
+        copyBtn.style.background = "rgba(252,165,165,0.18)";
+        setTimeout(() => {
+          copyBtn.style.borderColor = "rgba(255,255,255,0.18)";
+          copyBtn.style.background = "rgba(255,255,255,0.08)";
+        }, 900);
+      }
+    });
+
+    flowLink.addEventListener("click", openFlowModal);
+    closeModalBtn.addEventListener("click", closeFlowModal);
+    prevStepBtn.addEventListener("click", () => {
+      if (flowIndex > 0) { flowIndex -= 1; renderFlowStep(); }
+    });
+    nextStepBtn.addEventListener("click", () => {
+      if (flowIndex < flowSteps.length - 1) { flowIndex += 1; renderFlowStep(); }
+    });
+    modalBackdrop.addEventListener("click", (e) => {
+      if (e.target === modalBackdrop) closeFlowModal();
+    });
+
+    initOperators();
+    renderExpression();
+  </script>
+
+  
+  
+
+
+
+<footer style="
+  text-align:center;
+  margin-top:40px;
+  padding:20px 10px;
+  color:#4b5563;
+  font-size:14px;
+  
+  background:#f5f7fb;
+">
+  <div style="font-weight:600; margin-bottom:6px;">
+    © 2026 Junossam | 교사 강준호 · 성서고등학교
+  </div>
+  <div style="font-size:13px;">
+    본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
+  </div>
+</footer>
+
+</body>
+</html>
