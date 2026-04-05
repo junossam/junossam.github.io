@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Algorithm Lab</title>
+<title>Junossam Lab</title>
 <style>
   * { box-sizing: border-box; }
 
   body {
     margin: 0;
     font-family: Arial, "Noto Sans KR", sans-serif;
-    background: #f5f7fb;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
     color: #111827;
   }
 
@@ -20,23 +20,37 @@
     padding: 40px 20px;
   }
 
+  .hero {
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(8px);
+    border: 1px solid #e5e7eb;
+    border-radius: 28px;
+    padding: 28px 24px;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    margin-bottom: 24px;
+  }
+
   .brand {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
     margin-bottom: 14px;
+    flex-wrap: wrap;
   }
 
   .logo {
-    width: 90px;
+    width: 92px;
     max-width: 30vw;
+    display: block;
+    mix-blend-mode: multiply;
   }
 
   .brand-text {
     font-size: 26px;
     font-weight: 800;
     color: #374151;
+    letter-spacing: 0.2px;
   }
 
   h1 {
@@ -48,8 +62,9 @@
   .page-desc {
     text-align: center;
     color: #6b7280;
-    margin-bottom: 28px;
-    line-height: 1.6;
+    margin-bottom: 4px;
+    line-height: 1.7;
+    font-size: 16px;
   }
 
   .list {
@@ -62,16 +77,18 @@
     display: block;
     padding: 20px 22px;
     border-radius: 18px;
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.92);
     border: 1px solid #e5e7eb;
     text-decoration: none;
     color: inherit;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
   }
 
   .list-item:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.09);
+    border-color: #cbd5e1;
   }
 
   .title-line {
@@ -115,7 +132,7 @@
   }
 
   .empty, .error {
-    background: white;
+    background: rgba(255, 255, 255, 0.92);
     border: 1px solid #e5e7eb;
     border-radius: 18px;
     padding: 20px;
@@ -129,27 +146,49 @@
     text-align: center;
     font-size: 13px;
     color: #6b7280;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid #dbe2ea;
     line-height: 1.7;
   }
 
   @media (max-width: 640px) {
-    h1 { font-size: 28px; }
-    .main-title { font-size: 17px; }
-    .sub-title { font-size: 12px; }
-    .list-item { padding: 18px; }
+    .hero {
+      padding: 22px 18px;
+      border-radius: 22px;
+    }
+
+    h1 {
+      font-size: 28px;
+    }
+
+    .main-title {
+      font-size: 17px;
+    }
+
+    .sub-title {
+      font-size: 12px;
+    }
+
+    .list-item {
+      padding: 18px;
+    }
+
+    .brand-text {
+      font-size: 23px;
+    }
   }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="brand">
-      <img src="logo.png" class="logo" alt="Junossam 로고">
-      <div class="brand-text">Junossam</div>
-    </div>
+    <div class="hero">
+      <div class="brand">
+        <img src="logo.png" class="logo" alt="Junossam 로고">
+        <div class="brand-text">Junossam</div>
+      </div>
 
-    <h1>알고리즘 실습실</h1>
-    <div class="page-desc">탐색과 정렬 알고리즘을 직접 만들고 비교해보는 공간</div>
+      <h1>알고리즘 실습실</h1>
+      <div class="page-desc">파이썬, 알고리즘, 자료구조를 쉽게 이해하고 체험하는 학습 공간</div>
+    </div>
 
     <div id="app">
       <div class="empty">목록을 불러오는 중입니다.</div>
@@ -176,26 +215,26 @@
 
   function normalizeMarkdown(md) {
     return md
-      .replace(/\r/g, "\n")
-      .replace(/---/g, "\n---\n")
-      .replace(/(###\s+)/g, "\n$1")
-      .replace(/(-\s*파일명:)/g, "\n$1")
-      .replace(/(-\s*용도:)/g, "\n$1")
-      .replace(/(-\s*태그:)/g, "\n$1")
-      .replace(/\n{2,}/g, "\n")
+      .replace(/\\r/g, "\\n")
+      .replace(/---/g, "\\n---\\n")
+      .replace(/(###\\s+)/g, "\\n$1")
+      .replace(/(-\\s*파일명:)/g, "\\n$1")
+      .replace(/(-\\s*용도:)/g, "\\n$1")
+      .replace(/(-\\s*태그:)/g, "\\n$1")
+      .replace(/\\n{2,}/g, "\\n")
       .trim();
   }
 
   function parseMarkdown(md) {
     const normalized = normalizeMarkdown(md);
-    const blocks = normalized.split(/\n(?=###\s+)/);
+    const blocks = normalized.split(/\\n(?=###\\s+)/);
     const items = [];
 
     for (const block of blocks) {
-      const titleMatch = block.match(/###\s+(.+)/);
-      const fileMatch = block.match(/-\s*파일명:\s*(.+)/);
-      const purposeMatch = block.match(/-\s*용도:\s*(.+)/);
-      const tagMatch = block.match(/-\s*태그:\s*(.+)/);
+      const titleMatch = block.match(/###\\s+(.+)/);
+      const fileMatch = block.match(/-\\s*파일명:\\s*(.+)/);
+      const purposeMatch = block.match(/-\\s*용도:\\s*(.+)/);
+      const tagMatch = block.match(/-\\s*태그:\\s*(.+)/);
 
       if (!titleMatch || !fileMatch) continue;
 
@@ -206,12 +245,12 @@
         ? tagMatch[1].split(",").map(v => v.trim()).filter(Boolean)
         : [];
 
-      if (title && filename) {
+      if (title && filename && filename !== "new-page.html") {
         items.push({ title, filename, purpose, tags });
       }
     }
 
-    return items.filter(item => item.filename !== "new-page.html");
+    return items;
   }
 
   function render(items) {
@@ -235,7 +274,6 @@
               <span class="main-title">${escapeHtml(item.title)}</span>
               ${item.purpose ? `<span class="sub-title">${escapeHtml(item.purpose)}</span>` : ""}
             </div>
-
             ${item.tags.length ? `
               <div class="tags">
                 ${item.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
@@ -250,9 +288,7 @@
   async function fetchMarkdown() {
     try {
       const rawRes = await fetch(RAW_MD_URL + `?v=${Date.now()}`, { cache: "no-store" });
-      if (rawRes.ok) {
-        return await rawRes.text();
-      }
+      if (rawRes.ok) return await rawRes.text();
     } catch (e) {}
 
     const localRes = await fetch(LOCAL_MD_URL + `?v=${Date.now()}`, { cache: "no-store" });
