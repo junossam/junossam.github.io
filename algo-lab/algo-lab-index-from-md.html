@@ -1,430 +1,194 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Algorithm Lab</title>
-  <style>
-    :root {
-      --bg: #f5f7fb;
-      --panel: #ffffff;
-      --line: #e5e7eb;
-      --text: #111827;
-      --sub: #6b7280;
-      --brand: #374151;
-      --shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
-      --shadow-hover: 0 18px 34px rgba(15, 23, 42, 0.12);
-      --accent: #eef2ff;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Algorithm Lab</title>
 
-    * { box-sizing: border-box; }
+<style>
+body {
+  margin: 0;
+  font-family: Arial, "Noto Sans KR", sans-serif;
+  background: #f5f7fb;
+  color: #111827;
+}
 
-    body {
-      margin: 0;
-      font-family: Arial, "Noto Sans KR", sans-serif;
-      background: linear-gradient(180deg, #f8fafc 0%, var(--bg) 100%);
-      color: var(--text);
-    }
+.wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
 
-    .wrap {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 42px 20px 56px;
-    }
+h1 {
+  text-align: center;
+  margin-bottom: 8px;
+}
 
-    .hero {
-      background: rgba(255,255,255,0.8);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(229,231,235,0.9);
-      border-radius: 28px;
-      padding: 28px 26px;
-      box-shadow: var(--shadow);
-      margin-bottom: 28px;
-    }
+.desc {
+  text-align: center;
+  color: #6b7280;
+  margin-bottom: 30px;
+}
 
-    .brand {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
-    }
+/* 리스트 카드 */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
-    .logo {
-      width: 110px;
-      max-width: 28vw;
-      mix-blend-mode: multiply;
-    }
+.list-item {
+  display: block;
+  padding: 20px 22px;
+  border-radius: 18px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  text-decoration: none;
+  color: inherit;
+  transition: 0.2s;
+}
 
-    .brand-text {
-      font-size: 32px;
-      font-weight: 800;
-      color: var(--brand);
-      letter-spacing: 0.3px;
-    }
+.list-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+}
 
-    h1 {
-      margin: 8px 0 10px;
-      font-size: 38px;
-      text-align: center;
-    }
+.title {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
 
-    .desc {
-      margin: 0;
-      text-align: center;
-      color: var(--sub);
-      font-size: 17px;
-      line-height: 1.7;
-    }
+.desc-item {
+  font-size: 14px;
+  color: #4b5563;
+  margin-bottom: 10px;
+}
 
-    .toolbar {
-      margin-top: 22px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
+.tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
 
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 14px;
-      background: var(--accent);
-      border: 1px solid #c7d2fe;
-      border-radius: 999px;
-      color: #3730a3;
-      font-size: 14px;
-      font-weight: 700;
-    }
+.tag {
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-weight: 600;
+}
 
-    .meta {
-      color: var(--sub);
-      font-size: 14px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 20px;
-    }
-
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: var(--shadow);
-      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      min-height: 220px;
-    }
-
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: var(--shadow-hover);
-      border-color: #cbd5e1;
-    }
-
-    .card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 14px;
-    }
-
-    .card h2 {
-      margin: 0;
-      font-size: 24px;
-      line-height: 1.4;
-    }
-
-    .badge {
-      flex: 0 0 auto;
-      padding: 7px 11px;
-      border-radius: 999px;
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      color: #475569;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .card p {
-      margin: 0;
-      color: #4b5563;
-      font-size: 15px;
-      line-height: 1.7;
-    }
-
-    .file-box {
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 14px;
-    }
-
-    .file-label {
-      font-size: 12px;
-      color: var(--sub);
-      margin-bottom: 6px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-
-    .file-name {
-      font-family: Consolas, "Courier New", monospace;
-      font-size: 15px;
-      color: #0f172a;
-      word-break: break-word;
-    }
-
-    .tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      min-height: 28px;
-    }
-
-    .tag {
-      display: inline-flex;
-      align-items: center;
-      padding: 7px 10px;
-      border-radius: 999px;
-      background: #eff6ff;
-      color: #1d4ed8;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .card-actions {
-      margin-top: auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .open-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 120px;
-      padding: 11px 16px;
-      border-radius: 14px;
-      background: #111827;
-      color: white;
-      text-decoration: none;
-      font-weight: 700;
-    }
-
-    .open-link:hover {
-      opacity: 0.92;
-    }
-
-    .empty, .error {
-      background: white;
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      padding: 28px;
-      box-shadow: var(--shadow);
-      color: #475569;
-      line-height: 1.7;
-    }
-
-    .copyright {
-      margin-top: 28px;
-      padding-top: 18px;
-      border-top: 1px solid var(--line);
-      text-align: center;
-      color: var(--sub);
-      font-size: 13px;
-      line-height: 1.7;
-    }
-
-    @media (max-width: 860px) {
-      .grid { grid-template-columns: 1fr; }
-      h1 { font-size: 30px; }
-      .brand-text { font-size: 26px; }
-      .hero { padding: 24px 18px; }
-      .card { min-height: 0; }
-    }
-  </style>
+.copyright {
+  margin-top: 30px;
+  padding-top: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+  border-top: 1px solid #e5e7eb;
+}
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <section class="hero">
-      <div class="brand">
-        <img src="logo.png" class="logo" alt="Junossam 로고">
-        <div class="brand-text">Junossam</div>
-      </div>
+<div class="wrap">
+  <h1 id="title">알고리즘 실습실</h1>
+  <div class="desc" id="desc">불러오는 중...</div>
 
-      <h1 id="pageTitle">알고리즘 실습실</h1>
-      <p class="desc" id="pageDesc">콘텐츠를 불러오는 중입니다.</p>
+  <div id="app"></div>
 
-      <div class="toolbar">
-        <div class="pill">MD 파일 기반 자동 목록</div>
-        <div class="meta" id="cardCount">0개 실습</div>
-      </div>
-    </section>
-
-    <main id="app">
-      <div class="empty">목록을 불러오는 중입니다.</div>
-    </main>
-
-    <div class="copyright">
-      <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong><br>
-      본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
-    </div>
+  <div class="copyright">
+    <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong><br>
+    본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
   </div>
+</div>
 
-  <script>
-    const DATA_FILE = "README.md";
+<script>
+const DATA_FILE = "README.md";
 
-    function escapeHtml(text) {
-      return String(text ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+function escapeHtml(text) {
+  return String(text ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function parseMarkdown(md) {
+  const lines = md.split(/\r?\n/);
+  let title = "";
+  let desc = "";
+  const items = [];
+  let current = null;
+
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) continue;
+
+    if (t.startsWith("# ")) {
+      title = t.slice(2);
+      continue;
     }
 
-    function parseMarkdown(md) {
-      const lines = md.split(/\r?\n/);
-      let title = "알고리즘 실습실";
-      let desc = "";
-      const items = [];
-      let current = null;
-
-      for (const rawLine of lines) {
-        const line = rawLine.trim();
-        if (!line) continue;
-
-        if (line.startsWith("# ")) {
-          title = line.slice(2).trim();
-          continue;
-        }
-
-        if (line.startsWith("> ")) {
-          if (!desc) desc = line.slice(2).trim();
-          continue;
-        }
-
-        if (line.startsWith("### ")) {
-          if (current && current.title && current.filename) items.push(current);
-          current = {
-            title: line.slice(4).trim(),
-            filename: "",
-            purpose: "",
-            tags: []
-          };
-          continue;
-        }
-
-        if (!current) continue;
-
-        if (line.startsWith("- 파일명:")) {
-          current.filename = line.replace("- 파일명:", "").trim();
-          continue;
-        }
-
-        if (line.startsWith("- 용도:")) {
-          current.purpose = line.replace("- 용도:", "").trim();
-          continue;
-        }
-
-        if (line.startsWith("- 태그:")) {
-          current.tags = line
-            .replace("- 태그:", "")
-            .split(",")
-            .map(tag => tag.trim())
-            .filter(Boolean);
-        }
-      }
-
-      if (current && current.title && current.filename) items.push(current);
-
-      return { title, desc, items };
+    if (t.startsWith("> ")) {
+      desc = t.slice(2);
+      continue;
     }
 
-    function renderCards(data) {
-      const app = document.getElementById("app");
-      const titleEl = document.getElementById("pageTitle");
-      const descEl = document.getElementById("pageDesc");
-      const countEl = document.getElementById("cardCount");
-
-      titleEl.textContent = data.title || "알고리즘 실습실";
-      descEl.textContent = data.desc || "탐색과 정렬 알고리즘을 직접 만들고 비교해보는 공간";
-      countEl.textContent = `${data.items.length}개 실습`;
-
-      if (!data.items.length) {
-        app.innerHTML = '<div class="empty">표시할 실습 항목이 없습니다. MD 파일에 `### 제목`, `- 파일명:`, `- 용도:` 형식으로 내용을 추가해 주세요.</div>';
-        return;
-      }
-
-      app.innerHTML = `
-        <div class="grid">
-          ${data.items.map((item, index) => `
-            <article class="card">
-              <div class="card-top">
-                <h2>${escapeHtml(item.title)}</h2>
-                <div class="badge">실습 ${index + 1}</div>
-              </div>
-
-              <p>${escapeHtml(item.purpose || "설명이 없습니다.")}</p>
-
-              <div class="file-box">
-                <div class="file-label">파일명</div>
-                <div class="file-name">${escapeHtml(item.filename)}</div>
-              </div>
-
-              <div class="tags">
-                ${item.tags.length
-                  ? item.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")
-                  : ""}
-              </div>
-
-              <div class="card-actions">
-                <div class="meta">용도: ${escapeHtml(item.purpose || "-")}</div>
-                <a class="open-link" href="${encodeURI(item.filename)}">열기</a>
-              </div>
-            </article>
-          `).join("")}
-        </div>
-      `;
+    if (t.startsWith("### ")) {
+      if (current) items.push(current);
+      current = { title: t.slice(4), filename: "", purpose: "", tags: [] };
+      continue;
     }
 
-    async function init() {
-      const app = document.getElementById("app");
+    if (!current) continue;
 
-      try {
-        const response = await fetch(DATA_FILE, { cache: "no-store" });
-        if (!response.ok) {
-          throw new Error(`MD 파일을 불러오지 못했습니다. (${response.status})`);
-        }
+    if (t.startsWith("- 파일명:")) {
+      current.filename = t.replace("- 파일명:", "").trim();
+    }
 
-        const md = await response.text();
-        const data = parseMarkdown(md);
-        renderCards(data);
-      } catch (error) {
-        app.innerHTML = `
-          <div class="error">
-            <strong>목록을 불러오지 못했습니다.</strong><br>
-            ${escapeHtml(error.message)}<br><br>
-            같은 폴더에 <span class="file-name">${escapeHtml(DATA_FILE)}</span> 파일이 있는지 확인해 주세요.
+    if (t.startsWith("- 용도:")) {
+      current.purpose = t.replace("- 용도:", "").trim();
+    }
+
+    if (t.startsWith("- 태그:")) {
+      current.tags = t.replace("- 태그:", "").split(",").map(s => s.trim());
+    }
+  }
+
+  if (current) items.push(current);
+
+  return { title, desc, items };
+}
+
+function render(data) {
+  document.getElementById("title").textContent = data.title;
+  document.getElementById("desc").textContent = data.desc;
+
+  const app = document.getElementById("app");
+
+  app.innerHTML = `
+    <div class="list">
+      ${data.items.map(item => `
+        <a class="list-item" href="${item.filename}">
+          <div class="title">${escapeHtml(item.title)}</div>
+          <div class="desc-item">${escapeHtml(item.purpose)}</div>
+          <div class="tags">
+            ${item.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
           </div>
-        `;
-        document.getElementById("pageDesc").textContent = "MD 파일을 읽어오지 못했습니다.";
-      }
-    }
+        </a>
+      `).join("")}
+    </div>
+  `;
+}
 
-    init();
-  </script>
+fetch(DATA_FILE)
+  .then(res => res.text())
+  .then(md => render(parseMarkdown(md)))
+  .catch(() => {
+    document.getElementById("app").innerHTML = "MD 파일을 불러올 수 없습니다.";
+  });
+</script>
+
 </body>
 </html>
