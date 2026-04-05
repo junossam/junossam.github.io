@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>temp / print / type</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f5f7fb;
+    color: #1f2937;
+  }
+  .wrap {
+    max-width: 980px;
+    margin: 28px auto;
+    padding: 20px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+  }
+  h1 {
+    margin: 0 0 10px;
+    font-size: 30px;
+  }
+  .desc {
+    color: #4b5563;
+    line-height: 1.7;
+    margin-bottom: 22px;
+  }
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    align-items: end;
+  }
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    font-size: 16px;
+    background: white;
+  }
+  .hint {
+    margin-top: 10px;
+    color: #6b7280;
+    line-height: 1.6;
+    font-size: 14px;
+  }
+  .examples {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+  .example-btn {
+    width: auto;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 14px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    cursor: pointer;
+  }
+  .error {
+    display: none;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    line-height: 1.6;
+  }
+  .grid {
+    margin-top: 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .panel {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 18px;
+  }
+  .panel h2 {
+    margin: 0 0 12px;
+    font-size: 22px;
+  }
+  .code, .output {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px;
+    font-family: Consolas, monospace;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 150px;
+  }
+  .summary {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px;
+    line-height: 1.7;
+    margin-top: 14px;
+  }
+  .info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .info-item {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .k {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 6px;
+  }
+  .v {
+    font-size: 16px;
+    font-weight: 700;
+    word-break: break-word;
+  }
+  .footer {
+    color: #6b7280;
+    text-align: center;
+    margin-top: 18px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  @media (max-width: 820px) {
+    .grid, .info {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>입력값으로 보는 파이썬 자료형</h1>
+    <p class="desc">
+      값을 입력하면 <strong>temp</strong>에 저장된다고 가정하고,
+      <strong>print(temp)</strong>와 <strong>print(type(temp))</strong> 결과를 보여줍니다.
+      문자열, 숫자, bool, 그리고 <strong>str()</strong>, <strong>int()</strong>, <strong>float()</strong>, <strong>bool()</strong>도 입력할 수 있습니다.
+    </p>
+
+    <div class="controls">
+      <div>
+        <label for="inputBox">값 입력</label>
+        <input id="inputBox" type="text" value="10" />
+        <div class="hint">예: 10, 3.14, '안녕', "hello", True, str(10), int("10"), float(10), bool('안녕')</div>
+      </div>
+    </div>
+
+    <div class="examples" id="examples"></div>
+    <div class="error" id="errorBox"></div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2>실행 코드</h2>
+        <div class="code" id="codeBox"></div>
+      </div>
+
+      <div class="panel">
+        <h2>실행 결과</h2>
+        <div class="output" id="outputBox"></div>
+
+        </div>
+    </div>
+
+    <div class="footer">
+      © 2026 Junossam | 교사 강준호 · 성서고등학교<br>
+      본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
+    </div>
+  </div>
+</div>
+
+<script>
+const inputBox = document.getElementById("inputBox");
+const codeBox = document.getElementById("codeBox");
+const outputBox = document.getElementById("outputBox");
+
+
+const errorBox = document.getElementById("errorBox");
+const examples = document.getElementById("examples");
+
+const samples = [
+  "10",
+  "3.14",
+  "'안녕'",
+  "\"hello\"",
+  "True",
+  "False",
+  "str(10)",
+  "str(True)",
+  "int('10')",
+  "int(3.14)",
+  "float('3.14')",
+  "float(10)",
+  "float()",
+  "bool(0)",
+  "bool(1)",
+  "bool('')",
+  "bool('안녕')",
+  "'파이썬\'연습\'문장'",
+  "'hello\\nworld'",
+  "'hello\\tworld'"
+];
+
+function displayValue(result){
+  if(result.type === "float"){
+    const n = result.raw;
+    return Number.isInteger(n) ? String(n) + ".0" : String(n);
+  }
+  if(result.type === "bool"){
+    return result.raw ? "True" : "False";
+  }
+  if(result.type === "str"){
+    return result.raw;
+  }
+  return String(result.raw);
+}
+
+function typeName(result){
+  return "<class '" + result.type + "'>";
+}
+
+function parseStringLiteral(v){
+  if(v.length < 2) return {ok:false, reason:"too_short"};
+  const q = v[0];
+  if(q !== "'" && q !== '"') return {ok:false, reason:"not_string"};
+  if(v[v.length - 1] !== q) return {ok:false, reason:"unclosed"};
+
+  let out = "";
+  for(let i = 1; i < v.length - 1; i++){
+    const ch = v[i];
+    if(ch === "\\"){
+      if(i === v.length - 2) return {ok:false, reason:"bad_escape"};
+      const next = v[i + 1];
+      if(next === "n") out += "\n";
+      else if(next === "t") out += "\t";
+      else if(next === "'" ) out += "'";
+      else if(next === '"') out += '"';
+      else if(next === "\\") out += "\\";
+      else return {ok:false, reason:"bad_escape"};
+      i++;
+      continue;
+    }
+    if(ch === q) return {ok:false, reason:"collision"};
+    out += ch;
+  }
+  return {ok:true, value:out};
+}
+
+function splitFunctionCall(v){
+  const m = v.match(/^([A-Za-z_]\w*)\(([\s\S]*)\)$/);
+  if(!m) return null;
+  return {name:m[1], inner:m[2].trim()};
+}
+
+function evaluate(v){
+  if(v === "True") return {raw:true, type:"bool"};
+  if(v === "False") return {raw:false, type:"bool"};
+
+  const strLit = parseStringLiteral(v);
+  if(strLit.ok) return {raw:strLit.value, type:"str"};
+  if(strLit.reason === "unclosed") throw new Error("SyntaxError: EOL while scanning string literal");
+  if(strLit.reason === "collision") throw new Error("SyntaxError: invalid string");
+  if(strLit.reason === "bad_escape") throw new Error("SyntaxError: invalid escape sequence");
+
+  const call = splitFunctionCall(v);
+  if(call){
+    const name = call.name;
+    const inner = call.inner;
+
+    if(name === "str"){
+      if(inner === "") return {raw:"", type:"str"};
+      const r = evaluate(inner);
+      return {raw:displayValue(r), type:"str"};
+    }
+
+    if(name === "int"){
+      if(inner === "") throw new Error("TypeError: int() missing argument");
+      const r = evaluate(inner);
+      if(r.type === "int") return {raw:r.raw, type:"int"};
+      if(r.type === "bool") return {raw:r.raw ? 1 : 0, type:"int"};
+      if(r.type === "float") return {raw:Math.trunc(r.raw), type:"int"};
+      if(r.type === "str" && /^[-+]?\d+$/.test(r.raw.trim())){
+        return {raw:parseInt(r.raw.trim(), 10), type:"int"};
+      }
+      throw new Error("ValueError: invalid literal for int()");
+    }
+
+    if(name === "float"){
+      if(inner === "") return {raw:0.0, type:"float"};
+      const r = evaluate(inner);
+      if(r.type === "float") return {raw:r.raw, type:"float"};
+      if(r.type === "int") return {raw:Number(r.raw), type:"float"};
+      if(r.type === "bool") return {raw:r.raw ? 1.0 : 0.0, type:"float"};
+      if(r.type === "str" && r.raw.trim() !== "" && !Number.isNaN(Number(r.raw.trim()))){
+        return {raw:Number(r.raw.trim()), type:"float"};
+      }
+      throw new Error("ValueError: could not convert string to float()");
+    }
+
+    if(name === "bool"){
+      if(inner === "") return {raw:false, type:"bool"};
+      const r = evaluate(inner);
+      if(r.type === "bool") return {raw:r.raw, type:"bool"};
+      if(r.type === "int") return {raw:r.raw !== 0, type:"bool"};
+      if(r.type === "float") return {raw:r.raw !== 0, type:"bool"};
+      if(r.type === "str") return {raw:r.raw !== "", type:"bool"};
+      throw new Error("SyntaxError: invalid syntax");
+    }
+
+    throw new Error("NameError: unsupported function");
+  }
+
+  if(/^[-+]?\d+$/.test(v)) return {raw:parseInt(v, 10), type:"int"};
+  if(v !== "" && !Number.isNaN(Number(v))) return {raw:Number(v), type:"float"};
+
+  if(v.startsWith("'") || v.startsWith('"')) {
+    throw new Error("SyntaxError: invalid string");
+  }
+
+  throw new Error("SyntaxError: invalid syntax");
+}
+
+
+
+function renderExamples(){
+  examples.innerHTML = "";
+  samples.forEach(s => {
+    const btn = document.createElement("button");
+    btn.className = "example-btn";
+    btn.textContent = s;
+    btn.onclick = () => {
+      inputBox.value = s;
+      render();
+    };
+    examples.appendChild(btn);
+  });
+}
+
+function render(){
+  const v = inputBox.value.trim();
+  errorBox.style.display = "none";
+  errorBox.textContent = "";
+  outputBox.textContent = "";
+  
+  
+
+  if(v === ""){
+    codeBox.textContent = "temp = \nprint(temp)\nprint(type(temp))";
+    return;
+  }
+
+  codeBox.textContent = `temp = ${v}
+print(temp)
+print(type(temp))`;
+
+  try{
+    const result = evaluate(v);
+    outputBox.textContent = displayValue(result) + "\n" + typeName(result);
+    
+    
+  }catch(e){
+    errorBox.textContent = e.message;
+    errorBox.style.display = "block";
+    summaryBox.textContent = "입력 형식이 올바른지 확인해 보세요.";
+  }
+}
+
+inputBox.addEventListener("input", render);
+renderExamples();
+render();
+</script>
+</body>
+</html>
