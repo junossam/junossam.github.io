@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>자료형 메모리 애니메이션</title>
+<title>파이썬은 왜 자료형을 구분할까?</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -12,10 +12,19 @@
     background: #f5f7fb;
     color: #1f2937;
   }
+  .hero {
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .hero-inner {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 28px 40px 24px;
+  }
   .wrap {
     max-width: 980px;
-    margin: 28px auto;
-    padding: 20px;
+    margin: 24px auto;
+    padding: 0 20px;
   }
   .card {
     background: #fff;
@@ -31,7 +40,7 @@
   .desc {
     color: #4b5563;
     line-height: 1.7;
-    margin-bottom: 22px;
+    margin: 0;
   }
   .controls {
     display: grid;
@@ -231,11 +240,22 @@
     .controls, .grid, .info {
       grid-template-columns: 1fr;
     }
+    .hero-inner, .footer-inner {
+      padding: 24px 20px 20px;
+    }
   }
 
+  .footer-note {
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 24px;
+  }
+  .footer-inner {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 16px 40px 22px;
+  }
   .copyright {
-    margin-top: 26px;
-    padding: 14px;
     text-align: center;
     font-size: 13px;
     color: #6b7280;
@@ -245,14 +265,19 @@
 </style>
 </head>
 <body>
+<div class="hero">
+  <div class="hero-inner">
+    <h1>같은 10인데 왜 다를까?</h1>
+    <p class="desc">
+      겉으로 보기에는 비슷해 보여도 <strong>"10"</strong>, <strong>10</strong>, <strong>10.0</strong>은 서로 다른 자료형입니다.
+      파이썬은 자료형에 따라 값을 해석하는 방법과 메모리에 저장하는 방식을 다르게 처리합니다.
+      이 페이지에서는 자료형별 저장 모습을 통해 그 차이를 시각적으로 이해할 수 있습니다.
+    </p>
+  </div>
+</div>
+
 <div class="wrap">
   <div class="card">
-    <h1>자료형 메모리 애니메이션</h1>
-    <p class="desc">
-      같은 입력값이라도 자료형이 다르면 메모리에 저장되는 모양이 달라집니다.
-      아래에서 값을 입력한 뒤 <strong>메모리 쌓기</strong>를 누르면, 저장 칸이 차례대로 쌓이는 모습을 볼 수 있습니다.
-    </p>
-
     <div class="controls">
       <div>
         <label for="typeSelect">자료형</label>
@@ -290,6 +315,11 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<div class="footer-note">
+  <div class="footer-inner">
     <div class="copyright">
       <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong><br>
       본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
@@ -419,17 +449,18 @@ function buildIntView(raw) {
   const n = Number(raw.trim());
 
   function chooseByteWidth(num) {
+    // signed integer 기준으로 표시
     if (num >= 0) {
-      if (num <= 255) return 8;
-      if (num <= 65535) return 16;
-      if (num <= 4294967295) return 32;
-      return Math.ceil(num.toString(2).length / 8) * 8;
+      if (num <= 127) return 8;
+      if (num <= 32767) return 16;
+      if (num <= 2147483647) return 32;
+      return Math.ceil((num.toString(2).length + 1) / 8) * 8;
     } else {
       if (num >= -128) return 8;
       if (num >= -32768) return 16;
       if (num >= -2147483648) return 32;
-      const absBits = Math.ceil((Math.abs(num) + 1).toString(2).length / 8) * 8;
-      return Math.max(8, absBits);
+      const neededBits = Math.ceil((Math.abs(num)).toString(2).length / 8) * 8;
+      return Math.max(8, neededBits);
     }
   }
 
@@ -450,8 +481,8 @@ function buildIntView(raw) {
     summary: `
       <strong>정수</strong>는 숫자를 2진수로 바꾸어 저장합니다.<br>
       입력한 값 <strong>${n}</strong>은 <span class="mono">${bits}</span> 형태로 설명할 수 있습니다.<br>
-      이 페이지에서는 <strong>8비트(1바이트) 단위</strong>로 묶어서 보여줍니다.
-      음수는 보통 2의 보수 방식으로 표현합니다.
+      이 페이지에서는 <strong>signed int 기준</strong>으로 <strong>8비트(1바이트) 단위</strong>로 묶어서 보여줍니다.<br>
+      따라서 <strong>8비트 범위는 -128 ~ 127</strong>이며, 음수는 보통 2의 보수 방식으로 표현합니다.
     `,
     info: [
       ["입력값", n],
