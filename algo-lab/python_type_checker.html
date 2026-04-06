@@ -12,10 +12,18 @@
     background: #f5f7fb;
     color: #1f2937;
   }
+  .hero {
+    background: #f5f7fb;
+  }
+  .hero-inner {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 28px 40px 12px;
+  }
   .wrap {
     max-width: 980px;
-    margin: 28px auto;
-    padding: 20px;
+    margin: 8px auto 0;
+    padding: 0 20px;
   }
   .card {
     background: #fff;
@@ -31,7 +39,7 @@
   .desc {
     color: #4b5563;
     line-height: 1.7;
-    margin-bottom: 22px;
+    margin: 0;
   }
   .controls {
     display: grid;
@@ -140,10 +148,18 @@
     font-weight: 700;
     word-break: break-word;
   }
+  .footer-note {
+    background: #f5f7fb;
+    margin-top: 24px;
+  }
+  .footer-inner {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 16px 40px 22px;
+  }
   .footer {
     color: #6b7280;
     text-align: center;
-    margin-top: 18px;
     font-size: 14px;
     line-height: 1.7;
   }
@@ -151,19 +167,26 @@
     .grid, .info {
       grid-template-columns: 1fr;
     }
+    .hero-inner, .footer-inner {
+      padding: 24px 20px 16px;
+    }
   }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
+<div class="hero">
+  <div class="hero-inner">
     <h1>입력값으로 보는 파이썬 자료형</h1>
     <p class="desc">
       값을 입력하면 <strong>temp</strong>에 저장된다고 가정하고,
       <strong>print(temp)</strong>와 <strong>print(type(temp))</strong> 결과를 보여줍니다.
       문자열, 숫자, bool, 그리고 <strong>str()</strong>, <strong>int()</strong>, <strong>float()</strong>, <strong>bool()</strong>도 입력할 수 있습니다.
     </p>
+  </div>
+</div>
 
+<div class="wrap">
+  <div class="card">
     <div class="controls">
       <div>
         <label for="inputBox">값 입력</label>
@@ -188,6 +211,11 @@
         </div>
     </div>
 
+  </div>
+</div>
+
+<div class="footer-note">
+  <div class="footer-inner">
     <div class="footer">
       © 2026 Junossam | 교사 강준호 · 성서고등학교<br>
       본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
