@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>리스트의 시간 복잡도 실습</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Noto Sans KR", Arial, sans-serif;
+      background: #f6f8fc;
+      color: #1f2937;
+    }
+    .app {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+    .hero, .card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
+    }
+    .hero {
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #ffffff, #eef2ff);
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 30px;
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 22px;
+    }
+    p {
+      margin: 0;
+      line-height: 1.7;
+      color: #4b5563;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1.25fr 0.75fr;
+      gap: 20px;
+      align-items: start;
+    }
+    .stack {
+      display: grid;
+      gap: 20px;
+    }
+    .list-row {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .slot {
+      min-height: 94px;
+      border: 2px dashed #c7d2fe;
+      border-radius: 18px;
+      background: #f8faff;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      transition: 0.2s ease;
+    }
+    .slot.drag-over {
+      background: #eef2ff;
+      border-color: #4f46e5;
+      transform: translateY(-2px);
+    }
+    .slot.fixed {
+      border-style: solid;
+    }
+    .slot.empty::after {
+      content: '빈 칸';
+      color: #94a3b8;
+      font-size: 13px;
+    }
+    .slot-label {
+      position: absolute;
+      top: 6px;
+      left: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+    }
+    .card-chip {
+      width: 100%;
+      min-height: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 900;
+      color: white;
+      cursor: grab;
+      user-select: none;
+      box-shadow: 0 12px 24px rgba(79, 70, 229, 0.22);
+    }
+    .card-chip:active { cursor: grabbing; }
+    .existing {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    }
+    .queue-card {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      max-width: 120px;
+    }
+    .queue-next {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      max-width: 120px;
+      cursor: default;
+      opacity: 0.92;
+    }
+    .queue-wrap {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(90px, 120px));
+      gap: 14px;
+      align-items: start;
+    }
+    .queue-box {
+      background: #f8fafc;
+      border-radius: 18px;
+      padding: 12px;
+      min-height: 110px;
+    }
+    .queue-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 10px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      background: #111827;
+      color: white;
+    }
+    button.secondary {
+      background: #eef2ff;
+      color: #3730a3;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .stat {
+      background: #f8fafc;
+      border-radius: 18px;
+      padding: 14px;
+    }
+    .stat .label {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+    .stat .value {
+      font-size: 26px;
+      font-weight: 900;
+      color: #111827;
+    }
+    .log {
+      margin-top: 16px;
+      background: #f8fafc;
+      border-radius: 18px;
+      padding: 14px;
+      max-height: 320px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.75;
+      white-space: pre-wrap;
+    }
+    .formula {
+      margin-top: 16px;
+      background: #eefbf5;
+      border-radius: 18px;
+      padding: 16px;
+      line-height: 1.8;
+      color: #065f46;
+      font-size: 14px;
+    }
+    .mini {
+      margin-top: 14px;
+      color: #64748b;
+      font-size: 14px;
+    }
+    .code {
+      margin-top: 14px;
+      background: #0f172a;
+      color: #e5e7eb;
+      border-radius: 18px;
+      padding: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+    .copyright {
+      margin-top: 24px;
+      padding: 20px 16px 8px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .copyright strong {
+      display: block;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      .list-row { grid-template-columns: repeat(5, 1fr); }
+      .queue-wrap { grid-template-columns: repeat(2, minmax(90px, 120px)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <h1>리스트의 시간 복잡도 실습</h1>
+      <p>
+        길이 10의 리스트 중 7칸이 이미 정렬되어 있다고 가정해 보세요. 처리해야 하는 새 카드를 알맞은 위치로 넣기 위해
+        기존 원소를 직접 한 칸씩 옮겨 보면, 왜 리스트의 삽입 연산이 느려질 수 있는지 이해할 수 있습니다.
+      </p>
+    </section>
+
+    <div class="layout">
+      <div class="stack">
+        <section class="card">
+          <h2>리스트에 새 원소 삽입해 보기</h2>
+          <p>기존 값은 직접 옮겨도 원래 칸에 그대로 남아 있습니다. 빈 칸을 선택해 복사해 넣듯이 자리를 맞춰 보세요. 다른 카드 위에 놓으면 그 칸의 값은 새 값으로 바뀝니다.</p>
+          <div class="list-row" id="listRow"></div>
+
+          <div class="mini">삽입할 카드 순서</div>
+          <div class="queue-wrap" id="queueWrap"></div>
+
+          <div class="controls">
+            <button id="resetBtn">다시 시작</button>
+            <button id="newValueBtn" class="secondary">카드 다시 섞기</button>
+            <button id="checkBtn" class="secondary">정답 확인</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>왜 시간이 걸릴까요?</h2>
+          <div class="formula" id="formulaBox"></div>
+          <div class="code" id="codeBox"></div>
+        </section>
+      </div>
+
+      <section class="card">
+        <h2>현재 상태</h2>
+        <div class="stats">
+          <div class="stat">
+            <div class="label">이동 횟수</div>
+            <div class="value" id="moveCount">0</div>
+          </div>
+          <div class="stat">
+            <div class="label">현재 카드의 삽입 위치</div>
+            <div class="value" id="insertIndex">-</div>
+          </div>
+          <div class="stat">
+            <div class="label">남은 빈 칸</div>
+            <div class="value" id="emptyCount">3</div>
+          </div>
+          <div class="stat">
+            <div class="label">판정</div>
+            <div class="value" id="statusText">진행 중</div>
+          </div>
+        </div>
+        <div class="log" id="logBox">실습을 시작해 보세요.</div>
+      </section>
+    </div>
+
+    <div class="copyright">
+      <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong>
+      본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
+    </div>
+  </div>
+
+  <script>
+    const listRowEl = document.getElementById('listRow');
+    const queueWrapEl = document.getElementById('queueWrap');
+    const moveCountEl = document.getElementById('moveCount');
+    const insertIndexEl = document.getElementById('insertIndex');
+    const emptyCountEl = document.getElementById('emptyCount');
+    const statusTextEl = document.getElementById('statusText');
+    const logBoxEl = document.getElementById('logBox');
+    const formulaBoxEl = document.getElementById('formulaBox');
+    const codeBoxEl = document.getElementById('codeBox');
+    const resetBtn = document.getElementById('resetBtn');
+    const newValueBtn = document.getElementById('newValueBtn');
+    const checkBtn = document.getElementById('checkBtn');
+
+    const SLOT_COUNT = 10;
+    const BASE_VALUES = [10, 20, 30, 40, 50, 60, 70, null, null, null];
+    const QUEUE_PRESETS = [
+      [35, 15, 65],
+      [25, 55, 75],
+      [45, 12, 68],
+      [18, 52, 72]
+    ];
+
+    let state = null;
+
+    function cloneBaseValues() {
+      return [...BASE_VALUES];
+    }
+
+    function makeDefaultState(randomize = false) {
+      const queue = randomize
+        ? [...QUEUE_PRESETS[Math.floor(Math.random() * QUEUE_PRESETS.length)]]
+        : [35, 15, 65];
+      return {
+        slots: cloneBaseValues(),
+        queue,
+        insertedCards: [],
+        moveCount: 0,
+        dragging: null,
+        logs: [`현재 처리할 카드는 ${queue[0]}입니다.`],
+      };
+    }
+
+    function getCurrentCard() {
+      return state.queue[0] ?? null;
+    }
+
+    function getCurrentExpectedArray() {
+      const values = BASE_VALUES.filter((v) => v != null);
+      state.insertedCards.forEach((v) => values.push(v));
+      values.sort((a, b) => a - b);
+      while (values.length < SLOT_COUNT) values.push(null);
+      return values;
+    }
+
+    function getFinalExpectedArray() {
+      const values = BASE_VALUES.filter((v) => v != null);
+      state.insertedCards.forEach((v) => values.push(v));
+      state.queue.forEach((v) => {
+        if (v != null) values.push(v);
+      });
+      values.sort((a, b) => a - b);
+      while (values.length < SLOT_COUNT) values.push(null);
+      return values;
+    }
+
+    function findInsertIndex() {
+      const current = getCurrentCard();
+      if (current == null) return '-';
+      const values = state.slots.filter((v) => v != null);
+      const idx = values.findIndex((v) => current < v);
+      return idx === -1 ? values.length : idx;
+    }
+
+    function pushLog(message) {
+      state.logs.unshift(message);
+      state.logs = state.logs.slice(0, 14);
+    }
+
+    function createSlot(index) {
+      const slot = document.createElement('div');
+      slot.className = `slot ${state.slots[index] == null ? 'empty' : 'fixed'}`;
+      slot.dataset.index = String(index);
+
+      const label = document.createElement('div');
+      label.className = 'slot-label';
+      label.textContent = `${index}`;
+      slot.appendChild(label);
+
+      slot.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        slot.classList.add('drag-over');
+      });
+      slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+      slot.addEventListener('drop', (event) => {
+        event.preventDefault();
+        slot.classList.remove('drag-over');
+        handleDrop(index);
+      });
+
+      const value = state.slots[index];
+      if (value != null) {
+        const chip = createChip(value, 'slot', index, 'existing');
+        slot.appendChild(chip);
+      }
+      return slot;
+    }
+
+    function createChip(value, source, index, type) {
+      const chip = document.createElement('div');
+      chip.className = `card-chip ${type}`;
+      chip.textContent = value;
+      chip.draggable = source !== 'preview';
+      chip.addEventListener('dragstart', () => {
+        if (source === 'preview') return;
+        state.dragging = { value, source, index };
+      });
+      chip.addEventListener('dragend', () => {
+        state.dragging = null;
+        document.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
+      });
+      return chip;
+    }
+
+    function handleDrop(targetIndex) {
+      if (!state.dragging) return;
+      const targetValue = state.slots[targetIndex];
+      const { source, index, value } = state.dragging;
+      if (source === 'slot' && index === targetIndex) return;
+
+      if (source === 'current') {
+        state.slots[targetIndex] = value;
+        state.insertedCards.push(value);
+        state.queue.shift();
+        if (targetValue != null) {
+          pushLog(`${targetIndex}번 칸에 현재 카드 ${value}을(를) 올려 기존 값 ${targetValue}이(가) 덮였습니다.`);
+        } else {
+          pushLog(`${targetIndex}번 칸에 현재 카드 ${value}을(를) 넣었습니다.`);
+        }
+      } else if (source === 'slot') {
+        state.slots[targetIndex] = value;
+        state.moveCount += 1;
+        if (targetValue != null && targetValue !== value) {
+          pushLog(`${index}번 칸의 ${value}을(를) ${targetIndex}번 칸으로 복사해 기존 값 ${targetValue}을(를) 덮었습니다.`);
+        } else if (targetValue === value) {
+          pushLog(`${index}번 칸의 ${value}을(를) ${targetIndex}번 칸으로 복사했습니다.`);
+        } else {
+          pushLog(`${index}번 칸의 ${value}을(를) ${targetIndex}번 빈 칸으로 복사했습니다.`);
+        }
+      }
+
+      if (state.queue.length > 0) {
+        pushLog(`다음 처리할 카드는 ${state.queue[0]}입니다.`);
+      }
+
+      render();
+    }
+
+    function renderQueue() {
+      queueWrapEl.innerHTML = '';
+      const labels = ['현재 처리할 카드', '다음 카드', '그다음 카드'];
+      for (let i = 0; i < 3; i += 1) {
+        const box = document.createElement('div');
+        box.className = 'queue-box';
+
+        const label = document.createElement('div');
+        label.className = 'queue-label';
+        label.textContent = labels[i];
+        box.appendChild(label);
+
+        const value = state.queue[i];
+        if (value != null) {
+          const type = i === 0 ? 'queue-card' : 'queue-next';
+          const source = i === 0 ? 'current' : 'preview';
+          box.appendChild(createChip(value, source, i, type));
+        } else {
+          const mini = document.createElement('div');
+          mini.className = 'mini';
+          mini.textContent = '없음';
+          box.appendChild(mini);
+        }
+
+        queueWrapEl.appendChild(box);
+      }
+    }
+
+    function arraysEqual(a, b) {
+      return JSON.stringify(a) === JSON.stringify(b);
+    }
+
+    function updateInfo() {
+      moveCountEl.textContent = String(state.moveCount);
+      insertIndexEl.textContent = String(findInsertIndex());
+      emptyCountEl.textContent = String(state.slots.filter((v) => v == null).length);
+
+      const currentExpected = getCurrentExpectedArray();
+      const success = arraysEqual(state.slots, currentExpected);
+      statusTextEl.textContent = success && state.queue.length === 0 ? '성공' : '진행 중';
+
+      logBoxEl.textContent = state.logs.join('\n\n');
+      logBoxEl.scrollTop = 0;
+
+      const current = getCurrentCard();
+      formulaBoxEl.innerHTML = current == null
+        ? `모든 카드를 다 넣었습니다. 리스트에 새 값을 넣기 위해 뒤쪽 원소를 복사해 빈 칸을 만드는 과정을 직접 수행했습니다.<br><br>이처럼 리스트의 중간 삽입은 여러 칸 이동이 필요하므로 <strong>O(n)</strong>이 될 수 있습니다.`
+        : `현재 카드 <strong>${current}</strong>의 삽입 위치는 <strong>${findInsertIndex()}</strong>번입니다.<br><br>이 위치 뒤의 값들을 오른쪽 빈 칸으로 하나씩 복사해 자리를 만들어야 합니다.<br><br>새 카드가 앞쪽에 들어갈수록 더 많은 값을 옮겨야 하므로 리스트의 중간 삽입은 최악의 경우 <strong>O(n)</strong>입니다.`;
+
+      codeBoxEl.textContent = `# 정렬된 리스트에 새 값 삽입\narr = ${JSON.stringify(state.slots)}\ncurrent_card = ${current == null ? '처리 완료' : current}\ninserted_cards = ${JSON.stringify(state.insertedCards)}\nnext_cards = ${JSON.stringify(state.queue.slice(1))}\n\n# 뒤쪽 값을 오른쪽 빈 칸으로 한 칸씩 복사\n# 자리가 생기면 현재 카드를 삽입`;
+    }
+
+    function render() {
+      listRowEl.innerHTML = '';
+      for (let i = 0; i < SLOT_COUNT; i += 1) {
+        listRowEl.appendChild(createSlot(i));
+      }
+      renderQueue();
+      updateInfo();
+    }
+
+    function reset(randomize = false) {
+      state = makeDefaultState(randomize);
+      render();
+    }
+
+    resetBtn.addEventListener('click', () => reset(false));
+    newValueBtn.addEventListener('click', () => reset(true));
+    checkBtn.addEventListener('click', () => {
+      const expected = getCurrentExpectedArray();
+      if (arraysEqual(expected, state.slots)) {
+        if (state.queue.length === 0) {
+          pushLog('정답입니다. 3장의 카드가 모두 올바른 위치에 삽입되었습니다.');
+        } else {
+          pushLog(`정답입니다. 현재까지의 올바른 결과는 [${expected.filter((v) => v != null).join(', ')}] 입니다.`);
+        }
+      } else {
+        pushLog(`아직 아닙니다. 현재 단계의 올바른 결과는 [${expected.filter((v) => v != null).join(', ')}] 입니다.`);
+      }
+      render();
+    });
+
+    function runSelfTests() {
+      state = makeDefaultState(false);
+      console.assert(findInsertIndex() === 3, 'insert index for first card 35 should be 3');
+      state.insertedCards = [35];
+      console.assert(arraysEqual(getCurrentExpectedArray().filter((v) => v != null), [10, 20, 30, 35, 40, 50, 60, 70]), 'current expected array should include inserted cards sorted');
+      console.assert(arraysEqual(getFinalExpectedArray().filter((v) => v != null), [10, 15, 20, 30, 35, 40, 50, 60, 65, 70]), 'final expected array should include all cards sorted');
+      console.assert(typeof getCurrentExpectedArray === 'function', 'getCurrentExpectedArray should be defined');
+      console.assert(typeof getFinalExpectedArray === 'function', 'getFinalExpectedArray should be defined');
+    }
+
+    runSelfTests();
+    reset(false);
+  </script>
+</body>
+</html>
