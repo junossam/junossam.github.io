@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>정렬 알고리즘 시간 복잡도 계산 이해하기</title>
+  <title>시간 복잡도 계산 이해하기</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -87,14 +87,14 @@
     .scenario-btn span {
       font-size: 13px;
       line-height: 1.6;
-      opacity: 0.95;
+      opacity: 0.9;
     }
     .control-row {
       display: grid;
       gap: 16px;
       margin-top: 16px;
     }
-    .range-wrap label {
+    .range-wrap label, .toggle-wrap label {
       display: block;
       margin-bottom: 8px;
       font-weight: 700;
@@ -108,12 +108,29 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 90px;
+      min-width: 80px;
       padding: 8px 12px;
       border-radius: 999px;
       background: #eef2ff;
       color: #3730a3;
       font-weight: 800;
+    }
+    .toggle-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .toggle-btn {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: #f3f4f6;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .toggle-btn.active {
+      background: #111827;
+      color: white;
     }
     .main-grid {
       display: grid;
@@ -205,7 +222,7 @@
     }
     .bar-row {
       display: grid;
-      grid-template-columns: 180px 1fr 110px;
+      grid-template-columns: 140px 1fr 80px;
       gap: 12px;
       align-items: center;
     }
@@ -235,23 +252,12 @@
       background: #f8fafc;
       border-radius: 18px;
       padding: 16px;
-      max-height: 320px;
+      max-height: 260px;
       overflow: auto;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 13px;
-      line-height: 1.8;
+      line-height: 1.7;
       color: #1f2937;
-      white-space: normal;
-    }
-    .trace-item {
-      margin-bottom: 12px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    .trace-item:last-child {
-      margin-bottom: 0;
-      padding-bottom: 0;
-      border-bottom: none;
     }
     .note {
       margin-top: 12px;
@@ -291,31 +297,39 @@
 <body>
   <div class="app">
     <section class="hero">
-      <h1>정렬 알고리즘의 시간 복잡도 계산 과정을 이해해 봅시다</h1>
+      <h1>시간 복잡도 계산 과정을 이해해 봅시다</h1>
       <p>
-        정렬 알고리즘은 데이터 개수가 커질수록 실행 횟수가 어떻게 늘어나는지 살펴보기 좋은 예제입니다.
-        알고리즘을 선택하고 n 값을 바꾸어 보면서, 비교 횟수와 계산 식, 최종 Big-O가 어떻게 연결되는지 확인해 보세요.
+        반복문이 몇 번 실행되는지 직접 세어 보고, 그 횟수가 어떻게 식으로 바뀌는지,
+        마지막에는 왜 Big-O에서 가장 큰 항만 남기는지를 한 화면에서 확인할 수 있도록 만들었습니다.
       </p>
     </section>
 
     <div class="layout">
       <aside class="card">
-        <h2>정렬 알고리즘 선택</h2>
-        <p class="muted">선택 정렬, 버블 정렬, 삽입 정렬, 병합 정렬, 퀵 정렬의 계산 과정을 비교해 보세요.</p>
+        <h2>예제 선택</h2>
+        <p class="muted">단일 반복문부터 의존적인 이중 반복문까지, 시간 복잡도를 계산하는 대표 예제를 선택해 보세요.</p>
         <div class="scenario-list" id="scenarioList"></div>
 
         <div class="control-row">
           <div class="range-wrap">
-            <label for="nRange">데이터 개수 n</label>
-            <input id="nRange" type="range" min="2" max="64" step="1" value="8" />
-            <div class="n-badge" id="nBadge">n = 8</div>
+            <label for="nRange">입력 크기 n</label>
+            <input id="nRange" type="range" min="1" max="20" step="1" value="5" />
+            <div class="n-badge" id="nBadge">n = 5</div>
+          </div>
+
+          <div class="toggle-wrap">
+            <label>표현 방식</label>
+            <div class="toggle-grid">
+              <button class="toggle-btn active" data-view="count">실행 횟수</button>
+              <button class="toggle-btn" data-view="growth">성장 식</button>
+            </div>
           </div>
         </div>
       </aside>
 
       <main class="main-grid">
         <section class="card">
-          <h2 id="scenarioTitle">선택 정렬</h2>
+          <h2 id="scenarioTitle">단일 반복문</h2>
           <p class="muted" id="scenarioDesc"></p>
           <div class="code-box" id="codeBox"></div>
         </section>
@@ -324,16 +338,16 @@
           <h2>계산 결과</h2>
           <div class="summary-grid">
             <div class="summary-item">
-              <div class="label">현재 계산값</div>
-              <div class="value" id="countValue">28</div>
+              <div class="label">현재 실행 횟수</div>
+              <div class="value" id="countValue">5</div>
             </div>
             <div class="summary-item">
               <div class="label">계산 식</div>
-              <div class="value" id="formulaValue" style="font-size:20px;">(n-1) + (n-2) + ... + 2 + 1</div>
+              <div class="value" id="formulaValue" style="font-size:20px;">n</div>
             </div>
             <div class="summary-item">
-              <div class="label">최종 시간 복잡도</div>
-              <div class="value" id="bigOValue">O(n²)</div>
+              <div class="label">시간 복잡도</div>
+              <div class="value" id="bigOValue">O(n)</div>
             </div>
           </div>
         </section>
@@ -344,7 +358,7 @@
         </section>
 
         <section class="card">
-          <h2>데이터 개수별 실행 횟수 비교</h2>
+          <h2>실행 횟수 비교</h2>
           <div class="sim-box">
             <div class="bars" id="barsBox"></div>
             <div class="trace" id="traceBox"></div>
@@ -363,97 +377,135 @@
   <script>
     const scenarios = [
       {
-        id: 'selection',
-        name: '선택 정렬',
-        description: '매 회차마다 가장 작은 값을 찾아 앞으로 보내는 정렬입니다.',
-        code: (n) => `for i in range(${n} - 1):\n    min_idx = i\n    for j in range(i + 1, ${n}):\n        if arr[j] < arr[min_idx]:\n            min_idx = j\n    arr[i], arr[min_idx] = arr[min_idx], arr[i]`,
-        count: (n) => (n * (n - 1)) / 2,
-        formula: '(n-1) + (n-2) + ... + 2 + 1',
+        id: 'single',
+        name: '단일 반복문',
+        description: '반복문이 n번 실행되는 가장 기본적인 경우입니다.',
+        code: (n) => `for i in range(${n}):\n    print(i)`,
+        count: (n) => n,
+        formula: 'n',
+        bigO: 'O(n)',
         steps: (n) => [
-          { title: '회차 구조 확인', text: '첫 번째 자리부터 마지막 전 자리까지, 각 자리에 들어갈 최솟값을 찾습니다.' },
-          { title: '회차별 비교 횟수 세기', text: '첫 회차에는 n-1번, 다음에는 n-2번, 마지막에는 1번 비교합니다.', math: `${n - 1} + ${n - 2} + ... + 1` },
-          { title: '합 공식으로 바꾸기', text: '이 식은 1부터 (n-1)까지의 합과 같습니다.', math: `n(n-1)/2 = ${(n * (n - 1)) / 2}` },
-          { title: 'Big-O로 정리', text: '가장 크게 증가하는 항은 n²이므로 시간 복잡도는 O(n²)입니다.', math: 'n(n-1)/2 ≈ n²/2 → O(n²)' }
+          { title: '반복문 개수 확인', text: '반복문이 한 번만 나타납니다. 따라서 먼저 몇 번 도는지만 보면 됩니다.' },
+          { title: 'range(n) 해석', text: `range(${n})은 0부터 ${n - 1}까지이므로 모두 ${n}번 반복됩니다.`, math: `${n}` },
+          { title: '증가 속도 정리', text: '입력 크기 n이 커지면 실행 횟수도 n에 비례하여 증가합니다.', math: 'T(n) = n' },
+          { title: 'Big-O로 표현', text: '가장 크게 증가하는 항은 n이므로 시간 복잡도는 O(n)입니다.', math: 'O(n)' }
         ],
+        trace: (n) => Array.from({ length: n }, (_, i) => `i = ${i} → 1회 실행`).join('\n'),
+        note: '단일 반복문은 반복 횟수를 바로 세면 됩니다. 가장 먼저 익혀야 하는 기준입니다.'
+      },
+      {
+        id: 'double',
+        name: '독립적인 이중 반복문',
+        description: '바깥 반복문과 안쪽 반복문이 모두 n번 반복되는 경우입니다.',
+        code: (n) => `for i in range(${n}):\n    for j in range(${n}):\n        print(i, j)`,
+        count: (n) => n * n,
+        formula: 'n × n',
         bigO: 'O(n²)',
-        trace: (n) => Array.from({ length: Math.max(0, n - 1) }, (_, i) => `${i + 1}회차: 남은 원소 ${n - i}개 중 최솟값 탐색 → 비교 ${n - i - 1}번`),
-        note: '선택 정렬은 데이터 상태가 달라도 비교 횟수는 거의 일정합니다. 그래서 계산식이 깔끔하게 n(n-1)/2가 됩니다.'
-      },
-      {
-        id: 'bubble',
-        name: '버블 정렬',
-        description: '인접한 두 값을 비교하며 큰 값을 뒤로 보내는 정렬입니다.',
-        code: (n) => `for i in range(${n} - 1):\n    for j in range(${n} - 1 - i):\n        if arr[j] > arr[j + 1]:\n            arr[j], arr[j + 1] = arr[j + 1], arr[j]`,
-        count: (n) => (n * (n - 1)) / 2,
-        formula: '(n-1) + (n-2) + ... + 2 + 1',
         steps: (n) => [
-          { title: '회차별 비교 횟수 확인', text: '첫 회차는 n-1번, 두 번째 회차는 n-2번, 마지막 회차는 1번 비교합니다.' },
-          { title: '합으로 정리', text: '전체 비교 횟수는 (n-1) + (n-2) + ... + 1 입니다.', math: `${n - 1} + ${n - 2} + ... + 1` },
-          { title: '공식 적용', text: '이 식도 결국 1부터 (n-1)까지의 합과 같습니다.', math: `n(n-1)/2 = ${(n * (n - 1)) / 2}` },
-          { title: 'Big-O로 정리', text: '가장 크게 증가하는 항은 n²이므로 O(n²)입니다.', math: 'O(n²)' }
+          { title: '반복문 구조 확인', text: '반복문이 두 겹으로 중첩되어 있습니다. 바깥이 한 번 돌 때마다 안쪽이 전체 실행됩니다.' },
+          { title: '바깥 반복 횟수', text: `바깥 반복문은 ${n}번 실행됩니다.`, math: `${n}` },
+          { title: '안쪽 반복 횟수', text: `바깥 반복문이 한 번 돌 때마다 안쪽도 ${n}번 실행됩니다.`, math: `${n}` },
+          { title: '곱으로 계산', text: '중첩 반복문은 실행 횟수를 곱해서 계산합니다.', math: `${n} × ${n} = ${n * n}` },
+          { title: 'Big-O로 표현', text: '가장 크게 증가하는 항은 n²이므로 시간 복잡도는 O(n²)입니다.', math: 'O(n²)' }
         ],
-        bigO: 'O(n²)',
-        trace: (n) => Array.from({ length: Math.max(0, n - 1) }, (_, i) => `${i + 1}회차: 인접 비교 ${n - i - 1}번`),
-        note: '버블 정렬도 최악의 경우에는 삼각수 형태로 비교 횟수가 누적되어 O(n²)가 됩니다.'
-      },
-      {
-        id: 'insertion',
-        name: '삽입 정렬',
-        description: '현재 값을 앞쪽의 정렬된 구간에 끼워 넣는 정렬입니다.',
-        code: (n) => `for i in range(1, ${n}):\n    key = arr[i]\n    j = i - 1\n    while j >= 0 and arr[j] > key:\n        arr[j + 1] = arr[j]\n        j -= 1`,
-        count: (n) => (n * (n - 1)) / 2,
-        formula: '(n-1) + (n-2) + ... + 2 + 1 (최악의 경우)',
-        steps: (n) => [
-          { title: '최악의 경우 가정', text: '역순 데이터에서는 새 원소가 앞쪽 끝까지 계속 이동해야 합니다.' },
-          { title: '원소별 이동 횟수 세기', text: '두 번째 원소는 1칸, 세 번째는 2칸, 네 번째는 3칸씩 이동할 수 있습니다.' },
-          { title: '합 공식 적용', text: '전체 비교 또는 이동 횟수는 1 + 2 + ... + (n-1) 입니다.', math: `n(n-1)/2 = ${(n * (n - 1)) / 2}` },
-          { title: 'Big-O로 정리', text: '최악의 경우에는 n²에 비례하므로 O(n²)입니다.', math: 'O(n²)' }
-        ],
-        bigO: 'O(n²)',
-        trace: (n) => Array.from({ length: Math.max(0, n - 1) }, (_, i) => `${i + 2}번째 원소 삽입: 최악의 경우 ${i + 1}번 비교/이동`),
-        note: '삽입 정렬은 거의 정렬된 데이터에서는 빠르지만, 최악의 경우 시간 복잡도를 기준으로 하면 O(n²)입니다.'
-      },
-      {
-        id: 'merge',
-        name: '병합 정렬',
-        description: '배열을 반으로 나누고, 정렬된 두 배열을 다시 합치는 정렬입니다.',
-        code: (n) => `merge_sort(arr):\n    left = merge_sort(arr[:${Math.floor(n / 2)}])\n    right = merge_sort(arr[${Math.floor(n / 2)}:])\n    return merge(left, right)`,
-        count: (n) => Math.round(n * Math.log2(Math.max(n, 1))),
-        formula: 'n × log₂n (단계 수 × 각 단계 작업량)',
-        steps: (n) => [
-          { title: '반으로 나누는 과정 관찰', text: '배열을 계속 반으로 나누면 크기가 절반씩 줄어듭니다.' },
-          { title: '단계 직접 세어보기', text: 'n이 8이라면 → 8 → 4 → 2 → 1 이 됩니다. 총 3번 나뉘었습니다.', math: `${n} → ${Math.floor(n/2)} → ${Math.floor(n/4)} → ... → 1` },
-          { title: '왜 log₂n인가?', text: 'n을 2로 몇 번 나누면 1이 되는지를 세는 것이 바로 log₂n입니다.', math: `2^k = ${n} → k = log₂${n}` },
-          { title: '각 단계 작업량', text: '각 단계에서는 모든 원소를 한 번씩 비교하므로 n번 처리합니다.', math: `${n}` },
-          { title: '전체 계산', text: '단계 수(log₂n) × 각 단계 작업량(n)을 곱합니다.', math: `${n} × log₂${n}` },
-          { title: 'Big-O로 정리', text: '따라서 시간 복잡도는 O(n log n)입니다.', math: 'O(n log n)' }
-        ],
-        bigO: 'O(n log n)',
-        trace: (n) => Array.from({ length: Math.max(1, Math.ceil(Math.log2(Math.max(n, 1)))) }, (_, i) => `${i + 1}단계: 전체 원소 약 ${n}개를 비교하며 병합`),
-        note: '병합 정렬은 “몇 단계로 나누는가”와 “각 단계에서 몇 개를 처리하는가”를 곱해서 생각하면 이해가 쉽습니다.'
-      },
-      {
-        id: 'quick',
-        name: '퀵 정렬',
-        description: '기준값을 중심으로 작은 값과 큰 값을 나누는 정렬입니다.',
-        code: (n) => `pivot = arr[right]\nfor j in range(left, right):\n    if arr[j] <= pivot:\n        ...\n# 평균적으로 배열이 반씩 나뉜다고 가정`,
-        count: (n) => Math.round(n * Math.log2(Math.max(n, 1))),
-        formula: 'n × log₂n (평균적인 경우)',
-        steps: (n) => [
-          { title: '평균적인 분할 가정', text: '기준값이 적절하면 배열이 대략 절반씩 나뉩니다.' },
-          { title: '단계 직접 세어보기', text: 'n이 8이라면 → 8 → 4 → 2 → 1 처럼 줄어듭니다.' , math: `${n} → ${Math.floor(n/2)} → ${Math.floor(n/4)} → ... → 1` },
-          { title: '왜 log₂n인가?', text: '이렇게 반씩 나누는 횟수가 바로 log₂n입니다.', math: `2^k = ${n} → k = log₂${n}` },
-          { title: '각 단계 작업량', text: '각 단계마다 전체 원소 n개를 기준값과 비교합니다.', math: `${n}` },
-          { title: '전체 계산', text: '단계 수(log₂n) × 각 단계 작업량(n)', math: `${n} × log₂${n}` },
-          { title: '평균과 최악 구분', text: '평균은 O(n log n)이지만, 한쪽으로만 나뉘면 O(n²)이 됩니다.', math: '평균 O(n log n), 최악 O(n²)' }
-        ],
-        bigO: '평균 O(n log n), 최악 O(n²)',
         trace: (n) => {
-          const lines = Array.from({ length: Math.max(1, Math.ceil(Math.log2(Math.max(n, 1)))) }, (_, i) => `${i + 1}단계: 전체 원소 약 ${n}개를 기준값과 비교`);
-          lines.push('치우친 분할이 반복되면 1 + 2 + ... + (n-1) 형태가 됩니다.');
-          return lines;
+          const lines = [];
+          for (let i = 0; i < n; i += 1) {
+            lines.push(`i = ${i}일 때 안쪽 반복문 ${n}번 실행`);
+          }
+          return lines.join('\n');
         },
-        note: '퀵 정렬은 보통 빠르지만, 이론적으로는 최악의 경우 O(n²)도 가능하다는 점을 함께 기억해야 합니다.'
+        note: '이중 반복문이라고 해서 무조건 O(n²)인 것은 아니지만, 두 반복문이 모두 n번 실행되면 O(n²)입니다.'
+      },
+      {
+        id: 'dependent',
+        name: '의존적인 이중 반복문',
+        description: '안쪽 반복문의 횟수가 바깥 반복문의 값에 따라 달라지는 경우입니다.',
+        code: (n) => `for i in range(${n}):\n    for j in range(i):\n        print(i, j)`,
+        count: (n) => (n * (n - 1)) / 2,
+        formula: '0 + 1 + 2 + ... + (n-1)',
+        bigO: 'O(n²)',
+        steps: (n) => {
+          const partial = Array.from({ length: n }, (_, i) => i).join(' + ');
+          return [
+            { title: '반복문 구조 확인', text: '이중 반복문이지만 안쪽 반복문의 횟수가 항상 같지 않습니다.' },
+            { title: '안쪽 반복문 해석', text: 'j는 range(i)이므로 i가 0일 때 0번, i가 1일 때 1번, i가 2일 때 2번 실행됩니다.' },
+            { title: '전체 실행 횟수 더하기', text: '모든 반복 횟수를 더해야 전체 실행 횟수를 구할 수 있습니다.', math: partial || '0' },
+            { title: '합 공식 적용', text: '0부터 (n-1)까지의 합은 n(n-1)/2입니다.', math: `${n}(${n}-1)/2 = ${(n * (n - 1)) / 2}` },
+            { title: 'Big-O로 표현', text: 'n(n-1)/2는 결국 n²에 비례합니다. 상수와 낮은 차수는 버리므로 O(n²)입니다.', math: 'n(n-1)/2 ≈ n²/2 → O(n²)' }
+          ];
+        },
+        trace: (n) => {
+          const lines = [];
+          for (let i = 0; i < n; i += 1) {
+            lines.push(`i = ${i} → 안쪽 반복 ${i}번 실행`);
+          }
+          return lines.join('\n');
+        },
+        note: '중첩 반복문을 볼 때는 “항상 곱하기”가 아니라, 실제로 몇 번씩 실행되는지 합으로 세어야 하는 경우가 있습니다.'
+      },
+      {
+        id: 'separate',
+        name: '서로 이어진 반복문',
+        description: '반복문이 중첩되지 않고 순서대로 이어져 있을 때의 경우입니다.',
+        code: (n) => `for i in range(${n}):\n    print(i)\n\nfor i in range(${n}):\n    for j in range(${n}):\n        print(i, j)`,
+        count: (n) => n + n * n,
+        formula: 'n + n²',
+        bigO: 'O(n²)',
+        steps: (n) => [
+          { title: '블록 나누기', text: '먼저 코드 덩어리를 나누어 각각의 실행 횟수를 구합니다.' },
+          { title: '첫 번째 블록', text: `첫 번째 반복문은 ${n}번 실행됩니다.`, math: `${n}` },
+          { title: '두 번째 블록', text: `이중 반복문은 ${n} × ${n} = ${n * n}번 실행됩니다.`, math: `${n * n}` },
+          { title: '더하기', text: '중첩이 아니라 이어진 구조이므로 실행 횟수를 더합니다.', math: `${n} + ${n * n} = ${n + n * n}` },
+          { title: 'Big-O로 표현', text: 'Big-O에서는 가장 크게 증가하는 항만 남깁니다. n²가 n보다 훨씬 빠르게 커지므로 O(n²)입니다.', math: 'O(n + n²) = O(n²)' }
+        ],
+        trace: (n) => `첫 번째 반복문: ${n}번 실행\n두 번째 반복문: ${n * n}번 실행\n전체: ${n + n * n}번 실행`,
+        note: '이어진 코드에서는 더하고, 중첩된 코드에서는 곱하는지 먼저 구분하면 훨씬 쉽게 계산할 수 있습니다.'
+      },
+      {
+        id: 'log',
+        name: '절반씩 줄어드는 반복문',
+        description: '입력이 절반씩 줄어드는 경우로, 로그 시간 복잡도를 이해하기 위한 예제입니다.',
+        code: (n) => `while n > 1:\n    n = n // 2`,
+        count: (n) => {
+          let count = 0;
+          let cur = n;
+          while (cur > 1) {
+            cur = Math.floor(cur / 2);
+            count += 1;
+          }
+          return count;
+        },
+        formula: 'n → n/2 → n/4 → ... → 1',
+        bigO: 'O(log n)',
+        steps: (n) => {
+          const path = [];
+          let cur = n;
+          path.push(cur);
+          while (cur > 1) {
+            cur = Math.floor(cur / 2);
+            path.push(cur);
+          }
+          return [
+            { title: '변화 방식 확인', text: '반복할 때마다 1씩 줄어드는 것이 아니라 절반씩 줄어듭니다.' },
+            { title: '값의 흐름 추적', text: 'n이 계속 절반으로 줄어들다가 1이 되면 끝납니다.', math: path.join(' → ') },
+            { title: '몇 번 줄어드는지 계산', text: '몇 번 나누어야 1에 도달하는지를 세면 됩니다.' },
+            { title: 'Big-O로 표현', text: '절반씩 줄어드는 구조는 log n으로 표현합니다.', math: 'O(log n)' }
+          ];
+        },
+        trace: (n) => {
+          const lines = [];
+          let cur = n;
+          let step = 0;
+          while (cur > 1) {
+            const next = Math.floor(cur / 2);
+            lines.push(`${step + 1}회차: ${cur} → ${next}`);
+            cur = next;
+            step += 1;
+          }
+          return lines.join('\n') || '반복 없음';
+        },
+        note: '입력이 조금만 커져도 실행 횟수가 크게 늘지 않는다는 점이 로그 시간의 핵심입니다.'
       }
     ];
 
@@ -470,8 +522,10 @@
     const barsBoxEl = document.getElementById('barsBox');
     const traceBoxEl = document.getElementById('traceBox');
     const noteBoxEl = document.getElementById('noteBox');
+    const toggleButtons = document.querySelectorAll('.toggle-btn');
 
     let currentScenario = scenarios[0].id;
+    let currentView = 'count';
 
     function getScenario() {
       return scenarios.find((s) => s.id === currentScenario) || scenarios[0];
@@ -509,12 +563,12 @@
     }
 
     function renderBars(n) {
-      const current = getScenario();
       const values = [
-        { label: 'O(n)', value: n, highlight: false },
-        { label: 'O(n log n)', value: Math.max(1, Math.round(n * Math.log2(Math.max(n, 1)))), highlight: false },
-        { label: 'O(n²)', value: n * n, highlight: false },
-        { label: `${current.name} 계산값`, value: current.count(n), highlight: true }
+        { label: 'O(1)', value: 1 },
+        { label: 'O(log n)', value: Math.max(1, Math.floor(Math.log2(n))) },
+        { label: 'O(n)', value: n },
+        { label: 'O(n log n)', value: Math.max(1, Math.floor(n * Math.log2(n))) },
+        { label: 'O(n²)', value: n * n }
       ];
 
       const max = Math.max(...values.map((item) => item.value));
@@ -523,25 +577,12 @@
         const width = (item.value / max) * 100;
         const row = document.createElement('div');
         row.className = 'bar-row';
-        const fillColor = item.highlight
-          ? 'linear-gradient(90deg, #059669, #10b981)'
-          : 'linear-gradient(90deg, #4f46e5, #7c3aed)';
         row.innerHTML = `
           <div class="bar-label">${item.label}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${width}%; background:${fillColor}"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
           <div class="bar-value">${item.value}</div>
         `;
         barsBoxEl.appendChild(row);
-      });
-    }
-
-    function renderTrace(lines) {
-      traceBoxEl.innerHTML = '';
-      lines.forEach((line) => {
-        const item = document.createElement('div');
-        item.className = 'trace-item';
-        item.textContent = line;
-        traceBoxEl.appendChild(item);
       });
     }
 
@@ -550,32 +591,37 @@
       const scenario = getScenario();
       const count = scenario.count(n);
       const steps = scenario.steps(n);
-      const traceLines = scenario.trace(n);
 
       nBadgeEl.textContent = `n = ${n}`;
       scenarioTitleEl.textContent = scenario.name;
       scenarioDescEl.textContent = scenario.description;
       codeBoxEl.textContent = scenario.code(n);
       countValueEl.textContent = String(count);
-      formulaValueEl.textContent = scenario.formula;
+      formulaValueEl.textContent = currentView === 'count' ? scenario.formula : scenario.bigO.replace('O(', '').replace(')', '');
       bigOValueEl.textContent = scenario.bigO;
+      traceBoxEl.textContent = scenario.trace(n);
       noteBoxEl.textContent = scenario.note;
 
       renderScenarioButtons();
       renderSteps(steps);
       renderBars(n);
-      renderTrace(traceLines);
     }
 
     nRangeEl.addEventListener('input', renderAll);
+    toggleButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        currentView = button.dataset.view;
+        toggleButtons.forEach((btn) => btn.classList.toggle('active', btn === button));
+        renderAll();
+      });
+    });
 
     function runSelfTests() {
-      console.assert(scenarios[0].count(5) === 10, 'selection sort count should be n(n-1)/2');
-      console.assert(scenarios[1].count(4) === 6, 'bubble sort count should be n(n-1)/2');
-      console.assert(scenarios[2].count(5) === 10, 'insertion worst-case count should be n(n-1)/2');
-      console.assert(scenarios[3].count(8) === Math.round(8 * Math.log2(8)), 'merge sort count should be about n log n');
-      console.assert(scenarios[4].bigO.includes('최악 O(n²)'), 'quick sort should mention worst-case O(n²)');
-      console.assert(Array.isArray(scenarios[0].trace(8)), 'trace should return an array of lines');
+      console.assert(scenarios[0].count(5) === 5, 'single loop count should be n');
+      console.assert(scenarios[1].count(4) === 16, 'double loop count should be n*n');
+      console.assert(scenarios[2].count(5) === 10, 'dependent loop count should be n(n-1)/2');
+      console.assert(scenarios[3].count(3) === 12, 'separate loops count should be n + n*n');
+      console.assert(scenarios[4].count(8) === 3, 'log loop count should count halving steps');
     }
 
     runSelfTests();
