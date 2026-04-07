@@ -35,7 +35,12 @@
 - 파일명: time_complexity_explainer.html
 - 용도: 반복문, 이중 반복문에 따른 시간 복잡도 계산해보기
 - 태그: 자료구조, 시간복잡도, Big-O
-- 
+
+ ### 정렬 알고리즘 시간복잡도 계산해보기
+- 파일명: sorting_time_complexity_explained
+- 용도: 정렬 알고리즘에 따른 시간 복잡도 계산해보기
+- 태그: 자료구조, 정렬 알고리즘, 시간복잡도, Big-O
+
 ### 리스트와 집합 비교
 - 파일명: List-set-comparison-page.html
 - 용도: 리스트와 집합의 차이를 시각적으로 비교
