@@ -37,7 +37,7 @@
 - 태그: 자료구조, 시간복잡도, Big-O
 
  ### 정렬 알고리즘 시간복잡도 계산해보기
-- 파일명: sorting_time_complexity_explained
+- 파일명: sorting_time_complexity_explained.html
 - 용도: 정렬 알고리즘에 따른 시간 복잡도 계산해보기
 - 태그: 자료구조, 정렬 알고리즘, 시간복잡도, Big-O
 
