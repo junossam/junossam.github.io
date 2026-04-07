@@ -94,7 +94,7 @@
       gap: 16px;
       margin-top: 16px;
     }
-    .range-wrap label, .toggle-wrap label {
+    .range-wrap label {
       display: block;
       margin-bottom: 8px;
       font-weight: 700;
@@ -114,23 +114,6 @@
       background: #eef2ff;
       color: #3730a3;
       font-weight: 800;
-    }
-    .toggle-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-    .toggle-btn {
-      border: none;
-      border-radius: 14px;
-      padding: 12px 14px;
-      background: #f3f4f6;
-      cursor: pointer;
-      font-weight: 700;
-    }
-    .toggle-btn.active {
-      background: #111827;
-      color: white;
     }
     .main-grid {
       display: grid;
@@ -258,6 +241,7 @@
       font-size: 13px;
       line-height: 1.7;
       color: #1f2937;
+      white-space: pre-line;
     }
     .note {
       margin-top: 12px;
@@ -315,14 +299,6 @@
             <label for="nRange">입력 크기 n</label>
             <input id="nRange" type="range" min="1" max="20" step="1" value="5" />
             <div class="n-badge" id="nBadge">n = 5</div>
-          </div>
-
-          <div class="toggle-wrap">
-            <label>표현 방식</label>
-            <div class="toggle-grid">
-              <button class="toggle-btn active" data-view="count">실행 횟수</button>
-              <button class="toggle-btn" data-view="growth">성장 식</button>
-            </div>
           </div>
         </div>
       </aside>
@@ -390,7 +366,7 @@
           { title: '증가 속도 정리', text: '입력 크기 n이 커지면 실행 횟수도 n에 비례하여 증가합니다.', math: 'T(n) = n' },
           { title: 'Big-O로 표현', text: '가장 크게 증가하는 항은 n이므로 시간 복잡도는 O(n)입니다.', math: 'O(n)' }
         ],
-        trace: (n) => Array.from({ length: n }, (_, i) => `i = ${i} → 1회 실행`).join('\n'),
+        trace: (n) => Array.from({ length: n }, (_, i) => `i = ${i} → 1회 실행`).join('\n\n'),
         note: '단일 반복문은 반복 횟수를 바로 세면 됩니다. 가장 먼저 익혀야 하는 기준입니다.'
       },
       {
@@ -413,7 +389,7 @@
           for (let i = 0; i < n; i += 1) {
             lines.push(`i = ${i}일 때 안쪽 반복문 ${n}번 실행`);
           }
-          return lines.join('\n');
+          return lines.join('\n\n');
         },
         note: '이중 반복문이라고 해서 무조건 O(n²)인 것은 아니지만, 두 반복문이 모두 n번 실행되면 O(n²)입니다.'
       },
@@ -440,7 +416,7 @@
           for (let i = 0; i < n; i += 1) {
             lines.push(`i = ${i} → 안쪽 반복 ${i}번 실행`);
           }
-          return lines.join('\n');
+          return lines.join('\n\n');
         },
         note: '중첩 반복문을 볼 때는 “항상 곱하기”가 아니라, 실제로 몇 번씩 실행되는지 합으로 세어야 하는 경우가 있습니다.'
       },
@@ -459,7 +435,7 @@
           { title: '더하기', text: '중첩이 아니라 이어진 구조이므로 실행 횟수를 더합니다.', math: `${n} + ${n * n} = ${n + n * n}` },
           { title: 'Big-O로 표현', text: 'Big-O에서는 가장 크게 증가하는 항만 남깁니다. n²가 n보다 훨씬 빠르게 커지므로 O(n²)입니다.', math: 'O(n + n²) = O(n²)' }
         ],
-        trace: (n) => `첫 번째 반복문: ${n}번 실행\n두 번째 반복문: ${n * n}번 실행\n전체: ${n + n * n}번 실행`,
+        trace: (n) => `첫 번째 반복문: ${n}번 실행\n\n두 번째 반복문: ${n * n}번 실행\n\n전체: ${n + n * n}번 실행`,
         note: '이어진 코드에서는 더하고, 중첩된 코드에서는 곱하는지 먼저 구분하면 훨씬 쉽게 계산할 수 있습니다.'
       },
       {
@@ -503,7 +479,7 @@
             cur = next;
             step += 1;
           }
-          return lines.join('\n') || '반복 없음';
+          return lines.join('\n\n') || '반복 없음';
         },
         note: '입력이 조금만 커져도 실행 횟수가 크게 늘지 않는다는 점이 로그 시간의 핵심입니다.'
       }
@@ -522,10 +498,8 @@
     const barsBoxEl = document.getElementById('barsBox');
     const traceBoxEl = document.getElementById('traceBox');
     const noteBoxEl = document.getElementById('noteBox');
-    const toggleButtons = document.querySelectorAll('.toggle-btn');
 
     let currentScenario = scenarios[0].id;
-    let currentView = 'count';
 
     function getScenario() {
       return scenarios.find((s) => s.id === currentScenario) || scenarios[0];
@@ -597,7 +571,7 @@
       scenarioDescEl.textContent = scenario.description;
       codeBoxEl.textContent = scenario.code(n);
       countValueEl.textContent = String(count);
-      formulaValueEl.textContent = currentView === 'count' ? scenario.formula : scenario.bigO.replace('O(', '').replace(')', '');
+      formulaValueEl.textContent = scenario.formula;
       bigOValueEl.textContent = scenario.bigO;
       traceBoxEl.textContent = scenario.trace(n);
       noteBoxEl.textContent = scenario.note;
@@ -608,13 +582,6 @@
     }
 
     nRangeEl.addEventListener('input', renderAll);
-    toggleButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        currentView = button.dataset.view;
-        toggleButtons.forEach((btn) => btn.classList.toggle('active', btn === button));
-        renderAll();
-      });
-    });
 
     function runSelfTests() {
       console.assert(scenarios[0].count(5) === 5, 'single loop count should be n');
@@ -622,6 +589,7 @@
       console.assert(scenarios[2].count(5) === 10, 'dependent loop count should be n(n-1)/2');
       console.assert(scenarios[3].count(3) === 12, 'separate loops count should be n + n*n');
       console.assert(scenarios[4].count(8) === 3, 'log loop count should count halving steps');
+      console.assert(!document.querySelector('.toggle-wrap'), 'toggle wrap should be removed');
     }
 
     runSelfTests();
