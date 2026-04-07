@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>정렬 알고리즘 시간 복잡도 계산 이해하기</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Noto Sans KR", Arial, sans-serif;
+      background: #f6f8fc;
+      color: #1f2937;
+    }
+    .app {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #ffffff, #eef2ff);
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+      margin-bottom: 22px;
+    }
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 32px;
+    }
+    .hero p {
+      margin: 0;
+      color: #4b5563;
+      line-height: 1.7;
+      font-size: 16px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+    .card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
+    }
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+    }
+    .muted {
+      color: #6b7280;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .scenario-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .scenario-btn {
+      width: 100%;
+      text-align: left;
+      border: none;
+      border-radius: 18px;
+      padding: 16px;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: 0.2s ease;
+      color: #111827;
+    }
+    .scenario-btn:hover {
+      transform: translateY(-1px);
+      background: #eef2ff;
+    }
+    .scenario-btn.active {
+      background: #4f46e5;
+      color: #fff;
+    }
+    .scenario-btn strong {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+    .scenario-btn span {
+      font-size: 13px;
+      line-height: 1.6;
+      opacity: 0.95;
+    }
+    .control-row {
+      display: grid;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .range-wrap label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    input[type="range"] {
+      width: 100%;
+    }
+    .n-badge {
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 90px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-weight: 800;
+    }
+    .main-grid {
+      display: grid;
+      gap: 20px;
+    }
+    .code-box {
+      background: #0f172a;
+      color: #e5e7eb;
+      border-radius: 20px;
+      padding: 18px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 14px;
+      line-height: 1.75;
+      white-space: pre-wrap;
+      overflow: auto;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .summary-item {
+      background: #f8fafc;
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .summary-item .label {
+      color: #6b7280;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .summary-item .value {
+      font-size: 24px;
+      font-weight: 900;
+      color: #111827;
+    }
+    .explain-steps {
+      display: grid;
+      gap: 12px;
+    }
+    .step {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 12px;
+      align-items: start;
+      background: #f8fafc;
+      border-radius: 18px;
+      padding: 14px;
+    }
+    .step-num {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #4f46e5;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+    }
+    .step h3 {
+      margin: 0 0 6px;
+      font-size: 16px;
+    }
+    .step p {
+      margin: 0;
+      color: #4b5563;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .math-box {
+      margin-top: 8px;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      line-height: 1.7;
+      color: #111827;
+      white-space: pre-wrap;
+    }
+    .sim-box {
+      display: grid;
+      gap: 14px;
+    }
+    .bars {
+      display: grid;
+      gap: 10px;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 180px 1fr 110px;
+      gap: 12px;
+      align-items: center;
+    }
+    .bar-label {
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .bar-track {
+      height: 16px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #4f46e5, #7c3aed);
+      transition: width 0.35s ease;
+    }
+    .bar-value {
+      text-align: right;
+      font-weight: 800;
+      font-size: 13px;
+      color: #374151;
+    }
+    .trace {
+      background: #f8fafc;
+      border-radius: 18px;
+      padding: 16px;
+      max-height: 320px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #1f2937;
+      white-space: normal;
+    }
+    .trace-item {
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .trace-item:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .note {
+      margin-top: 12px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: #eefbf5;
+      color: #065f46;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .copyright {
+      margin-top: 24px;
+      padding: 20px 16px 8px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .copyright strong {
+      display: block;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+    @media (max-width: 1080px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+      .bar-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <h1>정렬 알고리즘의 시간 복잡도 계산 과정을 이해해 봅시다</h1>
+      <p>
+        정렬 알고리즘은 데이터 개수가 커질수록 실행 횟수가 어떻게 늘어나는지 살펴보기 좋은 예제입니다.
+        알고리즘을 선택하고 n 값을 바꾸어 보면서, 비교 횟수와 계산 식, 최종 Big-O가 어떻게 연결되는지 확인해 보세요.
+      </p>
+    </section>
+
+    <div class="layout">
+      <aside class="card">
+        <h2>정렬 알고리즘 선택</h2>
+        <p class="muted">선택 정렬, 버블 정렬, 삽입 정렬, 병합 정렬, 퀵 정렬의 계산 과정을 비교해 보세요.</p>
+        <div class="scenario-list" id="scenarioList"></div>
+
+        <div class="control-row">
+          <div class="range-wrap">
+            <label for="nRange">데이터 개수 n</label>
+            <input id="nRange" type="range" min="2" max="64" step="1" value="8" />
+            <div class="n-badge" id="nBadge">n = 8</div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-grid">
+        <section class="card">
+          <h2 id="scenarioTitle">선택 정렬</h2>
+          <p class="muted" id="scenarioDesc"></p>
+          <div class="code-box" id="codeBox"></div>
+        </section>
+
+        <section class="card">
+          <h2>계산 결과</h2>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <div class="label">현재 계산값</div>
+              <div class="value" id="countValue">28</div>
+            </div>
+            <div class="summary-item">
+              <div class="label">계산 식</div>
+              <div class="value" id="formulaValue" style="font-size:20px;">(n-1) + (n-2) + ... + 2 + 1</div>
+            </div>
+            <div class="summary-item">
+              <div class="label">최종 시간 복잡도</div>
+              <div class="value" id="bigOValue">O(n²)</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>시간 복잡도를 계산하는 순서</h2>
+          <div class="explain-steps" id="stepsBox"></div>
+        </section>
+
+        <section class="card">
+          <h2>데이터 개수별 실행 횟수 비교</h2>
+          <div class="sim-box">
+            <div class="bars" id="barsBox"></div>
+            <div class="trace" id="traceBox"></div>
+            <div class="note" id="noteBox"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="copyright">
+      <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong>
+      본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
+    </div>
+  </div>
+
+  <script>
+    const scenarios = [
+      {
+        id: 'selection',
+        name: '선택 정렬',
+        description: '매 회차마다 가장 작은 값을 찾아 앞으로 보내는 정렬입니다.',
+        code: (n) => `for i in range(${n} - 1):\n    min_idx = i\n    for j in range(i + 1, ${n}):\n        if arr[j] < arr[min_idx]:\n            min_idx = j\n    arr[i], arr[min_idx] = arr[min_idx], arr[i]`,
+        count: (n) => (n * (n - 1)) / 2,
+        formula: '(n-1) + (n-2) + ... + 2 + 1',
+        steps: (n) => [
+          { title: '회차 구조 확인', text: '첫 번째 자리부터 마지막 전 자리까지, 각 자리에 들어갈 최솟값을 찾습니다.' },
+          { title: '회차별 비교 횟수 세기', text: '첫 회차에는 n-1번, 다음에는 n-2번, 마지막에는 1번 비교합니다.', math: `${n - 1} + ${n - 2} + ... + 1` },
+          { title: '합 공식으로 바꾸기', text: '이 식은 1부터 (n-1)까지의 합과 같습니다.', math: `n(n-1)/2 = ${(n * (n - 1)) / 2}` },
+          { title: 'Big-O로 정리', text: '가장 크게 증가하는 항은 n²이므로 시간 복잡도는 O(n²)입니다.', math: 'n(n-1)/2 ≈ n²/2 → O(n²)' }
+        ],
+        bigO: 'O(n²)',
+        trace: (n) => Array.from({ length: Math.max(0, n - 1) }, (_, i) => `${i + 1}회차: 남은 원소 ${n - i}개 중 최솟값 탐색 → 비교 ${n - i - 1}번`),
+        note: '선택 정렬은 데이터 상태가 달라도 비교 횟수는 거의 일정합니다. 그래서 계산식이 깔끔하게 n(n-1)/2가 됩니다.'
+      },
+      {
+        id: 'bubble',
+        name: '버블 정렬',
+        description: '인접한 두 값을 비교하며 큰 값을 뒤로 보내는 정렬입니다.',
+        code: (n) => `for i in range(${n} - 1):\n    for j in range(${n} - 1 - i):\n        if arr[j] > arr[j + 1]:\n            arr[j], arr[j + 1] = arr[j + 1], arr[j]`,
+        count: (n) => (n * (n - 1)) / 2,
+        formula: '(n-1) + (n-2) + ... + 2 + 1',
+        steps: (n) => [
+          { title: '회차별 비교 횟수 확인', text: '첫 회차는 n-1번, 두 번째 회차는 n-2번, 마지막 회차는 1번 비교합니다.' },
+          { title: '합으로 정리', text: '전체 비교 횟수는 (n-1) + (n-2) + ... + 1 입니다.', math: `${n - 1} + ${n - 2} + ... + 1` },
+          { title: '공식 적용', text: '이 식도 결국 1부터 (n-1)까지의 합과 같습니다.', math: `n(n-1)/2 = ${(n * (n - 1)) / 2}` },
+          { title: 'Big-O로 정리', text: '가장 크게 증가하는 항은 n²이므로 O(n²)입니다.', math: 'O(n²)' }
+        ],
+        bigO: 'O(n²)',
+        trace: (n) => Array.from({ length: Math.max(0, n - 1) }, (_, i) => `${i + 1}회차: 인접 비교 ${n - i - 1}번`),
+        note: '버블 정렬도 최악의 경우에는 삼각수 형태로 비교 횟수가 누적되어 O(n²)가 됩니다.'
+      },
+      {
+        id: 'insertion',
+        name: '삽입 정렬',
+        description: '현재 값을 앞쪽의 정렬된 구간에 끼워 넣는 정렬입니다.',
+        code: (n) => `for i in range(1, ${n}):\n    key = arr[i]\n    j = i - 1\n    while j >= 0 and arr[j] > key:\n        arr[j + 1] = arr[j]\n        j -= 1`,
+        count: (n) => (n * (n - 1)) / 2,
+        formula: '(n-1) + (n-2) + ... + 2 + 1 (최악의 경우)',
+        steps: (n) => [
+          { title: '최악의 경우 가정', text: '역순 데이터에서는 새 원소가 앞쪽 끝까지 계속 이동해야 합니다.' },
+          { title: '원소별 이동 횟수 세기', text: '두 번째 원소는 1칸, 세 번째는 2칸, 네 번째는 3칸씩 이동할 수 있습니다.' },
+          { title: '합 공식 적용', text: '전체 비교 또는 이동 횟수는 1 + 2 + ... + (n-1) 입니다.', math: `n(n-1)/2 = ${(n * (n - 1)) / 2}` },
+          { title: 'Big-O로 정리', text: '최악의 경우에는 n²에 비례하므로 O(n²)입니다.', math: 'O(n²)' }
+        ],
+        bigO: 'O(n²)',
+        trace: (n) => Array.from({ length: Math.max(0, n - 1) }, (_, i) => `${i + 2}번째 원소 삽입: 최악의 경우 ${i + 1}번 비교/이동`),
+        note: '삽입 정렬은 거의 정렬된 데이터에서는 빠르지만, 최악의 경우 시간 복잡도를 기준으로 하면 O(n²)입니다.'
+      },
+      {
+        id: 'merge',
+        name: '병합 정렬',
+        description: '배열을 반으로 나누고, 정렬된 두 배열을 다시 합치는 정렬입니다.',
+        code: (n) => `merge_sort(arr):\n    left = merge_sort(arr[:${Math.floor(n / 2)}])\n    right = merge_sort(arr[${Math.floor(n / 2)}:])\n    return merge(left, right)`,
+        count: (n) => Math.round(n * Math.log2(Math.max(n, 1))),
+        formula: 'n × log₂n (단계 수 × 각 단계 작업량)',
+        steps: (n) => [
+          { title: '반으로 나누는 과정 관찰', text: '배열을 계속 반으로 나누면 크기가 절반씩 줄어듭니다.' },
+          { title: '단계 직접 세어보기', text: 'n이 8이라면 → 8 → 4 → 2 → 1 이 됩니다. 총 3번 나뉘었습니다.', math: `${n} → ${Math.floor(n/2)} → ${Math.floor(n/4)} → ... → 1` },
+          { title: '왜 log₂n인가?', text: 'n을 2로 몇 번 나누면 1이 되는지를 세는 것이 바로 log₂n입니다.', math: `2^k = ${n} → k = log₂${n}` },
+          { title: '각 단계 작업량', text: '각 단계에서는 모든 원소를 한 번씩 비교하므로 n번 처리합니다.', math: `${n}` },
+          { title: '전체 계산', text: '단계 수(log₂n) × 각 단계 작업량(n)을 곱합니다.', math: `${n} × log₂${n}` },
+          { title: 'Big-O로 정리', text: '따라서 시간 복잡도는 O(n log n)입니다.', math: 'O(n log n)' }
+        ],
+        bigO: 'O(n log n)',
+        trace: (n) => Array.from({ length: Math.max(1, Math.ceil(Math.log2(Math.max(n, 1)))) }, (_, i) => `${i + 1}단계: 전체 원소 약 ${n}개를 비교하며 병합`),
+        note: '병합 정렬은 “몇 단계로 나누는가”와 “각 단계에서 몇 개를 처리하는가”를 곱해서 생각하면 이해가 쉽습니다.'
+      },
+      {
+        id: 'quick',
+        name: '퀵 정렬',
+        description: '기준값을 중심으로 작은 값과 큰 값을 나누는 정렬입니다.',
+        code: (n) => `pivot = arr[right]\nfor j in range(left, right):\n    if arr[j] <= pivot:\n        ...\n# 평균적으로 배열이 반씩 나뉜다고 가정`,
+        count: (n) => Math.round(n * Math.log2(Math.max(n, 1))),
+        formula: 'n × log₂n (평균적인 경우)',
+        steps: (n) => [
+          { title: '평균적인 분할 가정', text: '기준값이 적절하면 배열이 대략 절반씩 나뉩니다.' },
+          { title: '단계 직접 세어보기', text: 'n이 8이라면 → 8 → 4 → 2 → 1 처럼 줄어듭니다.' , math: `${n} → ${Math.floor(n/2)} → ${Math.floor(n/4)} → ... → 1` },
+          { title: '왜 log₂n인가?', text: '이렇게 반씩 나누는 횟수가 바로 log₂n입니다.', math: `2^k = ${n} → k = log₂${n}` },
+          { title: '각 단계 작업량', text: '각 단계마다 전체 원소 n개를 기준값과 비교합니다.', math: `${n}` },
+          { title: '전체 계산', text: '단계 수(log₂n) × 각 단계 작업량(n)', math: `${n} × log₂${n}` },
+          { title: '평균과 최악 구분', text: '평균은 O(n log n)이지만, 한쪽으로만 나뉘면 O(n²)이 됩니다.', math: '평균 O(n log n), 최악 O(n²)' }
+        ],
+        bigO: '평균 O(n log n), 최악 O(n²)',
+        trace: (n) => {
+          const lines = Array.from({ length: Math.max(1, Math.ceil(Math.log2(Math.max(n, 1)))) }, (_, i) => `${i + 1}단계: 전체 원소 약 ${n}개를 기준값과 비교`);
+          lines.push('치우친 분할이 반복되면 1 + 2 + ... + (n-1) 형태가 됩니다.');
+          return lines;
+        },
+        note: '퀵 정렬은 보통 빠르지만, 이론적으로는 최악의 경우 O(n²)도 가능하다는 점을 함께 기억해야 합니다.'
+      }
+    ];
+
+    const scenarioListEl = document.getElementById('scenarioList');
+    const nRangeEl = document.getElementById('nRange');
+    const nBadgeEl = document.getElementById('nBadge');
+    const codeBoxEl = document.getElementById('codeBox');
+    const scenarioTitleEl = document.getElementById('scenarioTitle');
+    const scenarioDescEl = document.getElementById('scenarioDesc');
+    const countValueEl = document.getElementById('countValue');
+    const formulaValueEl = document.getElementById('formulaValue');
+    const bigOValueEl = document.getElementById('bigOValue');
+    const stepsBoxEl = document.getElementById('stepsBox');
+    const barsBoxEl = document.getElementById('barsBox');
+    const traceBoxEl = document.getElementById('traceBox');
+    const noteBoxEl = document.getElementById('noteBox');
+
+    let currentScenario = scenarios[0].id;
+
+    function getScenario() {
+      return scenarios.find((s) => s.id === currentScenario) || scenarios[0];
+    }
+
+    function renderScenarioButtons() {
+      scenarioListEl.innerHTML = '';
+      scenarios.forEach((scenario) => {
+        const button = document.createElement('button');
+        button.className = `scenario-btn${scenario.id === currentScenario ? ' active' : ''}`;
+        button.innerHTML = `<strong>${scenario.name}</strong><span>${scenario.description}</span>`;
+        button.addEventListener('click', () => {
+          currentScenario = scenario.id;
+          renderAll();
+        });
+        scenarioListEl.appendChild(button);
+      });
+    }
+
+    function renderSteps(steps) {
+      stepsBoxEl.innerHTML = '';
+      steps.forEach((step, index) => {
+        const item = document.createElement('div');
+        item.className = 'step';
+        item.innerHTML = `
+          <div class="step-num">${index + 1}</div>
+          <div>
+            <h3>${step.title}</h3>
+            <p>${step.text}</p>
+            ${step.math ? `<div class="math-box">${step.math}</div>` : ''}
+          </div>
+        `;
+        stepsBoxEl.appendChild(item);
+      });
+    }
+
+    function renderBars(n) {
+      const current = getScenario();
+      const values = [
+        { label: 'O(n)', value: n, highlight: false },
+        { label: 'O(n log n)', value: Math.max(1, Math.round(n * Math.log2(Math.max(n, 1)))), highlight: false },
+        { label: 'O(n²)', value: n * n, highlight: false },
+        { label: `${current.name} 계산값`, value: current.count(n), highlight: true }
+      ];
+
+      const max = Math.max(...values.map((item) => item.value));
+      barsBoxEl.innerHTML = '';
+      values.forEach((item) => {
+        const width = (item.value / max) * 100;
+        const row = document.createElement('div');
+        row.className = 'bar-row';
+        const fillColor = item.highlight
+          ? 'linear-gradient(90deg, #059669, #10b981)'
+          : 'linear-gradient(90deg, #4f46e5, #7c3aed)';
+        row.innerHTML = `
+          <div class="bar-label">${item.label}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${width}%; background:${fillColor}"></div></div>
+          <div class="bar-value">${item.value}</div>
+        `;
+        barsBoxEl.appendChild(row);
+      });
+    }
+
+    function renderTrace(lines) {
+      traceBoxEl.innerHTML = '';
+      lines.forEach((line) => {
+        const item = document.createElement('div');
+        item.className = 'trace-item';
+        item.textContent = line;
+        traceBoxEl.appendChild(item);
+      });
+    }
+
+    function renderAll() {
+      const n = Number(nRangeEl.value);
+      const scenario = getScenario();
+      const count = scenario.count(n);
+      const steps = scenario.steps(n);
+      const traceLines = scenario.trace(n);
+
+      nBadgeEl.textContent = `n = ${n}`;
+      scenarioTitleEl.textContent = scenario.name;
+      scenarioDescEl.textContent = scenario.description;
+      codeBoxEl.textContent = scenario.code(n);
+      countValueEl.textContent = String(count);
+      formulaValueEl.textContent = scenario.formula;
+      bigOValueEl.textContent = scenario.bigO;
+      noteBoxEl.textContent = scenario.note;
+
+      renderScenarioButtons();
+      renderSteps(steps);
+      renderBars(n);
+      renderTrace(traceLines);
+    }
+
+    nRangeEl.addEventListener('input', renderAll);
+
+    function runSelfTests() {
+      console.assert(scenarios[0].count(5) === 10, 'selection sort count should be n(n-1)/2');
+      console.assert(scenarios[1].count(4) === 6, 'bubble sort count should be n(n-1)/2');
+      console.assert(scenarios[2].count(5) === 10, 'insertion worst-case count should be n(n-1)/2');
+      console.assert(scenarios[3].count(8) === Math.round(8 * Math.log2(8)), 'merge sort count should be about n log n');
+      console.assert(scenarios[4].bigO.includes('최악 O(n²)'), 'quick sort should mention worst-case O(n²)');
+      console.assert(Array.isArray(scenarios[0].trace(8)), 'trace should return an array of lines');
+    }
+
+    runSelfTests();
+    renderAll();
+  </script>
+</body>
+</html>
