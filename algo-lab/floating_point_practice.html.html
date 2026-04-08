@@ -100,9 +100,12 @@
       background: #f8fafc;
       border-radius: 18px;
       padding: 14px;
-      line-height: 1.75;
+      line-height: 1.85;
       color: #4b5563;
       font-size: 13px;
+    }
+    .custom-note p + p {
+      margin-top: 8px;
     }
     .practice-grid {
       display: grid;
@@ -283,7 +286,20 @@
               </table>
             </div>
 
-            <div id="fractionNote" class="custom-note"></div>
+            <div id="fractionNote" class="custom-note">
+              <p>
+                분수의 합은 정확한 값으로 계산되지만, 이를 실수로 표현하는 과정에서
+                무한히 반복되는 소수가 발생할 수 있습니다.
+              </p>
+              <p>
+                이러한 값을 제한된 자리까지 저장하기 위해 반올림하면
+                실제 값과 차이가 생길 수 있습니다.
+              </p>
+              <p>
+                다음 탭에서는 이와 비슷한 현상이 컴퓨터 내부의 2진수 계산에서
+                어떻게 나타나는지 확인해보세요.
+              </p>
+            </div>
           </div>
 
           <div id="binaryPanel" class="tab-panel">
@@ -334,7 +350,18 @@
               </table>
             </div>
 
-            <div id="binaryNote" class="custom-note"></div>
+            <div id="binaryNote" class="custom-note">
+              <p>
+                컴퓨터는 실수를 저장할 때 값을 2진수 형태로 변환하여 저장합니다.
+              </p>
+              <p>
+                이 과정에서 일부 수는 무한히 반복되는 2진수로 표현될 수 있습니다.
+              </p>
+              <p>
+                하지만 메모리 공간은 한정되어 있기 때문에 일정 자리에서 반올림하여 저장하며,
+                이로 인해 실제 값과 미세한 차이가 발생할 수 있습니다.
+              </p>
+            </div>
           </div>
         </section>
       </div>
@@ -485,7 +512,9 @@
       const d2 = parseInt(document.getElementById('den2').value, 10);
 
       if (!Number.isFinite(n1) || !Number.isFinite(d1) || !Number.isFinite(n2) || !Number.isFinite(d2) || d1 === 0 || d2 === 0) {
-        document.getElementById('fractionNote').textContent = '분모는 0이 아니어야 하고, 모든 칸에 숫자를 넣어야 합니다.';
+        document.getElementById('fractionNote').innerHTML = `
+          <p>분모는 0이 아니어야 하고, 모든 칸에 숫자를 넣어야 합니다.</p>
+        `;
         return;
       }
 
@@ -511,12 +540,6 @@
       const exactRepeatText = fractionToDecimalWithRepeat(exact.n, exact.d);
       document.getElementById('fracExactDec').textContent = exactRepeatText;
       document.getElementById('fracExactRound').textContent = exactRepeatText;
-
-      document.getElementById('fractionNote').textContent =
-        `${n1}/${d1} 와 ${n2}/${d2} 의 합은 정확히 ${exact.n}/${exact.d} 입니다. ` +
-        `하지만 해당 숫자를 실수로 변환하면 무한이 반복되는 숫자가 될수도 있습니다.` +
-        `이럴 경우 어쩔 수 없이 특정 자리에서 반올림하여 처리한다면 실제 값과 차이가 발생하는 것을 확인하였을 겁니다.` +
-        `이제 0.1+0.2 계산과정 탭을 선택하여 10진수 실수 값이 2진수 실수 값으로 변환될 때 일부 값이 사라지는 현상을 확인해보세요.`;
     }
 
     function toBinaryApprox(num, fracBits = 20) {
@@ -582,6 +605,37 @@
       return sign + intBinary + '.' + mainBits.join('').replace(/(\d{4})(?=\d)/g, '$1 ') + '₂';
     }
 
+    function addRoundedBinaryStrings(aStr, bStr) {
+      const clean = (s) => s.replace(/₂/g, '').replace(/ /g, '');
+      const [aIntRaw, aFracRaw = ''] = clean(aStr).split('.');
+      const [bIntRaw, bFracRaw = ''] = clean(bStr).split('.');
+
+      const fracLen = Math.max(aFracRaw.length, bFracRaw.length);
+      const aFrac = aFracRaw.padEnd(fracLen, '0');
+      const bFrac = bFracRaw.padEnd(fracLen, '0');
+
+      let carry = 0;
+      let fracOut = '';
+      for (let i = fracLen - 1; i >= 0; i--) {
+        const sum = Number(aFrac[i]) + Number(bFrac[i]) + carry;
+        fracOut = String(sum % 2) + fracOut;
+        carry = Math.floor(sum / 2);
+      }
+
+      const aInt = aIntRaw.split('').reverse();
+      const bInt = bIntRaw.split('').reverse();
+      const intLen = Math.max(aInt.length, bInt.length);
+      let intOut = '';
+      for (let i = 0; i < intLen; i++) {
+        const sum = Number(aInt[i] || '0') + Number(bInt[i] || '0') + carry;
+        intOut = String(sum % 2) + intOut;
+        carry = Math.floor(sum / 2);
+      }
+      if (carry) intOut = String(carry) + intOut;
+
+      return intOut + '.' + fracOut.replace(/(\d{4})(?=\d)/g, '$1 ') + '₂';
+    }
+
     function updateBinaryView() {
       const aText = document.getElementById('float1').value.trim();
       const bText = document.getElementById('float2').value.trim();
@@ -589,31 +643,31 @@
       const b = Number(bText);
 
       if (!Number.isFinite(a) || !Number.isFinite(b)) {
-        document.getElementById('binaryNote').textContent = '실수 칸에는 숫자 형태의 값을 넣어야 합니다.';
+        document.getElementById('binaryNote').innerHTML = `
+          <p>실수 칸에는 숫자 형태의 값을 넣어야 합니다.</p>
+        `;
         return;
       }
 
       const sum = a + b;
-      const expectedText = `${aText} + ${bText}`;
 
       document.getElementById('binLabel1').textContent = aText;
       document.getElementById('binLabel2').textContent = bText;
       document.getElementById('binRep1').textContent = toBinaryApprox(a);
       document.getElementById('binRep2').textContent = toBinaryApprox(b);
-      document.getElementById('binRound1').textContent = roundBinary(a);
-      document.getElementById('binRound2').textContent = roundBinary(b);
 
-      document.getElementById('binRepSum').textContent = toBinaryApprox(sum);
-      document.getElementById('binRoundSum').textContent = roundBinary(sum);
+      const roundedA = roundBinary(a);
+      const roundedB = roundBinary(b);
 
-      document.getElementById('binExactLabel').textContent = `수학적 기대값 (${expectedText})`;
-      const exactSumText = aText + ' + ' + bText;
+      document.getElementById('binRound1').textContent = roundedA;
+      document.getElementById('binRound2').textContent = roundedB;
+
+      document.getElementById('binRepSum').textContent = toBinaryApprox(sum, 20);
+      document.getElementById('binRoundSum').textContent = addRoundedBinaryStrings(roundedA, roundedB);
+
+      document.getElementById('binExactLabel').textContent = `수학적 기대값`;
       document.getElementById('binExactRep').textContent = toBinaryApprox(a + b, 24).replace('…₂', ' …₂');
       document.getElementById('binExactRound').textContent = toBinaryApprox(a + b, 24).replace('…₂', ' …₂');
-
-      document.getElementById('binaryNote').textContent =
-        `${aText} 와 ${bText} 는 2진수로 보면 일반적으로 무한히 이어지는 표현이 됩니다. ` +
-        `그래서 표에는 이진수 근사 표현, 유한 비트로 잘랐을 때의 이진 반올림값, 그리고 무한 반복되는 정확한 2진 표현을 함께 보여줍니다.`;
     }
 
     ['num1','den1','num2','den2'].forEach(id => {
