@@ -216,15 +216,15 @@
           </p>
 
           <div class="controls">
-            <button id="fractionBtn">3/7 + 5/7를 소수로 계산한다면?</button>
-            <button id="binaryBtn" class="secondary">0.1 + 0.2를 이진수로 계산하면?</button>
+            <button id="fractionBtn">3/7 + 5/7 계산 과정</button>
+            <button id="binaryBtn" class="secondary">0.1 + 0.2 계산 과정</button>
           </div>
 
           <div id="fractionPanel" class="tab-panel active">
             <div class="formula">
-              <strong>분수 탭</strong>에서는 컴퓨터 내부 연산 방식과는 다르지만,<br>
-              <strong>일상생활에서 사용하는 10진수 체계</strong>를 통해<br>
-              반복 소수와 반올림 과정에서 발생하는 오차를 간접적으로 확인할 수 있습니다.
+              <strong>분수 탭</strong>에서는 컴퓨터 내부에서 직접 처리되는 방식은 아니지만,<br>
+              <strong>우리가 일상생활에서 사용하는 10진수 체계</strong>에서 발생하는 사례를 통해<br>
+              반복 소수와 반올림으로 인해 생기는 오차를 간접적으로 경험해볼 수 있습니다.
             </div>
 
             <div class="fraction-practice">
@@ -308,7 +308,7 @@
               <table class="visual-table">
                 <tr>
                   <th>값</th>
-                  <th>이진수 (근사 표현)</th>
+                  <th>이진수</th>
                   <th>반올림값</th>
                 </tr>
                 <tr>
@@ -510,7 +510,7 @@
       document.getElementById('fracExactLabel').textContent = `정확 값 ${exact.n}/${exact.d}`;
       const exactRepeatText = fractionToDecimalWithRepeat(exact.n, exact.d);
       document.getElementById('fracExactDec').textContent = exactRepeatText;
-      document.getElementById('fracExactRound').textContent = exactRepeatText;
+      document.getElementById('fracExactRound').textContent = exactRepeatText + ' (무한 반복)';
 
       document.getElementById('fractionNote').textContent =
         `${n1}/${d1} 와 ${n2}/${d2} 의 합은 정확히 ${exact.n}/${exact.d} 입니다. ` +
@@ -580,37 +580,6 @@
       return sign + intBinary + '.' + mainBits.join('').replace(/(\d{4})(?=\d)/g, '$1 ') + '₂';
     }
 
-    function addRoundedBinaryStrings(aStr, bStr) {
-      const clean = (s) => s.replace(/₂/g, '').replace(/ /g, '');
-      const [aIntRaw, aFracRaw = ''] = clean(aStr).split('.');
-      const [bIntRaw, bFracRaw = ''] = clean(bStr).split('.');
-
-      const fracLen = Math.max(aFracRaw.length, bFracRaw.length);
-      const aFrac = aFracRaw.padEnd(fracLen, '0');
-      const bFrac = bFracRaw.padEnd(fracLen, '0');
-
-      let carry = 0;
-      let fracOut = '';
-      for (let i = fracLen - 1; i >= 0; i--) {
-        const sum = Number(aFrac[i]) + Number(bFrac[i]) + carry;
-        fracOut = String(sum % 2) + fracOut;
-        carry = Math.floor(sum / 2);
-      }
-
-      const aInt = aIntRaw.split('').reverse();
-      const bInt = bIntRaw.split('').reverse();
-      const intLen = Math.max(aInt.length, bInt.length);
-      let intOut = '';
-      for (let i = 0; i < intLen; i++) {
-        const sum = Number(aInt[i] || '0') + Number(bInt[i] || '0') + carry;
-        intOut = String(sum % 2) + intOut;
-        carry = Math.floor(sum / 2);
-      }
-      if (carry) intOut = String(carry) + intOut;
-
-      return intOut + '.' + fracOut.replace(/(\d{4})(?=\d)/g, '$1 ') + '₂';
-    }
-
     function updateBinaryView() {
       const aText = document.getElementById('float1').value.trim();
       const bText = document.getElementById('float2').value.trim();
@@ -632,11 +601,8 @@
       document.getElementById('binRound1').textContent = roundBinary(a);
       document.getElementById('binRound2').textContent = roundBinary(b);
 
-      const roundedA = roundBinary(a);
-      const roundedB = roundBinary(b);
-
-      document.getElementById('binRepSum').textContent = addRoundedBinaryStrings(roundedA, roundedB);
-      document.getElementById('binRoundSum').textContent = addRoundedBinaryStrings(roundedA, roundedB);
+      document.getElementById('binRepSum').textContent = toBinaryApprox(sum);
+      document.getElementById('binRoundSum').textContent = roundBinary(sum);
 
       document.getElementById('binExactLabel').textContent = `수학적 기대값 (${expectedText})`;
       const exactSumText = aText + ' + ' + bText;
