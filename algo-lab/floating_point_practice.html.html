@@ -510,7 +510,7 @@
       document.getElementById('fracExactLabel').textContent = `정확 값 ${exact.n}/${exact.d}`;
       const exactRepeatText = fractionToDecimalWithRepeat(exact.n, exact.d);
       document.getElementById('fracExactDec').textContent = exactRepeatText;
-      document.getElementById('fracExactRound').textContent = exactRepeatText + ' (무한 반복)';
+      document.getElementById('fracExactRound').textContent = exactRepeatText;
 
       document.getElementById('fractionNote').textContent =
         `${n1}/${d1} 와 ${n2}/${d2} 의 합은 정확히 ${exact.n}/${exact.d} 입니다. ` +
