@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>0.1+0.2는 왜 0.3이 아닌가?</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Noto Sans KR", Arial, sans-serif;
+      background: #f6f8fc;
+      color: #1f2937;
+    }
+    .app {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+    .hero, .card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
+    }
+    .hero {
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #ffffff, #eef2ff);
+    }
+    h1 { margin: 0 0 10px; font-size: 30px; }
+    h2 { margin: 0 0 12px; font-size: 22px; }
+    p { margin: 0; line-height: 1.7; color: #4b5563; }
+    .layout { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    .stack { display: grid; gap: 20px; }
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      background: #111827;
+      color: white;
+    }
+    button.secondary {
+      background: #eef2ff;
+      color: #3730a3;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .visual-table-wrap {
+      overflow-x: auto;
+      margin-top: 16px;
+    }
+    .visual-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    .visual-table th, .visual-table td {
+      border: 1px solid #e5e7eb;
+      padding: 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .visual-table th {
+      background: #f8fafc;
+      font-family: "Pretendard", "Noto Sans KR", Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: #374151;
+    }
+    .visual-table td {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.75;
+    }
+    .decimal, .binary {
+      color: #b91c1c;
+      word-break: break-all;
+    }
+    .rounded {
+      color: #15803d;
+      font-weight: 800;
+      word-break: break-all;
+    }
+    .formula {
+      margin-top: 16px;
+      background: #eefbf5;
+      border-radius: 18px;
+      padding: 16px;
+      line-height: 1.85;
+      color: #065f46;
+      font-size: 14px;
+    }
+    .custom-note {
+      margin-top: 16px;
+      background: #f8fafc;
+      border-radius: 18px;
+      padding: 14px;
+      line-height: 1.75;
+      color: #4b5563;
+      font-size: 13px;
+    }
+    .practice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 18px;
+    }
+    .field { display: grid; gap: 8px; }
+    .field label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #64748b;
+    }
+    .field input {
+      width: 100%;
+      border: 1px solid #dbe2ea;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font: inherit;
+      background: #fff;
+      color: #111827;
+    }
+    .fraction-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 16px 14px;
+      min-height: 170px;
+      justify-content: center;
+    }
+    .fraction-stack input {
+      width: 100%;
+      max-width: 140px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      border: 1px solid #dbe2ea;
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: white;
+    }
+    .fraction-bar {
+      width: 100%;
+      max-width: 140px;
+      height: 3px;
+      border-radius: 999px;
+      background: #111827;
+    }
+    .plus-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      font-weight: 900;
+      color: #6366f1;
+    }
+    .fraction-practice {
+      display: grid;
+      grid-template-columns: 1fr 60px 1fr;
+      gap: 12px;
+      margin-top: 18px;
+      align-items: stretch;
+    }
+    .subtle-note {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.7;
+    }
+    .copyright {
+      margin-top: 24px;
+      padding: 20px 16px 8px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .copyright strong {
+      display: block;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+    @media (max-width: 980px) {
+      .practice-grid { grid-template-columns: 1fr; }
+      .fraction-practice { grid-template-columns: 1fr; }
+      .plus-box { min-height: 40px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <h1>0.1+0.2는 왜 0.3이 아닌가?</h1>
+      <p>
+        겉으로는 단순한 덧셈처럼 보이지만, 컴퓨터는 어떤 수를 정확히 끝까지 저장하지 못합니다.
+        기본 예시로 3/7, 5/7, 0.1, 0.2를 제공하지만, 아래 입력값을 바꿔가며 직접 실습할 수도 있습니다.
+      </p>
+    </section>
+
+    <div class="layout">
+      <div class="stack">
+        <section class="card">
+          <h2>반복되는 수의 저장과 오차</h2>
+          <p>
+            버튼을 눌러 10진 분수 예시와 2진 실수 예시를 비교해 보세요.
+            값을 바꾸면 실시간으로 바로 갱신됩니다.
+          </p>
+
+          <div class="controls">
+            <button id="fractionBtn">3/7 + 5/7를 소수로 계산한다면?</button>
+            <button id="binaryBtn" class="secondary">0.1 + 0.2를 이진수로 계산하면?</button>
+          </div>
+
+          <div id="fractionPanel" class="tab-panel active">
+            <div class="formula">
+              <strong>분수 탭</strong>에서는 컴퓨터 내부 연산 방식과는 다르지만,<br>
+              <strong>일상생활에서 사용하는 10진수 체계</strong>를 통해<br>
+              반복 소수와 반올림 과정에서 발생하는 오차를 간접적으로 확인할 수 있습니다.
+            </div>
+
+            <div class="fraction-practice">
+              <div class="field">
+                <label>첫 번째 분수</label>
+                <div class="fraction-stack">
+                  <input id="num1" type="number" value="3" />
+                  <div class="fraction-bar"></div>
+                  <input id="den1" type="number" value="7" min="1" />
+                </div>
+              </div>
+
+              <div class="plus-box">+</div>
+
+              <div class="field">
+                <label>두 번째 분수</label>
+                <div class="fraction-stack">
+                  <input id="num2" type="number" value="5" />
+                  <div class="fraction-bar"></div>
+                  <input id="den2" type="number" value="7" min="1" />
+                </div>
+              </div>
+            </div>
+
+            <div class="subtle-note">
+              분수는 <strong>3 / 7</strong>처럼 위아래로 입력할 수 있습니다.
+            </div>
+
+            <div class="visual-table-wrap">
+              <table class="visual-table">
+                <tr>
+                  <th>값</th>
+                  <th>무한 반복 소수</th>
+                  <th>반올림 저장값 / 정확 값</th>
+                </tr>
+                <tr>
+                  <td id="fracLabel1">3/7</td>
+                  <td id="fracDec1" class="decimal"></td>
+                  <td id="fracRound1" class="rounded"></td>
+                </tr>
+                <tr>
+                  <td id="fracLabel2">5/7</td>
+                  <td id="fracDec2" class="decimal"></td>
+                  <td id="fracRound2" class="rounded"></td>
+                </tr>
+                <tr>
+                  <td><strong>합</strong></td>
+                  <td id="fracDecSum" class="decimal"></td>
+                  <td id="fracRoundSum" class="rounded"></td>
+                </tr>
+                <tr>
+                  <td id="fracExactLabel">정확 값 8/7</td>
+                  <td id="fracExactDec" class="decimal"></td>
+                  <td id="fracExactRound" class="rounded"></td>
+                </tr>
+              </table>
+            </div>
+
+            <div id="fractionNote" class="custom-note"></div>
+          </div>
+
+          <div id="binaryPanel" class="tab-panel">
+            <div class="formula">
+              <strong>해당 탭</strong>에서는 컴퓨터에서 실제로 처리되는 유사한 과정을 통해,<br>
+              <strong>컴퓨터 내부에서</strong> 수를 2진수로 변환하여 저장·연산하는 방식을 살펴볼 수 있습니다.<br>
+              <strong>유리수도 컴퓨터에서는 정확히 표현되지 못할 수 있으며</strong>, 이 과정에서 오차가 발생하는 원리를 확인할 수 있습니다.
+            </div>
+
+            <div class="practice-grid">
+              <div class="field">
+                <label for="float1">첫 번째 실수</label>
+                <input id="float1" type="text" value="0.1" />
+              </div>
+              <div class="field">
+                <label for="float2">두 번째 실수</label>
+                <input id="float2" type="text" value="0.2" />
+              </div>
+            </div>
+
+            <div class="visual-table-wrap">
+              <table class="visual-table">
+                <tr>
+                  <th>값</th>
+                  <th>이진수 (근사 표현)</th>
+                  <th>반올림값</th>
+                </tr>
+                <tr>
+                  <td id="binLabel1">0.1</td>
+                  <td id="binRep1" class="binary"></td>
+                  <td id="binRound1" class="rounded"></td>
+                </tr>
+                <tr>
+                  <td id="binLabel2">0.2</td>
+                  <td id="binRep2" class="binary"></td>
+                  <td id="binRound2" class="rounded"></td>
+                </tr>
+                <tr>
+                  <td><strong>합</strong></td>
+                  <td id="binRepSum" class="binary"></td>
+                  <td id="binRoundSum" class="rounded"></td>
+                </tr>
+                <tr>
+                  <td id="binExactLabel">수학적 기대값</td>
+                  <td id="binExactRep" class="binary"></td>
+                  <td id="binExactRound" class="rounded"></td>
+                </tr>
+              </table>
+            </div>
+
+            <div id="binaryNote" class="custom-note"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="copyright">
+      <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong>
+      본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
+    </div>
+  </div>
+
+  <script>
+    const fractionBtn = document.getElementById('fractionBtn');
+    const binaryBtn = document.getElementById('binaryBtn');
+    const fractionPanel = document.getElementById('fractionPanel');
+    const binaryPanel = document.getElementById('binaryPanel');
+
+    function gcd(a, b) {
+      a = Math.abs(a);
+      b = Math.abs(b);
+      while (b !== 0) {
+        const t = b;
+        b = a % b;
+        a = t;
+      }
+      return a || 1;
+    }
+
+    function simplifyFraction(n, d) {
+      if (d === 0) return { n, d };
+      const g = gcd(n, d);
+      d = d / g;
+      n = n / g;
+      if (d < 0) { n = -n; d = -d; }
+      return { n, d };
+    }
+
+    function groupDigits(str, size) {
+      const parts = [];
+      for (let i = 0; i < str.length; i += size) parts.push(str.slice(i, i + size));
+      return parts.join(' ');
+    }
+
+    function fractionToDecimalWithRepeat(n, d, digits = 24) {
+      if (d === 0) return '정의되지 않음';
+      const sign = (n * d < 0) ? '-' : '';
+      n = Math.abs(n);
+      d = Math.abs(d);
+      const integerPart = Math.floor(n / d);
+      let rem = n % d;
+      let out = '';
+      for (let i = 0; i < digits; i++) {
+        rem *= 10;
+        out += Math.floor(rem / d).toString();
+        rem %= d;
+      }
+      return sign + integerPart + '.' + groupDigits(out, 6) + ' …';
+    }
+
+    function fractionRoundedExact(n, d, digits = 18) {
+      if (d === 0) return '정의되지 않음';
+
+      const sign = (n * d < 0) ? '-' : '';
+      n = Math.abs(n);
+      d = Math.abs(d);
+
+      let integerPart = Math.floor(n / d);
+      let rem = n % d;
+
+      let out = '';
+      for (let i = 0; i < digits + 1; i++) {
+        rem *= 10;
+        out += Math.floor(rem / d).toString();
+        rem %= d;
+      }
+
+      const arr = out.slice(0, digits).split('').map(ch => Number(ch));
+      const roundDigit = Number(out[digits] || '0');
+
+      if (roundDigit >= 5) {
+        let carry = 1;
+        for (let i = arr.length - 1; i >= 0; i--) {
+          const next = arr[i] + carry;
+          if (next >= 10) {
+            arr[i] = 0;
+            carry = 1;
+          } else {
+            arr[i] = next;
+            carry = 0;
+            break;
+          }
+        }
+        if (carry === 1) integerPart += 1;
+      }
+
+      return sign + integerPart + '.' + arr.join('');
+    }
+
+    function groupDecimalText(text) {
+      const parts = text.split('.');
+      if (parts.length < 2) return text;
+      return parts[0] + '.' + parts[1].replace(/(\d{6})(?=\d)/g, '$1 ');
+    }
+
+    function addDecimalStrings(aText, bText) {
+      const [aInt, aFrac = ''] = aText.split('.');
+      const [bInt, bFrac = ''] = bText.split('.');
+      const fracLen = Math.max(aFrac.length, bFrac.length);
+      const aaFrac = aFrac.padEnd(fracLen, '0');
+      const bbFrac = bFrac.padEnd(fracLen, '0');
+
+      let carry = 0;
+      let fracOut = '';
+      for (let i = fracLen - 1; i >= 0; i--) {
+        const s = Number(aaFrac[i]) + Number(bbFrac[i]) + carry;
+        fracOut = String(s % 10) + fracOut;
+        carry = Math.floor(s / 10);
+      }
+
+      const aaInt = aInt.split('').reverse();
+      const bbInt = bInt.split('').reverse();
+      const intLen = Math.max(aaInt.length, bbInt.length);
+      let intOut = '';
+      for (let i = 0; i < intLen; i++) {
+        const s = Number(aaInt[i] || '0') + Number(bbInt[i] || '0') + carry;
+        intOut = String(s % 10) + intOut;
+        carry = Math.floor(s / 10);
+      }
+      if (carry) intOut = String(carry) + intOut;
+      return intOut + '.' + fracOut;
+    }
+
+    function showPanel(kind) {
+      const isFraction = kind === 'fraction';
+      fractionPanel.classList.toggle('active', isFraction);
+      binaryPanel.classList.toggle('active', !isFraction);
+      fractionBtn.classList.toggle('secondary', !isFraction);
+      binaryBtn.classList.toggle('secondary', isFraction);
+    }
+
+    fractionBtn.addEventListener('click', () => showPanel('fraction'));
+    binaryBtn.addEventListener('click', () => showPanel('binary'));
+
+    function updateFractionView() {
+      const n1 = parseInt(document.getElementById('num1').value, 10);
+      const d1 = parseInt(document.getElementById('den1').value, 10);
+      const n2 = parseInt(document.getElementById('num2').value, 10);
+      const d2 = parseInt(document.getElementById('den2').value, 10);
+
+      if (!Number.isFinite(n1) || !Number.isFinite(d1) || !Number.isFinite(n2) || !Number.isFinite(d2) || d1 === 0 || d2 === 0) {
+        document.getElementById('fractionNote').textContent = '분모는 0이 아니어야 하고, 모든 칸에 숫자를 넣어야 합니다.';
+        return;
+      }
+
+      const sumN = n1 * d2 + n2 * d1;
+      const sumD = d1 * d2;
+      const exact = simplifyFraction(sumN, sumD);
+
+      const roundedA = fractionRoundedExact(n1, d1);
+      const roundedB = fractionRoundedExact(n2, d2);
+      const roundedSum = addDecimalStrings(roundedA, roundedB);
+
+      document.getElementById('fracLabel1').textContent = `${n1}/${d1}`;
+      document.getElementById('fracLabel2').textContent = `${n2}/${d2}`;
+      document.getElementById('fracDec1').textContent = fractionToDecimalWithRepeat(n1, d1);
+      document.getElementById('fracDec2').textContent = fractionToDecimalWithRepeat(n2, d2);
+      document.getElementById('fracRound1').textContent = groupDecimalText(roundedA);
+      document.getElementById('fracRound2').textContent = groupDecimalText(roundedB);
+
+      document.getElementById('fracDecSum').textContent = fractionToDecimalWithRepeat(sumN, sumD);
+      document.getElementById('fracRoundSum').textContent = groupDecimalText(roundedSum);
+
+      document.getElementById('fracExactLabel').textContent = `정확 값 ${exact.n}/${exact.d}`;
+      const exactRepeatText = fractionToDecimalWithRepeat(exact.n, exact.d);
+      document.getElementById('fracExactDec').textContent = exactRepeatText;
+      document.getElementById('fracExactRound').textContent = exactRepeatText;
+
+      document.getElementById('fractionNote').textContent =
+        `${n1}/${d1} 와 ${n2}/${d2} 의 합은 정확히 ${exact.n}/${exact.d} 입니다. ` +
+        `합의 반올림 저장값은 정확한 합을 다시 반올림한 값이 아니라, 위 두 반올림 저장값을 직접 더한 결과입니다.`;
+    }
+
+    function toBinaryApprox(num, fracBits = 20) {
+      if (!Number.isFinite(num)) return '표현 불가';
+      if (num === 0) return '0';
+      const sign = num < 0 ? '-' : '';
+      num = Math.abs(num);
+      const integerPart = Math.floor(num);
+      let frac = num - integerPart;
+      const intBinary = integerPart.toString(2);
+      let bits = '';
+      for (let i = 0; i < fracBits; i++) {
+        frac *= 2;
+        if (frac >= 1) {
+          bits += '1';
+          frac -= 1;
+        } else {
+          bits += '0';
+        }
+      }
+      return sign + intBinary + '.' + groupDigits(bits, 4) + '…₂';
+    }
+
+    function roundBinary(num) {
+      if (!Number.isFinite(num)) return '표현 불가';
+      const sign = num < 0 ? '-' : '';
+      num = Math.abs(num);
+
+      const integerPart = Math.floor(num);
+      let frac = num - integerPart;
+      const intBinary = integerPart.toString(2);
+
+      let bits = '';
+      for (let i = 0; i < 17; i++) {
+        frac *= 2;
+        if (frac >= 1) {
+          bits += '1';
+          frac -= 1;
+        } else {
+          bits += '0';
+        }
+      }
+
+      let mainBits = bits.slice(0, 16).split('');
+      const roundBit = bits[16];
+
+      if (roundBit === '1') {
+        let carry = 1;
+        for (let i = mainBits.length - 1; i >= 0; i--) {
+          if (mainBits[i] === '0') {
+            mainBits[i] = '1';
+            carry = 0;
+            break;
+          } else {
+            mainBits[i] = '0';
+          }
+        }
+        if (carry === 1) {
+          return sign + (integerPart + 1).toString(2) + '.' + '0000 0000 0000 0000₂';
+        }
+      }
+
+      return sign + intBinary + '.' + mainBits.join('').replace(/(\d{4})(?=\d)/g, '$1 ') + '₂';
+    }
+
+    function addRoundedBinaryStrings(aStr, bStr) {
+      const clean = (s) => s.replace(/₂/g, '').replace(/ /g, '');
+      const [aIntRaw, aFracRaw = ''] = clean(aStr).split('.');
+      const [bIntRaw, bFracRaw = ''] = clean(bStr).split('.');
+
+      const fracLen = Math.max(aFracRaw.length, bFracRaw.length);
+      const aFrac = aFracRaw.padEnd(fracLen, '0');
+      const bFrac = bFracRaw.padEnd(fracLen, '0');
+
+      let carry = 0;
+      let fracOut = '';
+      for (let i = fracLen - 1; i >= 0; i--) {
+        const sum = Number(aFrac[i]) + Number(bFrac[i]) + carry;
+        fracOut = String(sum % 2) + fracOut;
+        carry = Math.floor(sum / 2);
+      }
+
+      const aInt = aIntRaw.split('').reverse();
+      const bInt = bIntRaw.split('').reverse();
+      const intLen = Math.max(aInt.length, bInt.length);
+      let intOut = '';
+      for (let i = 0; i < intLen; i++) {
+        const sum = Number(aInt[i] || '0') + Number(bInt[i] || '0') + carry;
+        intOut = String(sum % 2) + intOut;
+        carry = Math.floor(sum / 2);
+      }
+      if (carry) intOut = String(carry) + intOut;
+
+      return intOut + '.' + fracOut.replace(/(\d{4})(?=\d)/g, '$1 ') + '₂';
+    }
+
+    function updateBinaryView() {
+      const aText = document.getElementById('float1').value.trim();
+      const bText = document.getElementById('float2').value.trim();
+      const a = Number(aText);
+      const b = Number(bText);
+
+      if (!Number.isFinite(a) || !Number.isFinite(b)) {
+        document.getElementById('binaryNote').textContent = '실수 칸에는 숫자 형태의 값을 넣어야 합니다.';
+        return;
+      }
+
+      const sum = a + b;
+      const expectedText = `${aText} + ${bText}`;
+
+      document.getElementById('binLabel1').textContent = aText;
+      document.getElementById('binLabel2').textContent = bText;
+      document.getElementById('binRep1').textContent = toBinaryApprox(a);
+      document.getElementById('binRep2').textContent = toBinaryApprox(b);
+      document.getElementById('binRound1').textContent = roundBinary(a);
+      document.getElementById('binRound2').textContent = roundBinary(b);
+
+      const roundedA = roundBinary(a);
+      const roundedB = roundBinary(b);
+
+      document.getElementById('binRepSum').textContent = addRoundedBinaryStrings(roundedA, roundedB);
+      document.getElementById('binRoundSum').textContent = addRoundedBinaryStrings(roundedA, roundedB);
+
+      document.getElementById('binExactLabel').textContent = `수학적 기대값 (${expectedText})`;
+      const exactSumText = aText + ' + ' + bText;
+      document.getElementById('binExactRep').textContent = toBinaryApprox(a + b, 24).replace('…₂', ' …₂');
+      document.getElementById('binExactRound').textContent = toBinaryApprox(a + b, 24).replace('…₂', ' …₂');
+
+      document.getElementById('binaryNote').textContent =
+        `${aText} 와 ${bText} 는 2진수로 보면 일반적으로 무한히 이어지는 표현이 됩니다. ` +
+        `그래서 표에는 이진수 근사 표현, 유한 비트로 잘랐을 때의 이진 반올림값, 그리고 무한 반복되는 정확한 2진 표현을 함께 보여줍니다.`;
+    }
+
+    ['num1','den1','num2','den2'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updateFractionView);
+    });
+
+    ['float1','float2'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updateBinaryView);
+    });
+
+    updateFractionView();
+    updateBinaryView();
+    showPanel('fraction');
+  </script>
+</body>
+</html>
