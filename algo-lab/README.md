@@ -55,6 +55,14 @@
 - 파일명: list_time_complexity_practice.html
 - 용도: 리스트에서 새로운 자료의 삽입, 삭제시 시간복잡도 계산해보기
 - 태그: 자료구조, 리스트, 시간복잡도
+
+
+### 연결 리스트의 탐색, 삽입, 삭제
+- 파일명: linked_list_memory_playground_rebuilt.html
+- 용도: 연결 리스트에서 탐색 및 새로운 자료의 삽입, 삭제 원리 및 시간복잡도 알아보기
+- 태그: 자료구조, 연결 리스트, 적동 원리, 시간복잡도
+
+- linked_list_memory_playground_rebuilt.html
   
 ### 정렬 알고리즘 만들기
 - 파일명: sort-builder.html
