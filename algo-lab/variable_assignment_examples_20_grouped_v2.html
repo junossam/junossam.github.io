@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>변수 이해하기</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f6f8fc;
+      color: #1f2937;
+      font-family: "Pretendard", "Noto Sans KR", Arial, sans-serif;
+    }
+    .app {
+      max-width: 1460px;
+      margin: 0 auto;
+      padding: 24px 18px 40px;
+    }
+    .hero, .card {
+      background: #fff;
+      border-radius: 24px;
+      box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
+      padding: 22px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #ffffff, #eef2ff);
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 32px;
+      line-height: 1.2;
+    }
+    h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+    h3 {
+      margin: 0 0 10px;
+      font-size: 17px;
+      line-height: 1.2;
+    }
+    p {
+      margin: 0;
+      line-height: 1.8;
+      color: #475569;
+    }
+    .tip {
+      margin-top: 14px;
+      background: rgba(255,255,255,0.84);
+      border: 1px solid #dbe5ff;
+      border-radius: 18px;
+      padding: 14px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.8;
+      color: #334155;
+    }
+    .top-layout {
+      display: grid;
+      grid-template-columns: minmax(780px, 1.08fr) minmax(360px, 0.92fr);
+      gap: 20px;
+      align-items: start;
+      margin-bottom: 20px;
+    }
+    .bottom-layout {
+      display: grid;
+      gap: 20px;
+    }
+    .group-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .group-tab {
+      border: none;
+      border-radius: 14px;
+      padding: 10px 14px;
+      background: #e8ecf7;
+      color: #3730a3;
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .group-tab.active {
+      background: #111827;
+      color: white;
+    }
+    .example-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .example-card {
+      border: 1.5px solid #d7deea;
+      background: #f8fafc;
+      border-radius: 18px;
+      padding: 14px;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+    .example-card:hover {
+      transform: translateY(-1px);
+      border-color: #a5b4fc;
+    }
+    .example-card.active {
+      border: 2px solid #4f46e5;
+      background: #eef2ff;
+      box-shadow: 0 0 0 4px rgba(79,70,229,.08);
+    }
+    .example-title {
+      font-size: 15px;
+      font-weight: 900;
+      color: #111827;
+      margin-bottom: 6px;
+    }
+    .example-desc {
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.7;
+      font-weight: 700;
+    }
+    .code-box {
+      background: #0f172a;
+      color: #e5e7eb;
+      border-radius: 20px;
+      padding: 18px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 14px;
+      line-height: 1.95;
+      min-height: 280px;
+      white-space: pre-wrap;
+      overflow: auto;
+    }
+    .code-line {
+      display: block;
+      padding: 3px 8px;
+      border-radius: 10px;
+      transition: .18s ease;
+    }
+    .code-line.active {
+      background: rgba(79, 70, 229, 0.24);
+      outline: 1px solid rgba(129, 140, 248, 0.45);
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .primary { background: #111827; color: white; }
+    .secondary { background: #eef2ff; color: #3730a3; }
+    .message {
+      margin-top: 16px;
+      min-height: 92px;
+      border-radius: 18px;
+      padding: 16px;
+      background: #fff7df;
+      border: 1px solid #f4d28d;
+      color: #a16207;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.8;
+    }
+    .input-panel {
+      margin-top: 14px;
+      border-radius: 18px;
+      padding: 16px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e3a8a;
+      display: none;
+    }
+    .input-panel.show {
+      display: block;
+    }
+    .input-panel-title {
+      font-size: 14px;
+      font-weight: 900;
+      margin-bottom: 10px;
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .input-row input {
+      flex: 1 1 220px;
+      min-width: 0;
+      border: 1px solid #d7deea;
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1f2937;
+      background: white;
+    }
+    .memory-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .memory-card {
+      background: #f8fafc;
+      border: 1.5px solid #d8dee9;
+      border-radius: 20px;
+      padding: 14px;
+      min-height: 136px;
+      transition: .18s ease;
+    }
+    .memory-card.highlight {
+      border: 2.5px solid #ef4444;
+      background: #fff7f7;
+      box-shadow: 0 0 0 5px rgba(239,68,68,.12);
+      transform: translateY(-1px);
+    }
+    .chip-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      white-space: nowrap;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .chip.addr { background: #111827; color: white; }
+    .chip.status { background: #fee2e2; color: #b91c1c; }
+    .var-name {
+      font-size: 24px;
+      font-weight: 900;
+      margin-bottom: 10px;
+      color: #111827;
+    }
+    .info-grid {
+      display: grid;
+      gap: 8px;
+    }
+    .info {
+      background: white;
+      border: 1px solid #edf1f7;
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+    .label {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .value {
+      font-size: 17px;
+      color: #111827;
+      font-weight: 900;
+      word-break: break-word;
+    }
+    .legend {
+      margin-top: 14px;
+      background: #eefbf5;
+      border-radius: 18px;
+      padding: 14px 16px;
+      color: #065f46;
+      line-height: 1.8;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .output-box {
+      margin-top: 16px;
+      background: #f8fafc;
+      border-radius: 18px;
+      padding: 14px;
+      min-height: 120px;
+      white-space: pre-wrap;
+      line-height: 1.8;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      color: #334155;
+    }
+    .summary-box {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 16px;
+      line-height: 1.8;
+      color: #334155;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .copyright {
+      margin-top: 24px;
+      padding: 20px 16px 8px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .copyright strong {
+      display: block;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+    @media (max-width: 1120px) {
+      .top-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 780px) {
+      .example-grid,
+      .memory-grid {
+        grid-template-columns: 1fr;
+      }
+      .controls, .input-row, .group-tabs {
+        flex-direction: column;
+      }
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <h1>변수 및 변수의 값 변화 이해하기</h1>
+      <p>
+        이 페이지는 <strong>=</strong> 가 “같다”가 아니라
+        <strong>오른쪽 값을 계산한 뒤 왼쪽 변수에 저장하라</strong>는 뜻임을
+        눈으로 확인하는 실습 페이지입니다.
+      </p>
+      <div class="tip">
+        예시를 여러 묶음으로 나누어 두었습니다.
+        <br>
+        <strong>변수 1개 사용</strong>, <strong>변수 여러 개 사용</strong>, <strong>문자열</strong>,
+        <strong>자료형 변환</strong>, <strong>input 1개</strong>, <strong>input 여러 개</strong> 순서로
+        점점 복잡해집니다.
+        <br>
+        특히 <strong>input()</strong> 은 항상 먼저 <strong>문자열(str)</strong>로 저장되고,
+        필요하면 다음 줄에서 <strong>int(a)</strong>, <strong>float(a)</strong>로 바꾼다는 점을 확인해 보세요.
+      </div>
+    </section>
+
+    <section class="top-layout">
+      <section class="card">
+        <h2>실행할 코드</h2>
+
+        <div id="groupTabs" class="group-tabs"></div>
+        <div id="exampleGrid" class="example-grid"></div>
+        <div id="codeBox" class="code-box"></div>
+
+        <div class="controls">
+          <button id="stepBtn" class="primary">한 줄 실행하기</button>
+          <button id="runBtn" class="secondary">끝까지 실행</button>
+          <button id="resetBtn" class="secondary">실행 초기화</button>
+        </div>
+
+        <div id="inputPanel" class="input-panel">
+          <div class="input-panel-title">입력값을 넣어 주세요</div>
+          <div id="inputPrompt" class="label" style="margin-bottom:10px;"></div>
+          <div class="input-row">
+            <input id="inputField" type="text" placeholder="입력값은 먼저 문자열로 저장됩니다">
+            <button id="inputConfirmBtn" class="primary" style="width:auto;">입력 완료</button>
+            <button id="inputDefaultBtn" class="secondary" style="width:auto;">기본값 사용</button>
+          </div>
+        </div>
+
+        <div id="messageBox" class="message">예시를 고른 뒤 한 줄씩 실행하면서 변수에 무엇이 저장되는지 확인해 보세요.</div>
+      </section>
+
+      <section class="card">
+        <h2>변수 메모리 화면</h2>
+        <div id="memoryGrid" class="memory-grid"></div>
+
+        <div class="legend">
+          <strong>자료형 보기</strong><br>
+          int: 정수 / float: 실수 / str: 문자열 / bool: 참, 거짓
+          <br>
+          변수 메모리 화면에서는 문자열을 구분하기 위해 따옴표와 함께 표시합니다.<br>하지만 print() 출력 결과는 파이썬처럼 따옴표 없이 보여 줍니다.
+        </div>
+
+        <h3 style="margin-top:18px;">print() 출력 결과</h3>
+        <div id="outputBox" class="output-box">아직 출력된 내용이 없습니다.</div>
+      </section>
+    </section>
+
+    <section class="card bottom-layout">
+      <h2>현재 예시 설명</h2>
+      <div id="summaryBox" class="summary-box"></div>
+    </section>
+
+    <div class="copyright">
+      <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong>
+      본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
+    </div>
+  </div>
+
+  <script>
+    const groups = [
+      {
+        key: "single",
+        title: "변수 1개 사용",
+        examples: [
+          {
+            title: "1. 정수 대입",
+            desc: "변수 하나를 만들고 정수를 저장합니다.",
+            lines: [
+              { type: "assign", lhs: "num1", rhs: "10" },
+              { type: "print", left: "num1", op: "", right: "" },
+            ],
+          },
+          {
+            title: "2. 덮어쓰기",
+            desc: "같은 변수에 값을 다시 넣으면 이전 값이 덮어써집니다.",
+            lines: [
+              { type: "assign", lhs: "num1", rhs: "10" },
+              { type: "assign", lhs: "num1", rhs: "3" },
+              { type: "print", left: "num1", op: "", right: "" },
+            ],
+          },
+          {
+            title: "3. 계산 후 저장",
+            desc: "오른쪽 계산을 먼저 한 뒤 그 결과를 저장합니다.",
+            lines: [
+              { type: "assign", lhs: "num1", rhs: "3 + 5" },
+              { type: "print", left: "num1", op: "", right: "" },
+            ],
+          },
+        ],
+      },
+      {
+        key: "multi",
+        title: "변수 여러 개 사용",
+        examples: [
+          {
+            title: "4. 변수 두 개 만들기",
+            desc: "서로 다른 변수를 각각 만듭니다.",
+            lines: [
+              { type: "assign", lhs: "num1", rhs: "10" },
+              { type: "assign", lhs: "num2", rhs: "8" },
+              { type: "print", left: "num2", op: "", right: "" },
+            ],
+          },
+          {
+            title: "5. 변수끼리 더하기",
+            desc: "두 변수 값을 더해서 새 변수에 저장합니다.",
+            lines: [
+              { type: "assign", lhs: "num1", rhs: "10" },
+              { type: "assign", lhs: "num2", rhs: "8" },
+              { type: "binary", lhs: "num3", left: "num1", op: "+", right: "num2" },
+              { type: "print", left: "num3", op: "", right: "" },
+            ],
+          },
+          {
+            title: "6. 자기 자신 값 변경",
+            desc: "현재 변수 값으로 다시 계산해서 같은 변수에 저장합니다.",
+            lines: [
+              { type: "assign", lhs: "num1", rhs: "3" },
+              { type: "binary", lhs: "num1", left: "num1", op: "+", right: "5" },
+              { type: "print", left: "num1", op: "", right: "" },
+            ],
+          },
+          {
+            title: "7. print 안의 계산식",
+            desc: "저장하지 않고 print() 안에서 바로 계산할 수도 있습니다.",
+            lines: [
+              { type: "assign", lhs: "num1", rhs: "13" },
+              { type: "assign", lhs: "num2", rhs: "7" },
+              { type: "print", left: "num2", op: "", right: "" },
+              { type: "print", left: "num1", op: "+", right: "num2" },
+            ],
+          },
+        ],
+      },
+      {
+        key: "string",
+        title: "문자열",
+        examples: [
+          {
+            title: '8. 문자열 저장',
+            desc: '따옴표가 있으면 문자열(str)입니다.',
+            lines: [
+              { type: "assign", lhs: "text", rhs: '"안녕"' },
+              { type: "print", left: "text", op: "", right: "" },
+            ],
+          },
+          {
+            title: '9. 문자열 이어 붙이기',
+            desc: '문자열 + 문자열 은 이어 붙이기입니다.',
+            lines: [
+              { type: "assign", lhs: "a", rhs: '"안녕"' },
+              { type: "assign", lhs: "b", rhs: '"하세요"' },
+              { type: "binary", lhs: "c", left: "a", op: "+", right: "b" },
+              { type: "print", left: "c", op: "", right: "" },
+            ],
+          },
+          {
+            title: '10. 문자열 반복',
+            desc: '문자열 * 정수 는 같은 문자열 반복입니다.',
+            lines: [
+              { type: "assign", lhs: "num4", rhs: '"10"' },
+              { type: "binary", lhs: "num5", left: "num4", op: "*", right: "5" },
+              { type: "print", left: "num5", op: "", right: "" },
+            ],
+          },
+        ],
+      },
+      {
+        key: "convert",
+        title: "자료형 변환",
+        examples: [
+          {
+            title: "11. 문자열 숫자를 int로 바꾸기",
+            desc: '문자열 "10"을 정수 10으로 바꿉니다.',
+            lines: [
+              { type: "assign", lhs: "a", rhs: '"10"' },
+              { type: "assign", lhs: "a", rhs: "int(a)" },
+              { type: "print", left: "a", op: "", right: "" },
+            ],
+          },
+          {
+            title: "12. 문자열 실수를 float로 바꾸기",
+            desc: '문자열 "3.14"를 실수 3.14로 바꿉니다.',
+            lines: [
+              { type: "assign", lhs: "x", rhs: '"3.14"' },
+              { type: "assign", lhs: "x", rhs: "float(x)" },
+              { type: "print", left: "x", op: "", right: "" },
+            ],
+          },
+          {
+            title: "13. 자료형 변환 후 계산",
+            desc: "형변환을 하고 나서야 숫자 계산이 가능합니다.",
+            lines: [
+              { type: "assign", lhs: "a", rhs: '"20"' },
+              { type: "assign", lhs: "b", rhs: '"5"' },
+              { type: "assign", lhs: "a", rhs: "int(a)" },
+              { type: "assign", lhs: "b", rhs: "int(b)" },
+              { type: "binary", lhs: "c", left: "a", op: "+", right: "b" },
+              { type: "print", left: "c", op: "", right: "" },
+            ],
+          },
+          {
+            title: "14. print 안에서 형변환",
+            desc: "형변환 결과를 저장하지 않고 print() 안에서 바로 사용할 수 있습니다.",
+            lines: [
+              { type: "assign", lhs: "a", rhs: '"7"' },
+              { type: "print", left: "a", op: "", right: "" },
+              { type: "print", left: "int(a)", op: "+", right: "3" },
+            ],
+          },
+        ],
+      },
+      {
+        key: "input1",
+        title: "input 1개",
+        examples: [
+          {
+            title: "15. input()는 문자열",
+            desc: "입력값은 먼저 문자열(str)로 들어옵니다.",
+            lines: [
+              { type: "input", lhs: "a", prompt: "값을 입력하세요" },
+              { type: "print", left: "a", op: "", right: "" },
+            ],
+          },
+          {
+            title: "16. input 후 int(a)",
+            desc: "입력값을 정수로 쓰려면 다음 줄에서 int(a)로 바꿉니다.",
+            lines: [
+              { type: "input", lhs: "a", prompt: "정수를 입력하세요" },
+              { type: "assign", lhs: "a", rhs: "int(a)" },
+              { type: "print", left: "a", op: "", right: "" },
+            ],
+          },
+          {
+            title: "17. input 후 float(a)",
+            desc: "실수도 같은 방식으로 float(a)로 바꿉니다.",
+            lines: [
+              { type: "input", lhs: "rate", prompt: "실수를 입력하세요" },
+              { type: "assign", lhs: "rate", rhs: "float(rate)" },
+              { type: "print", left: "rate", op: "", right: "" },
+            ],
+          },
+        ],
+      },
+      {
+        key: "inputMany",
+        title: "input 여러 개",
+        examples: [
+          {
+            title: "18. 입력 2개를 정수로 바꾸고 더하기",
+            desc: "입력 2개는 먼저 문자열, 그 뒤 int()로 변환 후 계산합니다.",
+            lines: [
+              { type: "input", lhs: "a", prompt: "첫 번째 정수를 입력하세요" },
+              { type: "input", lhs: "b", prompt: "두 번째 정수를 입력하세요" },
+              { type: "assign", lhs: "a", rhs: "int(a)" },
+              { type: "assign", lhs: "b", rhs: "int(b)" },
+              { type: "binary", lhs: "total", left: "a", op: "+", right: "b" },
+              { type: "print", left: "total", op: "", right: "" },
+            ],
+          },
+          {
+            title: "19. 문자열과 반복 횟수 입력",
+            desc: "문자열은 그대로 두고, 횟수만 int()로 바꿔서 반복합니다.",
+            lines: [
+              { type: "input", lhs: "word", prompt: "문자열을 입력하세요" },
+              { type: "input", lhs: "count", prompt: "반복 횟수를 입력하세요" },
+              { type: "assign", lhs: "count", rhs: "int(count)" },
+              { type: "binary", lhs: "result", left: "word", op: "*", right: "count" },
+              { type: "print", left: "result", op: "", right: "" },
+            ],
+          },
+          {
+            title: "20. 입력 3개를 변환 후 단계적 계산",
+            desc: "입력 여러 개를 필요한 자료형으로 바꾼 뒤 계산합니다.",
+            lines: [
+              { type: "input", lhs: "price", prompt: "가격을 입력하세요" },
+              { type: "input", lhs: "count", prompt: "개수를 입력하세요" },
+              { type: "input", lhs: "rate", prompt: "배율을 입력하세요" },
+              { type: "assign", lhs: "price", rhs: "int(price)" },
+              { type: "assign", lhs: "count", rhs: "int(count)" },
+              { type: "assign", lhs: "rate", rhs: "float(rate)" },
+              { type: "binary", lhs: "subtotal", left: "price", op: "*", right: "count" },
+              { type: "binary", lhs: "final", left: "subtotal", op: "*", right: "rate" },
+              { type: "print", left: "subtotal", op: "", right: "" },
+              { type: "print", left: "final", op: "", right: "" },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const state = {
+      selectedGroup: 0,
+      selectedExample: 0,
+      currentLine: -1,
+      variables: {},
+      outputLines: [],
+      highlightVar: null,
+      nextAddressIndex: 0,
+      pendingInput: null,
+    };
+
+    const groupTabs = document.getElementById("groupTabs");
+    const exampleGrid = document.getElementById("exampleGrid");
+    const codeBox = document.getElementById("codeBox");
+    const memoryGrid = document.getElementById("memoryGrid");
+    const messageBox = document.getElementById("messageBox");
+    const outputBox = document.getElementById("outputBox");
+    const summaryBox = document.getElementById("summaryBox");
+    const inputPanel = document.getElementById("inputPanel");
+    const inputPrompt = document.getElementById("inputPrompt");
+    const inputField = document.getElementById("inputField");
+    const inputConfirmBtn = document.getElementById("inputConfirmBtn");
+    const inputDefaultBtn = document.getElementById("inputDefaultBtn");
+    const stepBtn = document.getElementById("stepBtn");
+    const runBtn = document.getElementById("runBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    function formatValue(value, type) {
+      if (type === "str") return `"${value}"`;
+      if (type === "float" && typeof value === "number") {
+        return Number.isInteger(value) ? value.toFixed(1) : String(value);
+      }
+      return String(value);
+    }
+
+    function formatPrintValue(value, type) {
+      if (type === "str") return String(value);
+      if (type === "float" && typeof value === "number") {
+        return Number.isInteger(value) ? value.toFixed(1) : String(value);
+      }
+      return String(value);
+    }
+
+    function getType(value) {
+      if (typeof value === "string") return "str";
+      if (typeof value === "boolean") return "bool";
+      if (typeof value === "number") return Number.isInteger(value) ? "int" : "float";
+      return "unknown";
+    }
+
+    function createAddress() {
+      const addr = 0x1000 + state.nextAddressIndex * 4;
+      state.nextAddressIndex += 1;
+      return "0x" + addr.toString(16).toUpperCase();
+    }
+
+    function parseBool(text) {
+      const lower = text.trim().toLowerCase();
+      if (lower === "true") return true;
+      if (lower === "false") return false;
+      throw new Error("bool 값은 True 또는 False 여야 합니다.");
+    }
+
+    function parseLiteralToken(token) {
+      const text = token.trim();
+
+      if ((text.startsWith('"') && text.endsWith('"')) || (text.startsWith("'") && text.endsWith("'"))) {
+        return text.slice(1, -1);
+      }
+      if (text === "True" || text === "False" || text.toLowerCase() === "true" || text.toLowerCase() === "false") {
+        return parseBool(text);
+      }
+      if (/^-?\d+\.\d+$/.test(text)) return Number(text);
+      if (/^-?\d+$/.test(text)) return Number(text);
+
+      const simpleAddMatch = text.match(/^(.+)\s*\+\s*(.+)$/);
+      if (simpleAddMatch && !text.startsWith("int(") && !text.startsWith("float(") && !text.startsWith("str(") && !text.startsWith("bool(")) {
+        return undefined;
+      }
+      return undefined;
+    }
+
+    function convertValue(typeName, value) {
+      if (typeName === "int") {
+        const converted = Number(value);
+        if (!Number.isInteger(converted)) throw new Error("int()로 바꿀 수 없는 값입니다.");
+        return { value: converted, explicitType: "int" };
+      }
+      if (typeName === "float") {
+        const converted = Number(value);
+        if (Number.isNaN(converted)) throw new Error("float()로 바꿀 수 없는 값입니다.");
+        return { value: converted, explicitType: "float" };
+      }
+      if (typeName === "str") return { value: String(value), explicitType: "str" };
+      if (typeName === "bool") return { value: Boolean(value), explicitType: "bool" };
+      throw new Error("지원하지 않는 형변환입니다.");
+    }
+
+    function evaluateSimpleExpression(text) {
+      const trimmed = text.trim();
+
+      const convertMatch = trimmed.match(/^(int|float|str|bool)\((.+)\)$/);
+      if (convertMatch) {
+        const [, typeName, inner] = convertMatch;
+        const innerValue = resolveToken(inner);
+        const converted = convertValue(typeName, innerValue);
+        return converted.value;
+      }
+
+      const binaryMatch = trimmed.match(/^(.+)\s*([\+\*])\s*(.+)$/);
+      if (binaryMatch) {
+        const [, left, op, right] = binaryMatch;
+        const leftValue = resolveToken(left);
+        const rightValue = resolveToken(right);
+
+        if (op === "+") {
+          if (typeof leftValue === "number" && typeof rightValue === "number") return leftValue + rightValue;
+          if (typeof leftValue === "string" && typeof rightValue === "string") return leftValue + rightValue;
+          throw new Error("+ 는 숫자+숫자 또는 문자열+문자열일 때만 사용할 수 있습니다.");
+        }
+
+        if (op === "*") {
+          if (typeof leftValue === "number" && typeof rightValue === "number") return leftValue * rightValue;
+          if (typeof leftValue === "string" && Number.isInteger(rightValue)) return leftValue.repeat(rightValue);
+          if (Number.isInteger(leftValue) && typeof rightValue === "string") return rightValue.repeat(leftValue);
+          throw new Error("* 는 숫자*숫자 또는 문자열*정수일 때만 사용할 수 있습니다.");
+        }
+      }
+
+      return undefined;
+    }
+
+    function resolveToken(token) {
+      const trimmed = token.trim();
+
+      const calcValue = evaluateSimpleExpression(trimmed);
+      if (calcValue !== undefined) return calcValue;
+
+      if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+        return trimmed.slice(1, -1);
+      }
+      if (trimmed === "True" || trimmed === "False" || trimmed.toLowerCase() === "true" || trimmed.toLowerCase() === "false") {
+        return parseBool(trimmed);
+      }
+      if (/^-?\d+\.\d+$/.test(trimmed)) return Number(trimmed);
+      if (/^-?\d+$/.test(trimmed)) return Number(trimmed);
+
+      if (Object.prototype.hasOwnProperty.call(state.variables, trimmed)) {
+        return state.variables[trimmed].value;
+      }
+
+      throw new Error(`"${trimmed}" 을(를) 찾을 수 없습니다. 변수 이름 또는 값이 맞는지 확인하세요.`);
+    }
+
+    function evaluateExpression(left, op, right) {
+      const leftValue = resolveToken(left);
+      if (!op) return { result: leftValue, leftValue, rightValue: null };
+
+      const rightValue = resolveToken(right);
+
+      if (op === "+") {
+        if (typeof leftValue === "number" && typeof rightValue === "number") {
+          return { result: leftValue + rightValue, leftValue, rightValue };
+        }
+        if (typeof leftValue === "string" && typeof rightValue === "string") {
+          return { result: leftValue + rightValue, leftValue, rightValue };
+        }
+        throw new Error("+ 는 숫자+숫자 또는 문자열+문자열일 때만 사용할 수 있습니다.");
+      }
+
+      if (op === "*") {
+        if (typeof leftValue === "number" && typeof rightValue === "number") {
+          return { result: leftValue * rightValue, leftValue, rightValue };
+        }
+        if (typeof leftValue === "string" && Number.isInteger(rightValue)) {
+          return { result: leftValue.repeat(rightValue), leftValue, rightValue };
+        }
+        if (Number.isInteger(leftValue) && typeof rightValue === "string") {
+          return { result: rightValue.repeat(leftValue), leftValue, rightValue };
+        }
+        throw new Error("* 는 숫자*숫자 또는 문자열*정수일 때만 사용할 수 있습니다.");
+      }
+
+      throw new Error("지원하지 않는 연산자입니다.");
+    }
+
+    function assignVar(name, value, status, explicitType = null) {
+      const type = explicitType || getType(value);
+      if (!state.variables[name]) {
+        state.variables[name] = {
+          value,
+          type,
+          address: createAddress(),
+          status: status || "새로 생성",
+        };
+      } else {
+        state.variables[name].value = value;
+        state.variables[name].type = type;
+        state.variables[name].status = status || "값 변경";
+      }
+      state.highlightVar = name;
+    }
+
+    function getCurrentExample() {
+      return groups[state.selectedGroup].examples[state.selectedExample];
+    }
+
+    function lineToText(line) {
+      if (line.type === "assign") return `${line.lhs} = ${line.rhs}`;
+      if (line.type === "binary") return `${line.lhs} = ${line.left} ${line.op} ${line.right}`;
+      if (line.type === "input") return `${line.lhs} = input("${line.prompt || "값을 입력하세요"}")`;
+      if (line.type === "print") return line.op ? `print(${line.left} ${line.op} ${line.right})` : `print(${line.left})`;
+      return "";
+    }
+
+    function renderGroupTabs() {
+      groupTabs.innerHTML = "";
+      groups.forEach((group, index) => {
+        const btn = document.createElement("button");
+        btn.className = "group-tab" + (index === state.selectedGroup ? " active" : "");
+        btn.textContent = group.title;
+        btn.onclick = () => {
+          state.selectedGroup = index;
+          state.selectedExample = 0;
+          resetExecution();
+        };
+        groupTabs.appendChild(btn);
+      });
+    }
+
+    function renderExampleGrid() {
+      exampleGrid.innerHTML = "";
+      const currentGroup = groups[state.selectedGroup];
+      currentGroup.examples.forEach((example, index) => {
+        const card = document.createElement("div");
+        card.className = "example-card" + (index === state.selectedExample ? " active" : "");
+        card.innerHTML = `
+          <div class="example-title">${example.title}</div>
+          <div class="example-desc">${example.desc}</div>
+        `;
+        card.onclick = () => {
+          state.selectedExample = index;
+          resetExecution();
+        };
+        exampleGrid.appendChild(card);
+      });
+    }
+
+    function renderSummary() {
+      const group = groups[state.selectedGroup];
+      const example = getCurrentExample();
+      summaryBox.innerHTML = `
+        <strong>현재 묶음:</strong> ${group.title}<br>
+        <strong>현재 예시:</strong> ${example.title}<br>
+        <strong>설명:</strong> ${example.desc}
+      `;
+    }
+
+    function renderCode() {
+      codeBox.innerHTML = "";
+      const program = getCurrentExample().lines;
+      program.forEach((line, index) => {
+        const div = document.createElement("div");
+        div.className = "code-line" + (index === state.currentLine ? " active" : "");
+        div.textContent = `${index + 1}. ${lineToText(line)}`;
+        codeBox.appendChild(div);
+      });
+    }
+
+    function renderMemory() {
+      memoryGrid.innerHTML = "";
+      const entries = Object.entries(state.variables);
+
+      if (entries.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "summary-box";
+        empty.style.gridColumn = "1 / -1";
+        empty.textContent = "아직 생성된 변수가 없습니다.";
+        memoryGrid.appendChild(empty);
+        return;
+      }
+
+      entries.forEach(([name, info]) => {
+        const card = document.createElement("div");
+        card.className = "memory-card" + (state.highlightVar === name ? " highlight" : "");
+        card.innerHTML = `
+          <div class="chip-row">
+            <div class="chip addr">주소 ${info.address}</div>
+            <div class="chip status">${info.status}</div>
+          </div>
+          <div class="var-name">${name}</div>
+          <div class="info-grid">
+            <div class="info">
+              <div class="label">저장된 값</div>
+              <div class="value">${formatValue(info.value, info.type)}</div>
+            </div>
+            <div class="info">
+              <div class="label">자료형</div>
+              <div class="value">${info.type}</div>
+            </div>
+          </div>
+        `;
+        memoryGrid.appendChild(card);
+      });
+    }
+
+    function renderOutput() {
+      outputBox.textContent = state.outputLines.length
+        ? state.outputLines.join("\n")
+        : "아직 출력된 내용이 없습니다.";
+    }
+
+    function renderInputPanel() {
+      if (!state.pendingInput) {
+        inputPanel.classList.remove("show");
+        inputPrompt.textContent = "";
+        inputField.value = "";
+        return;
+      }
+
+      const line = state.pendingInput.line;
+      inputPanel.classList.add("show");
+      inputPrompt.textContent = `${line.prompt || "값을 입력하세요"} → ${line.lhs} 에 문자열로 저장`;
+      inputField.placeholder = "입력값은 먼저 문자열로 저장됩니다";
+    }
+
+    function renderAll() {
+      renderGroupTabs();
+      renderExampleGrid();
+      renderSummary();
+      renderCode();
+      renderMemory();
+      renderOutput();
+      renderInputPanel();
+    }
+
+    function getExplicitTypeFromRhs(rhs) {
+      const trimmed = rhs.trim();
+      const match = trimmed.match(/^(int|float|str|bool)\((.+)\)$/);
+      return match ? match[1] : null;
+    }
+
+    function safeExecute(line) {
+      try {
+        executeLine(line);
+      } catch (error) {
+        messageBox.innerHTML = `<strong>실행 오류</strong><br>${error.message}`;
+      }
+    }
+
+    function executeLine(line) {
+      if (line.type === "assign") {
+        const value = resolveToken(line.rhs);
+        const explicitType = getExplicitTypeFromRhs(line.rhs);
+        assignVar(line.lhs.trim(), value, state.variables[line.lhs.trim()] ? "값 변경" : "새로 생성", explicitType);
+        messageBox.innerHTML =
+          `<strong>${lineToText(line)}</strong><br>` +
+          `오른쪽 값을 먼저 계산한 뒤, <strong>${line.lhs}</strong> 에 <strong>${formatValue(value, explicitType || getType(value))}</strong> 를 저장합니다.`;
+        return;
+      }
+
+      if (line.type === "binary") {
+        const { result, leftValue, rightValue } = evaluateExpression(line.left, line.op, line.right);
+        assignVar(line.lhs.trim(), result, state.variables[line.lhs.trim()] ? "값 변경" : "새로 생성");
+
+        let extraExplanation = "";
+        if (line.op === "*" && typeof leftValue === "string" && Number.isInteger(rightValue)) {
+          extraExplanation = `<br><strong>${line.left}</strong> 는 문자열이므로 <strong>${rightValue}번 반복합니다.</strong>`;
+        } else if (line.op === "*" && Number.isInteger(leftValue) && typeof rightValue === "string") {
+          extraExplanation = `<br><strong>${line.right}</strong> 는 문자열이므로 <strong>${leftValue}번 반복합니다.</strong>`;
+        }
+
+        messageBox.innerHTML =
+          `<strong>${lineToText(line)}</strong><br>` +
+          `오른쪽을 먼저 계산합니다. ` +
+          `<strong>${formatValue(leftValue, getType(leftValue))} ${line.op} ${formatValue(rightValue, getType(rightValue))}</strong> = ` +
+          `<strong>${formatValue(result, getType(result))}</strong>` +
+          `${extraExplanation}<br>` +
+          `계산 결과를 <strong>${line.lhs}</strong> 에 저장합니다.`;
+        return;
+      }
+
+      if (line.type === "print") {
+        const { result, leftValue, rightValue } = evaluateExpression(line.left, line.op, line.right);
+        const printType = (line.op === "" && state.variables[line.left]) ? state.variables[line.left].type : getType(result);
+        state.outputLines.push(formatPrintValue(result, printType));
+        state.highlightVar = null;
+
+        let extraExplanation = "";
+        if (line.op === "*" && typeof leftValue === "string" && Number.isInteger(rightValue)) {
+          extraExplanation = `<br><strong>${line.left}</strong> 는 문자열이므로 <strong>${rightValue}번 반복합니다.</strong>`;
+        } else if (line.op === "*" && Number.isInteger(leftValue) && typeof rightValue === "string") {
+          extraExplanation = `<br><strong>${line.right}</strong> 는 문자열이므로 <strong>${leftValue}번 반복합니다.</strong>`;
+        }
+
+        if (line.op) {
+          messageBox.innerHTML =
+            `<strong>${lineToText(line)}</strong><br>` +
+            `print() 안의 계산식을 먼저 계산합니다. ` +
+            `<strong>${formatValue(leftValue, getType(leftValue))} ${line.op} ${formatValue(rightValue, getType(rightValue))}</strong> = ` +
+            `<strong>${formatValue(result, getType(result))}</strong>` +
+            `${extraExplanation}<br>` +
+            `이 값이 화면에 출력됩니다.`;
+        } else {
+          messageBox.innerHTML =
+            `<strong>${lineToText(line)}</strong><br>` +
+            `print()는 값을 저장하는 것이 아니라, 현재 값 <strong>${formatValue(result, getType(result))}</strong> 을 화면에 출력합니다.`;
+        }
+        return;
+      }
+
+      if (line.type === "input") {
+        throw new Error("input 줄은 아래 입력칸에서 처리됩니다.");
+      }
+    }
+
+    function getDefaultInputValue() {
+      return "";
+    }
+
+    function applyPendingInput(useDefault = false) {
+      if (!state.pendingInput) return;
+
+      try {
+        const line = state.pendingInput.line;
+        const inputValue = useDefault ? getDefaultInputValue() : inputField.value;
+
+        assignVar(line.lhs.trim(), inputValue, state.variables[line.lhs.trim()] ? "값 변경" : "새로 생성");
+
+        const extraText = useDefault
+          ? `<br>입력을 생략하여 기본 문자열 <strong>""</strong> 을(를) 사용합니다.`
+          : "";
+
+        messageBox.innerHTML =
+          `<strong>${lineToText(line)}</strong><br>` +
+          `input() 로 들어온 값은 먼저 <strong>문자열(str)</strong>로 저장됩니다.` +
+          `<br>입력한 값 <strong>${formatValue(inputValue, "str")}</strong> 을(를) ` +
+          `<strong>${line.lhs}</strong> 에 저장합니다. 자료형은 <strong>str</strong> 입니다.` +
+          extraText;
+
+        state.pendingInput = null;
+        inputField.value = "";
+        renderAll();
+      } catch (error) {
+        messageBox.innerHTML = `<strong>입력 오류</strong><br>${error.message}`;
+      }
+    }
+
+    function resetExecution() {
+      state.currentLine = -1;
+      state.variables = {};
+      state.outputLines = [];
+      state.highlightVar = null;
+      state.nextAddressIndex = 0;
+      state.pendingInput = null;
+      inputField.value = "";
+      messageBox.innerHTML = "예시를 고른 뒤 한 줄씩 실행하면서 변수에 무엇이 저장되는지 확인해 보세요.";
+      renderAll();
+    }
+
+    function stepForward() {
+      const program = getCurrentExample().lines;
+
+      if (state.pendingInput) {
+        messageBox.innerHTML = "<strong>입력 대기 중</strong><br>아래 입력칸에 값을 넣고 <strong>입력 완료</strong> 버튼을 누르세요.";
+        renderAll();
+        return;
+      }
+
+      if (state.currentLine >= program.length - 1) return;
+
+      state.currentLine += 1;
+      const line = program[state.currentLine];
+
+      if (line.type === "input") {
+        state.pendingInput = { lineIndex: state.currentLine, line };
+        messageBox.innerHTML =
+          `<strong>${lineToText(line)}</strong><br>` +
+          `이 줄은 입력이 필요합니다. 아래에 값을 입력한 뒤 <strong>입력 완료</strong> 버튼을 누르세요.`;
+        renderAll();
+        return;
+      }
+
+      safeExecute(line);
+      renderAll();
+    }
+
+    function runAll() {
+      const program = getCurrentExample().lines;
+
+      while (!state.pendingInput && state.currentLine < program.length - 1) {
+        state.currentLine += 1;
+        const line = program[state.currentLine];
+
+        if (line.type === "input") {
+          state.pendingInput = { lineIndex: state.currentLine, line };
+          messageBox.innerHTML =
+            `<strong>${lineToText(line)}</strong><br>` +
+            `이 줄은 입력이 필요합니다. 아래에 값을 입력한 뒤 <strong>입력 완료</strong> 버튼을 누르세요.`;
+          break;
+        }
+
+        safeExecute(line);
+      }
+
+      renderAll();
+    }
+
+    stepBtn.addEventListener("click", stepForward);
+    runBtn.addEventListener("click", runAll);
+    resetBtn.addEventListener("click", resetExecution);
+    inputConfirmBtn.addEventListener("click", () => applyPendingInput(false));
+    inputDefaultBtn.addEventListener("click", () => applyPendingInput(true));
+    inputField.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        applyPendingInput(false);
+      }
+    });
+
+    resetExecution();
+  </script>
+</body>
+</html>
