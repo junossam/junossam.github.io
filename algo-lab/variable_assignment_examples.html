@@ -60,7 +60,7 @@
     }
     .top-layout {
       display: grid;
-      grid-template-columns: minmax(780px, 1.08fr) minmax(360px, 0.92fr);
+      grid-template-columns: minmax(840px, 1.12fr) minmax(340px, 0.88fr);
       gap: 20px;
       align-items: start;
       margin-bottom: 20px;
@@ -210,15 +210,15 @@
     }
     .memory-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
     }
     .memory-card {
       background: #f8fafc;
       border: 1.5px solid #d8dee9;
-      border-radius: 20px;
-      padding: 14px;
-      min-height: 136px;
+      border-radius: 15px;
+      padding: 10px;
+      min-height: 94px;
       transition: .18s ease;
     }
     .memory-card.highlight {
@@ -227,53 +227,34 @@
       box-shadow: 0 0 0 5px rgba(239,68,68,.12);
       transform: translateY(-1px);
     }
-    .chip-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-    }
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      white-space: nowrap;
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 11px;
-      font-weight: 900;
-      line-height: 1;
-    }
-    .chip.addr { background: #111827; color: white; }
-    .chip.status { background: #fee2e2; color: #b91c1c; }
     .var-name {
-      font-size: 24px;
+      font-size: 16px;
       font-weight: 900;
-      margin-bottom: 10px;
+      margin-bottom: 7px;
       color: #111827;
     }
     .info-grid {
       display: grid;
-      gap: 8px;
+      gap: 6px;
     }
     .info {
       background: white;
       border: 1px solid #edf1f7;
-      border-radius: 14px;
-      padding: 10px 12px;
+      border-radius: 11px;
+      padding: 8px 10px;
     }
     .label {
-      font-size: 12px;
+      font-size: 11px;
       color: #64748b;
       font-weight: 800;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     .value {
-      font-size: 17px;
+      font-size: 13px;
       color: #111827;
       font-weight: 900;
       word-break: break-word;
+      line-height: 1.4;
     }
     .legend {
       margin-top: 14px;
@@ -322,6 +303,11 @@
     }
     @media (max-width: 1120px) {
       .top-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 1040px) {
+      .memory-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
     @media (max-width: 780px) {
       .example-grid,
@@ -378,7 +364,6 @@
           <div class="input-row">
             <input id="inputField" type="text" placeholder="입력값은 먼저 문자열로 저장됩니다">
             <button id="inputConfirmBtn" class="primary" style="width:auto;">입력 완료</button>
-            <button id="inputDefaultBtn" class="secondary" style="width:auto;">기본값 사용</button>
           </div>
         </div>
 
@@ -416,10 +401,10 @@
     const groups = [
       {
         key: "single",
-        title: "변수 1개 사용",
+        title: "1. 변수 1개 사용",
         examples: [
           {
-            title: "1. 정수 대입",
+            title: "1-1. 정수 대입",
             desc: "변수 하나를 만들고 정수를 저장합니다.",
             lines: [
               { type: "assign", lhs: "num1", rhs: "10" },
@@ -427,7 +412,7 @@
             ],
           },
           {
-            title: "2. 덮어쓰기",
+            title: "1-2. 덮어쓰기",
             desc: "같은 변수에 값을 다시 넣으면 이전 값이 덮어써집니다.",
             lines: [
               { type: "assign", lhs: "num1", rhs: "10" },
@@ -436,7 +421,7 @@
             ],
           },
           {
-            title: "3. 계산 후 저장",
+            title: "1-3. 계산 후 저장",
             desc: "오른쪽 계산을 먼저 한 뒤 그 결과를 저장합니다.",
             lines: [
               { type: "assign", lhs: "num1", rhs: "3 + 5" },
@@ -447,10 +432,10 @@
       },
       {
         key: "multi",
-        title: "변수 여러 개 사용",
+        title: "2. 변수 여러 개 사용",
         examples: [
           {
-            title: "4. 변수 두 개 만들기",
+            title: "2-1. 변수 두 개 만들기",
             desc: "서로 다른 변수를 각각 만듭니다.",
             lines: [
               { type: "assign", lhs: "num1", rhs: "10" },
@@ -459,7 +444,7 @@
             ],
           },
           {
-            title: "5. 변수끼리 더하기",
+            title: "2-2. 변수끼리 더하기",
             desc: "두 변수 값을 더해서 새 변수에 저장합니다.",
             lines: [
               { type: "assign", lhs: "num1", rhs: "10" },
@@ -469,7 +454,7 @@
             ],
           },
           {
-            title: "6. 자기 자신 값 변경",
+            title: "2-3. 자기 자신 값 변경",
             desc: "현재 변수 값으로 다시 계산해서 같은 변수에 저장합니다.",
             lines: [
               { type: "assign", lhs: "num1", rhs: "3" },
@@ -478,7 +463,7 @@
             ],
           },
           {
-            title: "7. print 안의 계산식",
+            title: "2-4. print 안의 계산식",
             desc: "저장하지 않고 print() 안에서 바로 계산할 수도 있습니다.",
             lines: [
               { type: "assign", lhs: "num1", rhs: "13" },
@@ -491,10 +476,10 @@
       },
       {
         key: "string",
-        title: "문자열",
+        title: "3. 문자열",
         examples: [
           {
-            title: '8. 문자열 저장',
+            title: '3-1. 문자열 저장',
             desc: '따옴표가 있으면 문자열(str)입니다.',
             lines: [
               { type: "assign", lhs: "text", rhs: '"안녕"' },
@@ -502,7 +487,7 @@
             ],
           },
           {
-            title: '9. 문자열 이어 붙이기',
+            title: '3-2. 문자열 이어 붙이기',
             desc: '문자열 + 문자열 은 이어 붙이기입니다.',
             lines: [
               { type: "assign", lhs: "a", rhs: '"안녕"' },
@@ -512,7 +497,7 @@
             ],
           },
           {
-            title: '10. 문자열 반복',
+            title: '3-3. 문자열 반복',
             desc: '문자열 * 정수 는 같은 문자열 반복입니다.',
             lines: [
               { type: "assign", lhs: "num4", rhs: '"10"' },
@@ -524,10 +509,10 @@
       },
       {
         key: "convert",
-        title: "자료형 변환",
+        title: "4. 자료형 변환",
         examples: [
           {
-            title: "11. 문자열 숫자를 int로 바꾸기",
+            title: "4-1. 문자열 숫자를 int로 바꾸기",
             desc: '문자열 "10"을 정수 10으로 바꿉니다.',
             lines: [
               { type: "assign", lhs: "a", rhs: '"10"' },
@@ -536,7 +521,16 @@
             ],
           },
           {
-            title: "12. 문자열 실수를 float로 바꾸기",
+            title: "4-2. int(a)만 실행하면 a는 그대로",
+            desc: 'int(a)를 계산만 하고 다시 저장하지 않으면 변수 a 자체는 바뀌지 않습니다.',
+            lines: [
+              { type: "assign", lhs: "a", rhs: '"10"' },
+              { type: "expr", expr: "int(a)" },
+              { type: "print", left: "a", op: "", right: "" },
+            ],
+          },
+          {
+            title: "4-3. 문자열 실수를 float로 바꾸기",
             desc: '문자열 "3.14"를 실수 3.14로 바꿉니다.',
             lines: [
               { type: "assign", lhs: "x", rhs: '"3.14"' },
@@ -545,7 +539,7 @@
             ],
           },
           {
-            title: "13. 자료형 변환 후 계산",
+            title: "4-4. 자료형 변환 후 계산",
             desc: "형변환을 하고 나서야 숫자 계산이 가능합니다.",
             lines: [
               { type: "assign", lhs: "a", rhs: '"20"' },
@@ -557,7 +551,7 @@
             ],
           },
           {
-            title: "14. print 안에서 형변환",
+            title: "4-5. print 안에서 형변환",
             desc: "형변환 결과를 저장하지 않고 print() 안에서 바로 사용할 수 있습니다.",
             lines: [
               { type: "assign", lhs: "a", rhs: '"7"' },
@@ -569,10 +563,10 @@
       },
       {
         key: "input1",
-        title: "input 1개",
+        title: "5. input 1개",
         examples: [
           {
-            title: "15. input()는 문자열",
+            title: "5-1. input()는 문자열",
             desc: "입력값은 먼저 문자열(str)로 들어옵니다.",
             lines: [
               { type: "input", lhs: "a", prompt: "값을 입력하세요" },
@@ -580,7 +574,7 @@
             ],
           },
           {
-            title: "16. input 후 int(a)",
+            title: "5-2. input 후 int(a)",
             desc: "입력값을 정수로 쓰려면 다음 줄에서 int(a)로 바꿉니다.",
             lines: [
               { type: "input", lhs: "a", prompt: "정수를 입력하세요" },
@@ -589,7 +583,7 @@
             ],
           },
           {
-            title: "17. input 후 float(a)",
+            title: "5-3. input 후 float(a)",
             desc: "실수도 같은 방식으로 float(a)로 바꿉니다.",
             lines: [
               { type: "input", lhs: "rate", prompt: "실수를 입력하세요" },
@@ -601,10 +595,10 @@
       },
       {
         key: "inputMany",
-        title: "input 여러 개",
+        title: "6. input 여러 개",
         examples: [
           {
-            title: "18. 입력 2개를 정수로 바꾸고 더하기",
+            title: "6-1. 입력 2개를 정수로 바꾸고 더하기",
             desc: "입력 2개는 먼저 문자열, 그 뒤 int()로 변환 후 계산합니다.",
             lines: [
               { type: "input", lhs: "a", prompt: "첫 번째 정수를 입력하세요" },
@@ -616,7 +610,7 @@
             ],
           },
           {
-            title: "19. 문자열과 반복 횟수 입력",
+            title: "6-2. 문자열과 반복 횟수 입력",
             desc: "문자열은 그대로 두고, 횟수만 int()로 바꿔서 반복합니다.",
             lines: [
               { type: "input", lhs: "word", prompt: "문자열을 입력하세요" },
@@ -627,7 +621,7 @@
             ],
           },
           {
-            title: "20. 입력 3개를 변환 후 단계적 계산",
+            title: "6-3. 입력 3개를 변환 후 단계적 계산",
             desc: "입력 여러 개를 필요한 자료형으로 바꾼 뒤 계산합니다.",
             lines: [
               { type: "input", lhs: "price", prompt: "가격을 입력하세요" },
@@ -668,7 +662,6 @@
     const inputPrompt = document.getElementById("inputPrompt");
     const inputField = document.getElementById("inputField");
     const inputConfirmBtn = document.getElementById("inputConfirmBtn");
-    const inputDefaultBtn = document.getElementById("inputDefaultBtn");
     const stepBtn = document.getElementById("stepBtn");
     const runBtn = document.getElementById("runBtn");
     const resetBtn = document.getElementById("resetBtn");
@@ -858,6 +851,7 @@
       if (line.type === "binary") return `${line.lhs} = ${line.left} ${line.op} ${line.right}`;
       if (line.type === "input") return `${line.lhs} = input("${line.prompt || "값을 입력하세요"}")`;
       if (line.type === "print") return line.op ? `print(${line.left} ${line.op} ${line.right})` : `print(${line.left})`;
+      if (line.type === "expr") return `${line.expr}`;
       return "";
     }
 
@@ -923,6 +917,7 @@
         const empty = document.createElement("div");
         empty.className = "summary-box";
         empty.style.gridColumn = "1 / -1";
+        empty.style.padding = "12px";
         empty.textContent = "아직 생성된 변수가 없습니다.";
         memoryGrid.appendChild(empty);
         return;
@@ -932,10 +927,6 @@
         const card = document.createElement("div");
         card.className = "memory-card" + (state.highlightVar === name ? " highlight" : "");
         card.innerHTML = `
-          <div class="chip-row">
-            <div class="chip addr">주소 ${info.address}</div>
-            <div class="chip status">${info.status}</div>
-          </div>
           <div class="var-name">${name}</div>
           <div class="info-grid">
             <div class="info">
@@ -970,6 +961,11 @@
       inputPanel.classList.add("show");
       inputPrompt.textContent = `${line.prompt || "값을 입력하세요"} → ${line.lhs} 에 문자열로 저장`;
       inputField.placeholder = "입력값은 먼저 문자열로 저장됩니다";
+
+      setTimeout(() => {
+        inputField.focus();
+        inputField.select();
+      }, 0);
     }
 
     function renderAll() {
@@ -1057,34 +1053,36 @@
         return;
       }
 
+      if (line.type === "expr") {
+        const result = resolveToken(line.expr);
+        state.highlightVar = null;
+        messageBox.innerHTML =
+          `<strong>${lineToText(line)}</strong><br>` +
+          `<strong>${formatValue(result, getType(result))}</strong> 로 계산되지만, 어느 변수에도 다시 저장하지 않았습니다.` +
+          `<br>따라서 기존 변수의 값과 자료형은 그대로 유지됩니다.`;
+        return;
+      }
+
       if (line.type === "input") {
         throw new Error("input 줄은 아래 입력칸에서 처리됩니다.");
       }
     }
 
-    function getDefaultInputValue() {
-      return "";
-    }
-
-    function applyPendingInput(useDefault = false) {
+    function applyPendingInput() {
       if (!state.pendingInput) return;
 
       try {
         const line = state.pendingInput.line;
-        const inputValue = useDefault ? getDefaultInputValue() : inputField.value;
+        const inputValue = inputField.value;
 
         assignVar(line.lhs.trim(), inputValue, state.variables[line.lhs.trim()] ? "값 변경" : "새로 생성");
-
-        const extraText = useDefault
-          ? `<br>입력을 생략하여 기본 문자열 <strong>""</strong> 을(를) 사용합니다.`
-          : "";
 
         messageBox.innerHTML =
           `<strong>${lineToText(line)}</strong><br>` +
           `input() 로 들어온 값은 먼저 <strong>문자열(str)</strong>로 저장됩니다.` +
           `<br>입력한 값 <strong>${formatValue(inputValue, "str")}</strong> 을(를) ` +
           `<strong>${line.lhs}</strong> 에 저장합니다. 자료형은 <strong>str</strong> 입니다.` +
-          extraText;
+          `<br>여기서는 입력 줄만 처리되었습니다. 다음 줄은 <strong>한 줄 실행하기</strong>를 눌렀을 때 진행됩니다.`;
 
         state.pendingInput = null;
         inputField.value = "";
@@ -1157,12 +1155,11 @@
     stepBtn.addEventListener("click", stepForward);
     runBtn.addEventListener("click", runAll);
     resetBtn.addEventListener("click", resetExecution);
-    inputConfirmBtn.addEventListener("click", () => applyPendingInput(false));
-    inputDefaultBtn.addEventListener("click", () => applyPendingInput(true));
+    inputConfirmBtn.addEventListener("click", () => applyPendingInput());
     inputField.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        applyPendingInput(false);
+        applyPendingInput();
       }
     });
 
