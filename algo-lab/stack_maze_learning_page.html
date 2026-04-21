@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>미로로 이해하는 스택</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Pretendard, "Noto Sans KR", Arial, sans-serif;
+      background: #f6f8fc;
+      color: #1f2937;
+    }
+    .app { max-width: 1400px; margin: 0 auto; padding: 24px 18px 40px; }
+    .hero, .card {
+      background: #fff;
+      border-radius: 24px;
+      box-shadow: 0 12px 35px rgba(15,23,42,.08);
+      padding: 22px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #ffffff, #eef2ff);
+      margin-bottom: 20px;
+    }
+    h1 { margin: 0 0 10px; font-size: 32px; line-height: 1.2; }
+    h2 { margin: 0 0 14px; font-size: 22px; line-height: 1.25; }
+    p { margin: 0; line-height: 1.8; color: #475569; }
+    .tip {
+      margin-top: 14px;
+      background: rgba(255,255,255,.86);
+      border: 1px solid #dbe5ff;
+      border-radius: 18px;
+      padding: 14px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.8;
+      color: #334155;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 20px;
+      align-items: start;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .primary { background: #111827; color: white; }
+    .secondary { background: #eef2ff; color: #3730a3; }
+    .accent { background: #ef4444; color: white; }
+    .maze-grid {
+      --cols: 15;
+      --cell-size: 34px;
+      display: grid;
+      grid-template-columns: repeat(var(--cols), var(--cell-size));
+      gap: 4px;
+      justify-content: center;
+      padding: 6px 0;
+    }
+    .cell {
+      width: var(--cell-size);
+      height: var(--cell-size);
+      border-radius: 10px;
+      border: 1.5px solid #d8dee9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 11px;
+      transition: .18s ease;
+      user-select: none;
+    }
+    .wall { background: #0f172a; border-color: #0f172a; color: white; }
+    .road { background: #f8fafc; color: #94a3b8; }
+    .start { background: #dcfce7; border-color: #86efac; color: #166534; }
+    .goal { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
+    .visited { background: #dbeafe; border-color: #93c5fd; color: #1d4ed8; }
+    .current {
+      background: #fee2e2;
+      border: 3px solid #ef4444;
+      color: #b91c1c;
+      transform: scale(1.05);
+      box-shadow: 0 0 0 5px rgba(239,68,68,.14);
+    }
+    .path { background: #ede9fe; border-color: #c4b5fd; color: #6d28d9; }
+    .dead { background: #e5e7eb; border-color: #cbd5e1; color: #6b7280; }
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f8fafc;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #334155;
+    }
+    .legend-box {
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+    }
+    .status-box, .stack-box, .log-box, .mini-box, .pseudo-box, .footer-note {
+      background: #f8fafc;
+      border-radius: 18px;
+      padding: 14px;
+    }
+    .status-box {
+      border: 1px solid #e5e7eb;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.8;
+      color: #334155;
+      margin-bottom: 14px;
+    }
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .mini-box .label {
+      font-size: 12px;
+      font-weight: 800;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+    .mini-box .value {
+      font-size: 24px;
+      font-weight: 900;
+      color: #111827;
+      line-height: 1.1;
+    }
+    .pseudo-box {
+      border: 1px solid #e5e7eb;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.9;
+      white-space: pre-wrap;
+      color: #334155;
+      margin-bottom: 14px;
+    }
+    .stack-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+      max-height: 360px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .stack-item {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .stack-item.top {
+      border: 2px solid #ef4444;
+      box-shadow: 0 0 0 4px rgba(239,68,68,.12);
+      background: #fff7f7;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 900;
+      background: #111827;
+      color: white;
+      white-space: nowrap;
+    }
+    .log-box {
+      max-height: 260px;
+      overflow: auto;
+      line-height: 1.8;
+      font-size: 13px;
+      font-weight: 700;
+      color: #475569;
+      white-space: pre-wrap;
+      margin-top: 14px;
+    }
+    .footer-note {
+      margin-top: 16px;
+      background: #eefbf5;
+      color: #065f46;
+      line-height: 1.8;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .copyright {
+      margin-top: 22px;
+      padding: 20px 16px 8px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .copyright strong {
+      display: block;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      .maze-grid { --cell-size: 22px; gap: 3px; }
+      .cell { font-size: 9px; border-radius: 7px; }
+      .mini-grid { grid-template-columns: 1fr; }
+      .controls { flex-direction: column; }
+      button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <h1>미로로 이해하는 스택(Stack)</h1>
+      <p>
+        스택은 <strong>가장 최근에 넣은 데이터가 가장 먼저 나오는 구조</strong>입니다.
+        이 페이지에서는 미로를 한 단계씩 탐색하면서, <strong>현재 위치가 어떻게 스택에 쌓이고(push)</strong>
+        <strong>막다른 길에서는 어떻게 빠지는지(pop)</strong>를 눈으로 확인할 수 있습니다.
+      </p>
+      <div class="tip">
+        왼쪽 미로와 오른쪽 스택을 함께 보세요.
+        <br>이 코드는 현재 위치를 기준으로 <strong>오른쪽 → 아래 → 왼쪽 → 위</strong> 순서로 갈 수 있는 칸을 확인합니다.
+        갈 수 있는 새 칸이 있으면 스택에 넣고(push), 더 이상 갈 곳이 없으면 스택에서 꺼내며(pop) 되돌아갑니다.
+      </div>
+    </section>
+
+    <section class="layout">
+      <section class="card">
+        <h2>1. 미로 탐색 화면</h2>
+        <div class="controls">
+          <button id="stepBtn" class="primary">한 단계 진행</button>
+          <button id="runBtn" class="secondary">자동 실행</button>
+          <button id="pauseBtn" class="secondary">일시 정지</button>
+          <button id="resetBtn" class="accent">처음으로</button>
+        </div>
+        <div id="statusBox" class="status-box"></div>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-box" style="background:#dcfce7;border-color:#86efac;"></span> 시작</div>
+          <div class="legend-item"><span class="legend-box" style="background:#fef3c7;border-color:#fcd34d;"></span> 도착</div>
+          <div class="legend-item"><span class="legend-box" style="background:#dbeafe;border-color:#93c5fd;"></span> 방문함</div>
+          <div class="legend-item"><span class="legend-box" style="background:#fee2e2;border-color:#ef4444;"></span> 현재 위치</div>
+          <div class="legend-item"><span class="legend-box" style="background:#ede9fe;border-color:#c4b5fd;"></span> 최종 경로</div>
+          <div class="legend-item"><span class="legend-box" style="background:#0f172a;border-color:#0f172a;"></span> 벽</div>
+        </div>
+        <div id="mazeGrid" class="maze-grid"></div>
+        <div class="footer-note">
+          <strong>핵심 보기</strong><br>
+          현재 위치에서 갈 수 있는 새 칸을 찾으면 그 위치를 스택에 넣고 이동합니다.
+          <br>사방이 막혔거나 이미 방문한 길뿐이면 현재 위치를 스택에서 꺼내고, 이전 위치로 되돌아갑니다.
+          <br>이 과정을 반복하면서 도착점에 도달하거나 더 이상 갈 곳이 없을 때까지 탐색합니다.
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>2. 스택과 탐색 상태</h2>
+        <div class="mini-grid">
+          <div class="mini-box">
+            <div class="label">현재 단계</div>
+            <div id="stepCount" class="value">0</div>
+          </div>
+          <div class="mini-box">
+            <div class="label">현재 스택 크기</div>
+            <div id="stackCount" class="value">0</div>
+          </div>
+          <div class="mini-box">
+            <div class="label">현재 동작</div>
+            <div id="actionText" class="value" style="font-size:18px;">대기</div>
+          </div>
+        </div>
+
+        <div class="pseudo-box">DFS 느낌의 동작 순서
+1. 현재 칸을 방문 처리
+2. 오른쪽 → 아래 → 왼쪽 → 위 순서로 확인
+3. 갈 수 있는 새 칸이 있으면 push
+4. 막다른 길이면 pop
+5. 도착점이면 성공, 스택이 비면 종료</div>
+
+        <div class="stack-box">
+          <div style="font-size:16px;font-weight:900;color:#111827;">스택(Stack)</div>
+          <div style="margin-top:4px;font-size:13px;font-weight:700;color:#64748b;">
+            가장 위가 가장 최근에 들어간 위치입니다. 오래된 경로는 아래쪽에 남습니다.
+          </div>
+          <div id="stackList" class="stack-list"></div>
+        </div>
+
+        <div id="logBox" class="log-box"></div>
+      </section>
+    </section>
+
+    <div class="copyright">
+      <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong>
+      본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
+    </div>
+  </div>
+
+  <script>
+    const MAZE = [ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+       [1, "S", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1], 
+       [1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1], 
+       [1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], 
+       [1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1], 
+       [1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1], 
+       [1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1], 
+       [1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1], 
+       [1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1], 
+       [1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1], 
+       [1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1], 
+       [1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1], 
+       [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1], 
+       [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, "G", 1], 
+       [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] 
+    ];
+
+    const rows = MAZE.length;
+    const cols = MAZE[0].length;    const mazeGrid = document.getElementById("mazeGrid");
+    mazeGrid.style.setProperty("--cols", String(cols));
+    const stackList = document.getElementById("stackList");
+    const statusBox = document.getElementById("statusBox");
+    const logBox = document.getElementById("logBox");
+    const stepCountEl = document.getElementById("stepCount");
+    const stackCountEl = document.getElementById("stackCount");
+    const actionTextEl = document.getElementById("actionText");
+
+    const stepBtn = document.getElementById("stepBtn");
+    const runBtn = document.getElementById("runBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    let autoTimer = null;
+
+    function makeState() {
+      return {
+        stack: [],
+        visited: new Set(),
+        dead: new Set(),
+        path: [],
+        current: null,
+        started: false,
+        finished: false,
+        success: false,
+        stepCount: 0,
+        actionText: "대기",
+        statusText: "한 단계 진행 버튼을 눌러 탐색을 시작하세요.",
+        logs: ["스택을 활용한 미로 탐색을 시작합니다."]
+      };
+    }
+
+    let state = makeState();
+
+    function keyOf(r, c) { return r + "," + c; }
+    function parseKey(key) { return key.split(",").map(Number); }
+
+    function findSymbol(symbol) {
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (MAZE[r][c] === symbol) return [r, c];
+        }
+      }
+      return null;
+    }
+
+    const startPos = findSymbol("S");
+    const goalPos = findSymbol("G");
+
+    function isRoad(r, c) {
+      if (r < 0 || r >= rows || c < 0 || c >= cols) return false;
+      return MAZE[r][c] !== 1;
+    }
+
+    function neighbors(r, c) {
+      const dirs = [[0,1],[1,0],[0,-1],[-1,0]];
+      const result = [];
+      for (const [dr, dc] of dirs) {
+        const nr = r + dr;
+        const nc = c + dc;
+        if (isRoad(nr, nc)) result.push([nr, nc]);
+      }
+      return result;
+    }
+
+    function renderMaze() {
+      mazeGrid.innerHTML = "";
+      const pathSet = new Set(state.path);
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const div = document.createElement("div");
+          const cell = MAZE[r][c];
+          const key = keyOf(r, c);
+          div.className = "cell";
+
+          if (cell === 1) {
+            div.classList.add("wall");
+          } else {
+            div.classList.add("road");
+            if (cell === "S") {
+              div.classList.add("start");
+              div.textContent = "S";
+            }
+            if (cell === "G") {
+              div.classList.add("goal");
+              div.textContent = "G";
+            }
+            if (state.visited.has(key)) div.classList.add("visited");
+            if (pathSet.has(key) && cell !== "S" && cell !== "G") div.classList.add("path");
+            if (state.dead.has(key) && cell !== "S" && cell !== "G") div.classList.add("dead");
+            if (state.current === key) {
+              div.classList.add("current");
+              div.textContent = "●";
+            }
+          }
+          mazeGrid.appendChild(div);
+        }
+      }
+    }
+
+    function renderStack() {
+      stackList.innerHTML = "";
+      if (state.stack.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "stack-item";
+        empty.textContent = "스택이 비어 있습니다.";
+        stackList.appendChild(empty);
+        return;
+      }
+
+      [...state.stack].reverse().forEach((item, index) => {
+        const [r, c] = parseKey(item);
+        const row = document.createElement("div");
+        row.className = "stack-item" + (index === 0 ? " top" : "");
+        row.innerHTML = '<span>(' + r + ', ' + c + ')</span><span class="chip">' + (index === 0 ? "TOP" : "STACK") + '</span>';
+        stackList.appendChild(row);
+      });
+    }
+
+    function renderInfo() {
+      statusBox.innerHTML = state.statusText;
+      logBox.textContent = state.logs.join("\n\n");
+      stepCountEl.textContent = String(state.stepCount);
+      stackCountEl.textContent = String(state.stack.length);
+      actionTextEl.textContent = state.actionText;
+    }
+
+    function renderAll() {
+      renderMaze();
+      renderStack();
+      renderInfo();
+    }
+
+    function stopAuto() {
+      if (autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+      }
+    }
+
+    function resetAll() {
+      stopAuto();
+      state = makeState();
+      renderAll();
+    }
+
+    function finish(success, text) {
+      state.finished = true;
+      state.success = success;
+      state.statusText = text;
+      state.actionText = success ? "도착" : "종료";
+      stopAuto();
+    }
+
+    function stepSearch() {
+      if (state.finished) return;
+
+      if (!state.started) {
+        const startKey = keyOf(startPos[0], startPos[1]);
+        state.stack.push(startKey);
+        state.current = startKey;
+        state.started = true;
+        state.stepCount += 1;
+        state.actionText = "push";
+        state.statusText = "시작 위치 (" + startPos[0] + ", " + startPos[1] + ")를 스택에 넣었습니다.";
+        state.logs.unshift("push: 시작 위치 (" + startPos[0] + ", " + startPos[1] + ")를 스택에 저장했습니다.");
+        renderAll();
+        return;
+      }
+
+      if (state.stack.length === 0) {
+        state.stepCount += 1;
+        finish(false, "스택이 비어서 더 이상 탐색할 수 없습니다. 도착점에 도달하지 못했습니다.");
+        state.logs.unshift("스택이 비었습니다. 더 이상 갈 수 있는 길이 없습니다.");
+        renderAll();
+        return;
+      }
+
+      const topKey = state.stack[state.stack.length - 1];
+      const [r, c] = parseKey(topKey);
+      state.current = topKey;
+      state.visited.add(topKey);
+
+      if (topKey === keyOf(goalPos[0], goalPos[1])) {
+        state.path = [...state.stack];
+        state.stepCount += 1;
+        state.logs.unshift("도착점 (" + r + ", " + c + ")에 도달했습니다. 현재 스택 전체가 최종 경로입니다.");
+        finish(true, "도착점에 성공적으로 도달했습니다. 스택에 남아 있는 경로가 최종 이동 경로입니다.");
+        renderAll();
+        return;
+      }
+
+      const nextOptions = neighbors(r, c)
+        .map(([nr, nc]) => keyOf(nr, nc))
+        .filter(key => !state.visited.has(key) && !state.stack.includes(key) && !state.dead.has(key));
+
+      if (nextOptions.length > 0) {
+        const nextKey = nextOptions[0];
+        const [nr, nc] = parseKey(nextKey);
+        state.stack.push(nextKey);
+        state.current = nextKey;
+        state.stepCount += 1;
+        state.actionText = "push";
+        state.statusText = "(" + r + ", " + c + ")에서 다음 칸 (" + nr + ", " + nc + ")으로 이동합니다. 새 위치를 스택에 넣었습니다.";
+        state.logs.unshift("push: (" + r + ", " + c + ")에서 갈 수 있는 다음 칸 (" + nr + ", " + nc + ")을 찾아 스택에 넣었습니다.");
+        renderAll();
+        return;
+      }
+
+      state.dead.add(topKey);
+      const removed = state.stack[state.stack.length - 1];
+      state.stack = state.stack.slice(0, state.stack.length - 1);
+      state.stepCount += 1;
+      state.actionText = "pop";
+
+      const [pr, pc] = parseKey(removed);
+      if (state.stack.length > 0) {
+        const [br, bc] = parseKey(state.stack[state.stack.length - 1]);
+        state.current = state.stack[state.stack.length - 1];
+        state.statusText = "(" + pr + ", " + pc + ")는 막다른 길입니다. 스택에서 꺼내고 (" + br + ", " + bc + ")로 되돌아갑니다.";
+        state.logs.unshift("pop: (" + pr + ", " + pc + ")는 더 이상 갈 곳이 없어 스택에서 제거했습니다. 최근 위치 (" + br + ", " + bc + ")로 되돌아갑니다.");
+      } else {
+        state.current = null;
+        state.statusText = "(" + pr + ", " + pc + ")는 막다른 길입니다. 스택에서 꺼냈고, 이제 스택이 비었습니다.";
+        state.logs.unshift("pop: (" + pr + ", " + pc + ")를 꺼냈습니다. 더 이상 남은 경로가 없습니다.");
+      }
+
+      renderAll();
+    }
+
+    stepBtn.addEventListener("click", stepSearch);
+    runBtn.addEventListener("click", function() {
+      if (autoTimer || state.finished) return;
+      autoTimer = setInterval(function() {
+        stepSearch();
+        if (state.finished) stopAuto();
+      }, 850);
+    });
+    pauseBtn.addEventListener("click", stopAuto);
+    resetBtn.addEventListener("click", resetAll);
+
+    renderAll();
+  </script>
+</body>
+</html>
