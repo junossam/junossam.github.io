@@ -52,7 +52,7 @@
 - 태그: 스택, 자료구조, DFS, 백트래킹, 미로 탐색, 알고리즘 시각화
 
 ### 미로로 이해하는 큐(Queue)
-- 파일명: `maze_queue_bfs_learning_page.html`
+- 파일명: maze_queue_bfs_learning_page.html
 - 용도: 미로 탐색 과정을 통해 큐의 동작과 너비 우선 탐색(BFS) 원리를 시각적으로 학습하는 페이지
 - 태그: 큐, 자료구조, BFS, 미로 탐색, 최단 경로, 알고리즘 시각화
 
