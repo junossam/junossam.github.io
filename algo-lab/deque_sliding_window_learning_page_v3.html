@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>슬라이딩 윈도우 최대값으로 이해하는 덱</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Pretendard, "Noto Sans KR", Arial, sans-serif;
+      background: #f6f8fc;
+      color: #1f2937;
+    }
+    .app {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px 18px 40px;
+    }
+    .hero, .card {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 12px 35px rgba(15,23,42,.08);
+      padding: 22px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #ffffff, #eef2ff);
+      margin-bottom: 20px;
+    }
+    h1 { margin: 0 0 10px; font-size: 32px; line-height: 1.2; }
+    h2 { margin: 0 0 14px; font-size: 22px; line-height: 1.25; }
+    p { margin: 0; line-height: 1.8; color: #475569; }
+    .tip {
+      margin-top: 14px;
+      background: rgba(255,255,255,.9);
+      border: 1px solid #dbe5ff;
+      border-radius: 18px;
+      padding: 14px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.8;
+      color: #334155;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 20px;
+      align-items: start;
+    }
+    .controls, .examples {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .controls { margin-bottom: 14px; }
+    .examples { margin: 10px 0 16px; }
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .primary { background: #111827; color: white; }
+    .secondary { background: #eef2ff; color: #3730a3; }
+    .accent { background: #ef4444; color: white; }
+    .ghost {
+      background: #f8fafc;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 120px 110px;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    input {
+      width: 100%;
+      border: 1.5px solid #d1d5db;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #111827;
+      outline: none;
+      background: #fff;
+    }
+    input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 4px rgba(99,102,241,.12);
+    }
+    .status-box, .deque-box, .log-box, .mini-box, .pseudo-box, .result-box, .footer-note {
+      background: #f8fafc;
+      border-radius: 18px;
+      padding: 14px;
+    }
+    .status-box {
+      border: 1px solid #e5e7eb;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.8;
+      color: #334155;
+      margin-bottom: 14px;
+    }
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .mini-box .label {
+      font-size: 12px;
+      font-weight: 800;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+    .mini-box .value {
+      font-size: 22px;
+      font-weight: 900;
+      color: #111827;
+      line-height: 1.1;
+    }
+    .pseudo-box {
+      border: 1px solid #e5e7eb;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.9;
+      white-space: pre-wrap;
+      color: #334155;
+      margin-bottom: 14px;
+    }
+    .array-wrap, .result-wrap {
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .index-row, .array-row, .result-row {
+      display: grid;
+      grid-auto-flow: column;
+      gap: 8px;
+      width: max-content;
+    }
+    .index-row, .array-row { grid-auto-columns: 68px; }
+    .result-row { grid-auto-columns: 76px; }
+    .index-cell {
+      text-align: center;
+      font-size: 12px;
+      color: #6366f1;
+      font-weight: 800;
+    }
+    .array-cell {
+      width: 68px;
+      height: 68px;
+      border-radius: 16px;
+      background: white;
+      border: 2px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 900;
+      position: relative;
+      transition: .18s ease;
+    }
+    .in-window { background: #eef2ff; border-color: #818cf8; }
+    .current { background: #fff7ed; border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,.14); }
+    .max-cell { background: #ecfdf5; border-color: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,.14); }
+    .removed-cell { background: #fee2e2; border-color: #ef4444; }
+    .cell-tag {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 2px 8px;
+      border-radius: 999px;
+      color: white;
+      font-size: 10px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .orange { background: #f59e0b; }
+    .green { background: #10b981; }
+    .red { background: #ef4444; }
+    .purple { background: #7c3aed; }
+
+    .deque-track {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      min-height: 92px;
+      padding: 12px;
+      border-radius: 18px;
+      background: white;
+      border: 1px solid #e5e7eb;
+    }
+    .deque-item {
+      min-width: 76px;
+      border-radius: 16px;
+      padding: 10px 10px 8px;
+      text-align: center;
+      border: 2px solid #e5e7eb;
+      background: #f8fafc;
+      position: relative;
+    }
+    .deque-item .top {
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1;
+      color: #111827;
+    }
+    .deque-item .bottom {
+      font-size: 11px;
+      font-weight: 800;
+      color: #64748b;
+      margin-top: 6px;
+    }
+    .front { background: #fee2e2; border-color: #ef4444; box-shadow: 0 0 0 4px rgba(239,68,68,.12); }
+    .rear { background: #fff7ed; border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,.12); }
+    .both { background: linear-gradient(135deg, #fee2e2, #fff7ed); border-color: #7c3aed; box-shadow: 0 0 0 4px rgba(124,58,237,.12); }
+    .deque-badge {
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 2px 8px;
+      border-radius: 999px;
+      color: white;
+      font-size: 10px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .deque-help {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 800;
+    }
+    .log-box {
+      max-height: 330px;
+      overflow: auto;
+      line-height: 1.8;
+      font-size: 13px;
+      font-weight: 700;
+      color: #475569;
+      white-space: pre-wrap;
+      margin-top: 14px;
+    }
+    .result-cell {
+      width: 76px;
+      height: 58px;
+      border-radius: 16px;
+      background: #ecfdf5;
+      border: 2px solid #a7f3d0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+    }
+    .result-cell .value { font-size: 18px; line-height: 1; color: #065f46; }
+    .result-cell .window { font-size: 10px; color: #047857; margin-top: 5px; }
+    .footer-note {
+      margin-top: 16px;
+      background: #eefbf5;
+      color: #065f46;
+      line-height: 1.8;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+
+    .intro-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .intro-mini {
+      font-size: 14px;
+      font-weight: 800;
+      color: #334155;
+      background: rgba(255,255,255,.88);
+      border: 1px solid #dbe5ff;
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+    .intro-detail-panel {
+      display: none;
+      margin-top: 12px;
+      background: rgba(255,255,255,.92);
+      border: 1px solid #dbe5ff;
+      border-radius: 18px;
+      padding: 14px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.85;
+      color: #334155;
+    }
+    .intro-detail-panel.open {
+      display: block;
+    }
+    .input-label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #475569;
+    }
+    .rules-panel {
+      display: none;
+      margin-bottom: 14px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 14px;
+      line-height: 1.85;
+      font-size: 14px;
+      font-weight: 700;
+      color: #334155;
+    }
+    .rules-panel.open {
+      display: block;
+    }
+    .rules-panel strong {
+      color: #111827;
+    }
+    .copyright {
+      margin-top: 22px;
+      padding: 20px 16px 8px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .copyright strong {
+      display: block;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+    @media (max-width: 1180px) { .layout { grid-template-columns: 1fr; } }
+    @media (max-width: 760px) {
+      .input-row { grid-template-columns: 1fr; }
+      .mini-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .controls { flex-direction: column; }
+      button { width: 100%; }
+    }
+    @media (max-width: 520px) { .mini-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <h1>슬라이딩 윈도우 최대값으로 이해하는 덱(Deque)</h1>
+      <p>
+        덱은 양쪽 끝에서 빠르게 넣고 뺄 수 있는 자료구조입니다.
+        이 페이지에서는 <strong>슬라이딩 윈도우 최대값</strong>을 구하면서,
+        왜 덱이 꼭 필요한지 눈으로 확인할 수 있습니다.
+      </p>
+      <div class="intro-row">
+        <div class="intro-mini">윈도우 크기 범위 안에서 가장 큰 값이 무엇인지 찾는 문제입니다.</div>
+        <button id="introDetailBtn" class="ghost" type="button">자세히 보기</button>
+      </div>
+      <div id="introDetailPanel" class="intro-detail-panel">
+        슬라이딩 윈도우는 배열에서 <strong>연속된 일정 구간</strong>을 뜻합니다.
+        <br>예를 들어 배열이 <strong>[2, 1, 3, 4, 6]</strong>이고 윈도우 크기 <strong>k = 3</strong> 이라면,
+        볼 수 있는 구간은 <strong>[2, 1, 3]</strong>, <strong>[1, 3, 4]</strong>, <strong>[3, 4, 6]</strong> 입니다.
+        <br>이 문제는 이렇게 윈도우가 한 칸씩 이동할 때마다
+        <strong>각 구간의 최대값</strong>을 빠르게 구하는 문제입니다.
+      </div>
+      <div class="tip">
+        이 문제에서는 <strong>앞(front)에서는 범위를 벗어난 인덱스 제거</strong>,
+        <strong>뒤(rear)에서는 현재 값보다 작거나 같은 값 제거</strong>가 동시에 일어납니다.
+        <br>즉 덱의 양쪽 끝을 모두 적극적으로 사용해야 합니다.
+      </div>
+    </section>
+
+    <section class="layout">
+      <section class="card">
+        <h2>1. 배열과 윈도우</h2>
+
+        <div class="input-row">
+          <div>
+            <label class="input-label" for="arrayInput">배열 값</label>
+            <input id="arrayInput" value="2,1,3,4,6,3,8,9,10,12,56" />
+          </div>
+          <div>
+            <label class="input-label" for="kInput">윈도우 크기</label>
+            <input id="kInput" type="number" min="1" value="3" />
+          </div>
+          <div>
+            <label class="input-label" for="applyBtn">설정 적용</label>
+            <button id="applyBtn" class="primary">적용</button>
+          </div>
+        </div>
+
+        <div class="examples">
+          <button class="ghost example-btn" data-array="2,1,3,4,6,3,8,9,10,12,56" data-k="3">예시 1</button>
+          <button class="ghost example-btn" data-array="1,3,-1,-3,5,3,6,7" data-k="3">예시 2</button>
+          <button class="ghost example-btn" data-array="9,7,2,4,6,8,2,1,5" data-k="4">예시 3</button>
+          <button class="ghost example-btn" data-array="4,4,4,4,4,4" data-k="2">예시 4</button>
+        </div>
+
+        <div class="controls">
+          <button id="stepBtn" class="primary">한 단계 진행</button>
+          <button id="runBtn" class="secondary">자동 실행</button>
+          <button id="pauseBtn" class="secondary">일시 정지</button>
+          <button id="resetBtn" class="accent">처음으로</button>
+          <button id="rulesBtn" class="secondary">규칙 설명 보기</button>
+        </div>
+
+        <div id="rulesPanel" class="rules-panel">
+          <strong>이 문제에서 덱은 무엇을 하나요?</strong><br>
+          덱은 <strong>현재 윈도우에서 최대값이 될 가능성이 있는 후보들만 남겨 두는 용도</strong>로 사용됩니다.
+          그래서 앞에서도 빼고, 뒤에서도 빼고, 뒤에 넣는 동작이 모두 필요합니다.
+          <br><br>
+          <strong>1. 왜 front 에서 빼나요?</strong><br>
+          front 쪽에는 현재 최대값 후보가 있습니다.
+          그런데 슬라이딩 윈도우가 오른쪽으로 이동하면, 너무 오래된 인덱스는 현재 윈도우 범위를 벗어납니다.
+          그런 값은 더 이상 후보가 될 수 없으므로 <strong>front 에서 제거</strong>합니다.
+          <br><br>
+          <strong>2. 왜 rear 에서 빼나요?</strong><br>
+          새 값이 들어왔을 때, 그 값보다 작거나 같은 값이 뒤에 남아 있으면 앞으로 최대값이 될 수 없습니다.
+          새 값이 더 크고 더 나중까지 윈도우 안에 남기 때문입니다.
+          그래서 쓸모없어진 후보들을 <strong>rear 에서 제거</strong>합니다.
+          <br><br>
+          <strong>3. 왜 rear 에 넣나요?</strong><br>
+          현재 인덱스는 방금 들어온 새로운 후보이므로 <strong>rear 에 추가</strong>합니다.
+          <br><br>
+          <strong>한 줄 요약</strong><br>
+          - front 제거: 윈도우 밖으로 나가서<br>
+          - rear 제거: 새 값보다 작거나 같아서 이제 최대 후보가 아니어서<br>
+          - rear 추가: 새로 들어온 후보라서
+        </div>
+
+        <div id="statusBox" class="status-box"></div>
+
+        <div class="mini-grid">
+          <div class="mini-box">
+            <div class="label">현재 인덱스</div>
+            <div id="currentIndex" class="value">-</div>
+          </div>
+          <div class="mini-box">
+            <div class="label">현재 값</div>
+            <div id="currentValue" class="value">-</div>
+          </div>
+          <div class="mini-box">
+            <div class="label">현재 윈도우</div>
+            <div id="currentWindow" class="value" style="font-size:18px;">-</div>
+          </div>
+          <div class="mini-box">
+            <div class="label">현재 단계</div>
+            <div id="stepCount" class="value">0</div>
+          </div>
+        </div>
+
+        <div class="result-box" style="margin-bottom:14px;">
+          <div style="font-size:13px;font-weight:900;color:#4338ca;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;">배열</div>
+          <div class="array-wrap">
+            <div id="indexRow" class="index-row"></div>
+            <div id="arrayRow" class="array-row" style="margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <div class="result-box">
+          <div style="font-size:13px;font-weight:900;color:#4338ca;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;">결과 최대값</div>
+          <div class="result-wrap">
+            <div id="resultRow" class="result-row"></div>
+          </div>
+        </div>
+
+        <div class="footer-note">
+          <strong>핵심 보기</strong><br>
+          덱에는 값이 아니라 <strong>인덱스</strong>를 저장합니다.
+          <br>front는 현재 윈도우의 최대값 후보이고, rear는 새 값과 비교하며 정리하는 데 사용됩니다.
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>2. 덱과 동작 원리</h2>
+
+        <div class="pseudo-box">슬라이딩 윈도우 최대값 순서
+1. front 에서 범위를 벗어난 인덱스를 제거
+2. rear 에서 현재 값보다 작거나 같은 인덱스를 제거
+3. 현재 인덱스를 rear 에 추가
+4. 윈도우가 완성되면 front 가 최대값</div>
+
+        <div class="deque-box">
+          <div style="font-size:16px;font-weight:900;color:#111827;">덱(Deque)</div>
+          <div style="margin-top:4px;font-size:13px;font-weight:700;color:#64748b;">
+            front 는 현재 최대값 후보, rear 는 새 값이 들어올 때 비교되는 끝입니다.
+          </div>
+          <div id="dequeTrack" class="deque-track"></div>
+          <div class="deque-help">
+            <span>front ← 최대값 후보</span>
+            <span>rear ← 비교/추가</span>
+          </div>
+        </div>
+
+        <div id="descBox" class="status-box" style="margin-top:14px;"></div>
+        <div id="logBox" class="log-box"></div>
+      </section>
+    </section>
+
+    <div class="copyright">
+      <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong>
+      본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
+    </div>
+  </div>
+
+  <script>
+    const arrayInput = document.getElementById("arrayInput");
+    const kInput = document.getElementById("kInput");
+    const applyBtn = document.getElementById("applyBtn");
+    const stepBtn = document.getElementById("stepBtn");
+    const runBtn = document.getElementById("runBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const rulesBtn = document.getElementById("rulesBtn");
+    const rulesPanel = document.getElementById("rulesPanel");
+    const introDetailBtn = document.getElementById("introDetailBtn");
+    const introDetailPanel = document.getElementById("introDetailPanel");
+
+    const statusBox = document.getElementById("statusBox");
+    const currentIndexEl = document.getElementById("currentIndex");
+    const currentValueEl = document.getElementById("currentValue");
+    const currentWindowEl = document.getElementById("currentWindow");
+    const stepCountEl = document.getElementById("stepCount");
+    const indexRow = document.getElementById("indexRow");
+    const arrayRow = document.getElementById("arrayRow");
+    const resultRow = document.getElementById("resultRow");
+    const dequeTrack = document.getElementById("dequeTrack");
+    const descBox = document.getElementById("descBox");
+    const logBox = document.getElementById("logBox");
+
+    let timer = null;
+    let state = null;
+
+    function parseArray(text) {
+      return text.split(",").map(v => v.trim()).filter(v => v !== "").map(Number).filter(v => !Number.isNaN(v));
+    }
+
+    function buildOps(arr, k) {
+      const dq = [];
+      const results = [];
+      const ops = [];
+      const logs = ["배열과 k 값을 적용했습니다. 한 단계 진행을 눌러 시작하세요."];
+
+      function snap(extra = {}) {
+        return {
+          arr: arr.slice(),
+          k,
+          i: extra.i ?? null,
+          dq: dq.slice(),
+          results: results.slice(),
+          desc: extra.desc || "",
+          phase: extra.phase || "ready",
+          windowStart: extra.windowStart ?? null,
+          windowEnd: extra.windowEnd ?? null,
+          currentRemovedFront: extra.currentRemovedFront ?? null,
+          currentRemovedRear: extra.currentRemovedRear ?? null,
+          currentMaxIndex: extra.currentMaxIndex ?? null,
+          logs: logs.slice()
+        };
+      }
+
+      ops.push(snap({ desc: "준비 완료. 아직 덱은 비어 있습니다." }));
+
+      for (let i = 0; i < arr.length; i++) {
+        const ws = i - k + 1;
+        const we = i;
+
+        logs.unshift(`[i=${i}] 값 ${arr[i]} 처리 시작`);
+        ops.push(snap({
+          i, windowStart: ws, windowEnd: we,
+          phase: "start",
+          desc: `인덱스 ${i}, 값 ${arr[i]} 를 처리합니다. 먼저 front 에서 범위를 벗어난 인덱스가 있는지 확인합니다.`
+        }));
+
+        while (dq.length && dq[0] < ws) {
+          const removed = dq.shift();
+          logs.unshift(`front 제거: 인덱스 ${removed} (값 ${arr[removed]}) 는 현재 윈도우 [${ws}~${we}] 범위를 벗어났습니다.`);
+          ops.push(snap({
+            i, windowStart: ws, windowEnd: we,
+            phase: "pop-front",
+            currentRemovedFront: removed,
+            desc: `인덱스 ${removed} 는 현재 윈도우 범위를 벗어났으므로 front 에서 제거합니다.`
+          }));
+        }
+
+        while (dq.length && arr[dq[dq.length - 1]] <= arr[i]) {
+          const removed = dq.pop();
+          logs.unshift(`rear 제거: 인덱스 ${removed} (값 ${arr[removed]}) 는 현재 값 ${arr[i]} 보다 작거나 같아서 최대값 후보가 될 수 없습니다.`);
+          ops.push(snap({
+            i, windowStart: ws, windowEnd: we,
+            phase: "pop-rear",
+            currentRemovedRear: removed,
+            desc: `인덱스 ${removed} 의 값 ${arr[removed]} 는 현재 값 ${arr[i]} 보다 작거나 같으므로 rear 에서 제거합니다.`
+          }));
+        }
+
+        dq.push(i);
+        logs.unshift(`rear 추가: 인덱스 ${i} (값 ${arr[i]}) 를 덱 뒤에 넣었습니다.`);
+        ops.push(snap({
+          i, windowStart: ws, windowEnd: we,
+          phase: "push-rear",
+          desc: `현재 인덱스 ${i} 를 rear 에 추가합니다. 덱에는 최대값 후보 인덱스만 남게 됩니다.`
+        }));
+
+        if (i >= k - 1) {
+          const maxIndex = dq[0];
+          const maxValue = arr[maxIndex];
+          results.push({ windowStart: ws, windowEnd: we, value: maxValue, maxIndex });
+          logs.unshift(`최대값 기록: 윈도우 [${ws}~${we}] 의 최대값은 인덱스 ${maxIndex} 의 값 ${maxValue} 입니다.`);
+          ops.push(snap({
+            i, windowStart: ws, windowEnd: we,
+            phase: "record",
+            currentMaxIndex: maxIndex,
+            desc: `윈도우 [${ws}~${we}] 가 완성되었습니다. front 의 인덱스 ${maxIndex} 가 최대값 ${maxValue} 를 가리킵니다.`
+          }));
+        }
+      }
+
+      ops.push(snap({ phase: "done", desc: "모든 인덱스 처리가 끝났습니다. 슬라이딩 윈도우 최대값 계산이 완료되었습니다." }));
+      return ops;
+    }
+
+    function makeState() {
+      let arr = parseArray(arrayInput.value);
+      let k = Number(kInput.value);
+
+      if (arr.length === 0) {
+        arr = [2,1,3,4,6,3,8,9,10,12,56];
+        arrayInput.value = arr.join(",");
+      }
+      if (!k || k < 1) k = 1;
+      if (k > arr.length) k = arr.length;
+      kInput.value = String(k);
+
+      return {
+        arr,
+        k,
+        ops: buildOps(arr, k),
+        ptr: 0,
+        stepCount: 0
+      };
+    }
+
+    function currentOp() { return state.ops[state.ptr]; }
+
+    function stopAuto() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }
+
+    function resetState() {
+      stopAuto();
+      state = makeState();
+      renderAll();
+    }
+
+    function nextStep() {
+      if (state.ptr >= state.ops.length - 1) {
+        stopAuto();
+        return;
+      }
+      state.ptr += 1;
+      state.stepCount += 1;
+      renderAll();
+      if (state.ptr >= state.ops.length - 1) stopAuto();
+    }
+
+    function renderArray(op) {
+      indexRow.innerHTML = "";
+      arrayRow.innerHTML = "";
+
+      for (let i = 0; i < state.arr.length; i++) {
+        const idx = document.createElement("div");
+        idx.className = "index-cell";
+        idx.textContent = "[" + i + "]";
+        indexRow.appendChild(idx);
+
+        const cell = document.createElement("div");
+        cell.className = "array-cell";
+
+        const inWindow = op.windowStart !== null && op.windowEnd !== null && i >= op.windowStart && i <= op.windowEnd;
+        if (inWindow) cell.classList.add("in-window");
+        if (op.i === i) cell.classList.add("current");
+        if (op.currentMaxIndex === i) cell.classList.add("max-cell");
+        if (op.currentRemovedFront === i || op.currentRemovedRear === i) cell.classList.add("removed-cell");
+
+        cell.textContent = state.arr[i];
+
+        if (op.i === i) {
+          const tag = document.createElement("div");
+          tag.className = "cell-tag orange";
+          tag.textContent = "현재";
+          cell.appendChild(tag);
+        } else if (op.currentMaxIndex === i) {
+          const tag = document.createElement("div");
+          tag.className = "cell-tag green";
+          tag.textContent = "최대값";
+          cell.appendChild(tag);
+        } else if (op.currentRemovedFront === i) {
+          const tag = document.createElement("div");
+          tag.className = "cell-tag red";
+          tag.textContent = "front 제거";
+          cell.appendChild(tag);
+        } else if (op.currentRemovedRear === i) {
+          const tag = document.createElement("div");
+          tag.className = "cell-tag purple";
+          tag.textContent = "rear 제거";
+          cell.appendChild(tag);
+        }
+
+        arrayRow.appendChild(cell);
+      }
+    }
+
+    function renderResults(op) {
+      resultRow.innerHTML = "";
+      if (op.results.length === 0) {
+        const empty = document.createElement("div");
+        empty.style.color = "#94a3b8";
+        empty.style.fontSize = "14px";
+        empty.style.fontWeight = "800";
+        empty.textContent = "아직 완성된 윈도우가 없습니다.";
+        resultRow.appendChild(empty);
+        return;
+      }
+
+      op.results.forEach(r => {
+        const box = document.createElement("div");
+        box.className = "result-cell";
+        box.innerHTML = '<div class="value">' + r.value + '</div><div class="window">[' + r.windowStart + '~' + r.windowEnd + ']</div>';
+        resultRow.appendChild(box);
+      });
+    }
+
+    function renderDeque(op) {
+      dequeTrack.innerHTML = "";
+      if (op.dq.length === 0) {
+        const empty = document.createElement("div");
+        empty.style.color = "#94a3b8";
+        empty.style.fontSize = "14px";
+        empty.style.fontWeight = "800";
+        empty.textContent = "현재 덱이 비어 있습니다.";
+        dequeTrack.appendChild(empty);
+        return;
+      }
+
+      op.dq.forEach((idx, pos) => {
+        const item = document.createElement("div");
+        item.className = "deque-item";
+        const isFront = pos === 0;
+        const isRear = pos === op.dq.length - 1;
+
+        if (isFront && isRear) item.classList.add("both");
+        else if (isFront) item.classList.add("front");
+        else if (isRear) item.classList.add("rear");
+
+        item.innerHTML = '<div class="top">' + state.arr[idx] + '</div><div class="bottom">idx ' + idx + '</div>';
+
+        const badge = document.createElement("div");
+        if (isFront && isRear) {
+          badge.className = "deque-badge purple";
+          badge.textContent = "FRONT · REAR";
+        } else if (isFront) {
+          badge.className = "deque-badge red";
+          badge.textContent = "FRONT";
+        } else if (isRear) {
+          badge.className = "deque-badge orange";
+          badge.textContent = "REAR";
+        }
+        if (isFront || isRear) item.appendChild(badge);
+
+        dequeTrack.appendChild(item);
+      });
+    }
+
+    function renderInfo(op) {
+      statusBox.innerHTML = op.desc;
+      currentIndexEl.textContent = op.i === null ? "-" : op.i;
+      currentValueEl.textContent = op.i === null ? "-" : state.arr[op.i];
+      currentWindowEl.textContent = op.windowStart === null ? "-" : "[" + Math.max(0, op.windowStart) + " ~ " + op.windowEnd + "]";
+      stepCountEl.textContent = state.stepCount;
+      descBox.innerHTML = op.desc || "준비 상태입니다.";
+      logBox.textContent = op.logs.join("\n\n");
+    }
+
+    function renderAll() {
+      const op = currentOp();
+      renderArray(op);
+      renderResults(op);
+      renderDeque(op);
+      renderInfo(op);
+    }
+
+    applyBtn.addEventListener("click", resetState);
+    resetBtn.addEventListener("click", resetState);
+    stepBtn.addEventListener("click", nextStep);
+    pauseBtn.addEventListener("click", stopAuto);
+    rulesBtn.addEventListener("click", () => {
+      const isOpen = rulesPanel.classList.toggle("open");
+      rulesBtn.textContent = isOpen ? "규칙 설명 숨기기" : "규칙 설명 보기";
+    });
+
+    introDetailBtn.addEventListener("click", () => {
+      const isOpen = introDetailPanel.classList.toggle("open");
+      introDetailBtn.textContent = isOpen ? "자세히 숨기기" : "자세히 보기";
+    });
+
+    runBtn.addEventListener("click", () => {
+      if (timer) return;
+      timer = setInterval(() => {
+        nextStep();
+        if (state.ptr >= state.ops.length - 1) stopAuto();
+      }, 900);
+    });
+
+    document.querySelectorAll(".example-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        arrayInput.value = btn.dataset.array;
+        kInput.value = btn.dataset.k;
+        resetState();
+      });
+    });
+
+    resetState();
+  </script>
+</body>
+</html>
