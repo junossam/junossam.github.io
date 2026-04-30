@@ -1,0 +1,1360 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>이중 연결 리스트 인터랙티브 학습</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}*{box-sizing:border-box;}</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="typescript,react">
+
+const { useMemo, useState } = React;
+function cx(...classes) { return classes.filter(Boolean).join(" "); }
+function Card({ className = "", children, ...props }) { return <div className={cx("bg-white text-slate-950", className)} {...props}>{children}</div>; }
+function CardHeader({ className = "", children, ...props }) { return <div className={cx("flex flex-col space-y-1.5 p-6", className)} {...props}>{children}</div>; }
+function CardTitle({ className = "", children, ...props }) { return <h3 className={cx("font-semibold leading-none tracking-tight", className)} {...props}>{children}</h3>; }
+function CardContent({ className = "", children, ...props }) { return <div className={cx("p-6 pt-0", className)} {...props}>{children}</div>; }
+function Button({ className = "", variant, disabled, children, ...props }) {
+  const base = "inline-flex items-center justify-center whitespace-normal rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:pointer-events-none disabled:opacity-50 min-h-10 px-4 py-2";
+  const style = variant === "outline" ? "border border-slate-200 bg-white text-slate-900 hover:bg-slate-100" : "bg-slate-900 text-white hover:bg-slate-800";
+  return <button className={cx(base, style, className)} disabled={disabled} {...props}>{children}</button>;
+}
+
+type NodeItem = {
+  id: string;
+  value: number;
+  address: number;
+  prevId: string | null;
+  nextId: string | null;
+};
+
+type PendingInsert = {
+  id: string;
+  value: number;
+  address: number;
+  expectedLeftId: string | null;
+  expectedRightId: string | null;
+  chosenPrevId: string | null;
+  chosenNextId: string | null;
+};
+
+type PendingDelete = {
+  targetId: string;
+  prevId: string | null;
+  nextId: string | null;
+  linkedPrevId: string | null;
+  linkedNextId: string | null;
+};
+
+type Mode = "search" | "insert" | "delete";
+type StatusType = "idle" | "progress" | "success" | "error";
+type SearchMode = "fromHead" | "fromTail" | "neighbors";
+type NeighborDirection = "prev" | "next";
+
+type AppState = {
+  mode: Mode;
+  searchMode: SearchMode;
+  neighborDirection: NeighborDirection;
+  nodes: NodeItem[];
+  headId: string;
+  tailId: string;
+  selectedNodeId: string | null;
+  searchIndex: number;
+  searchStep: number;
+  neighborPromptId: string | null;
+  pendingInsert: PendingInsert | null;
+  pendingDelete: PendingDelete | null;
+  deletePromptId: string | null;
+  dragSourceId: string | null;
+  currentExec: number;
+  totalExec: number;
+  statusText: string;
+  statusType: StatusType;
+  logs: string[];
+};
+
+const BASE_ADDRESS = 0x1000;
+const ADDRESS_STEP = 4;
+const BASE_SLOT_COUNT = 24;
+const MEMORY_POOL = Array.from({ length: BASE_SLOT_COUNT }, (_, i) => BASE_ADDRESS + i * ADDRESS_STEP);
+
+function shuffle<T>(array: T[]): T[] {
+  const copy = [...array];
+
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+
+  return copy;
+}
+
+function formatAddress(address: number | null | undefined): string {
+  if (address == null) return "None";
+  return `0x${address.toString(16).toUpperCase()}`;
+}
+
+function getNodeMap(nodes: NodeItem[]): Record<string, NodeItem> {
+  return Object.fromEntries(nodes.map((node) => [node.id, node]));
+}
+
+function getOrder(nodes: NodeItem[], headId: string | null): NodeItem[] {
+  if (!headId) return [];
+
+  const map = getNodeMap(nodes);
+  const result: NodeItem[] = [];
+  const visited = new Set<string>();
+  let currentId: string | null = headId;
+
+  while (currentId && map[currentId] && !visited.has(currentId)) {
+    visited.add(currentId);
+    result.push(map[currentId]);
+    currentId = map[currentId].nextId;
+  }
+
+  return result;
+}
+
+function getVisibleAddresses(nodes: NodeItem[], pendingAddress?: number | null): number[] {
+  const used = nodes.map((node) => node.address);
+
+  if (pendingAddress != null) {
+    used.push(pendingAddress);
+  }
+
+  const baseLast = MEMORY_POOL[MEMORY_POOL.length - 1] ?? BASE_ADDRESS;
+  const maxAddress = used.length > 0 ? Math.max(baseLast, ...used) : baseLast;
+  const slotCount = Math.floor((maxAddress - BASE_ADDRESS) / ADDRESS_STEP) + 1;
+
+  return Array.from({ length: slotCount }, (_, i) => BASE_ADDRESS + i * ADDRESS_STEP);
+}
+
+function getRandomValue(nodes: NodeItem[]): number {
+  const used = new Set(nodes.map((node) => node.value));
+  const candidates: number[] = [];
+
+  for (let i = 10; i <= 199; i += 1) {
+    if (!used.has(i)) {
+      candidates.push(i);
+    }
+  }
+
+  return candidates[Math.floor(Math.random() * candidates.length)] ?? 999;
+}
+
+function getFreeAddress(nodes: NodeItem[]): number {
+  const used = new Set(nodes.map((node) => node.address));
+  const first = MEMORY_POOL.find((addr) => !used.has(addr));
+
+  if (first !== undefined) {
+    return first;
+  }
+
+  const maxAddr = nodes.length ? Math.max(...nodes.map((node) => node.address)) : MEMORY_POOL[MEMORY_POOL.length - 1];
+
+  return maxAddr + ADDRESS_STEP;
+}
+
+function createBaseNodes(): { nodes: NodeItem[]; headId: string; tailId: string } {
+  const addresses = shuffle(MEMORY_POOL).slice(0, 20);
+  const values = shuffle(Array.from({ length: 190 }, (_, i) => i + 10)).slice(0, 20);
+
+  const nodes: NodeItem[] = addresses.map((address, index) => ({
+    id: `n${index + 1}`,
+    value: values[index],
+    address,
+    prevId: null,
+    nextId: null,
+  }));
+
+  const linkedIds = shuffle(nodes.map((node) => node.id)).slice(0, 15);
+
+  for (let i = 0; i < linkedIds.length; i += 1) {
+    const current = nodes.find((node) => node.id === linkedIds[i]);
+
+    if (!current) continue;
+
+    current.prevId = i === 0 ? null : linkedIds[i - 1];
+    current.nextId = i === linkedIds.length - 1 ? null : linkedIds[i + 1];
+  }
+
+  return {
+    nodes: [...nodes].sort((a, b) => a.address - b.address),
+    headId: linkedIds[0],
+    tailId: linkedIds[linkedIds.length - 1],
+  };
+}
+
+function getRandomSearchIndex(nodes: NodeItem[], headId: string): number {
+  const ordered = getOrder(nodes, headId);
+
+  if (!ordered.length) {
+    return 0;
+  }
+
+  return Math.floor(Math.random() * ordered.length);
+}
+
+function getRandomInsertPairIndex(nodes: NodeItem[], headId: string): number {
+  const ordered = getOrder(nodes, headId);
+
+  if (ordered.length <= 1) {
+    return 0;
+  }
+
+  return Math.floor(Math.random() * (ordered.length - 1));
+}
+
+function getRandomDeleteTargetId(nodes: NodeItem[], headId: string, tailId: string): string | null {
+  const ordered = getOrder(nodes, headId);
+  const candidates = ordered.filter((node) => node.id !== headId && node.id !== tailId);
+
+  if (!candidates.length) {
+    return null;
+  }
+
+  return candidates[Math.floor(Math.random() * candidates.length)]?.id ?? null;
+}
+
+function getRandomNeighborProblem(
+  nodes: NodeItem[],
+  headId: string,
+): {
+  targetId: string | null;
+  direction: NeighborDirection;
+} {
+  const ordered = getOrder(nodes, headId);
+  const direction: NeighborDirection = Math.random() < 0.5 ? "prev" : "next";
+
+  const candidates = ordered.filter((node) => (direction === "prev" ? node.prevId !== null : node.nextId !== null));
+
+  if (!candidates.length) {
+    const fallbackCandidates = ordered.filter((node) => node.prevId !== null || node.nextId !== null);
+    const fallback = fallbackCandidates[Math.floor(Math.random() * fallbackCandidates.length)] ?? null;
+
+    return {
+      targetId: fallback?.id ?? null,
+      direction: fallback?.prevId ? "prev" : "next",
+    };
+  }
+
+  return {
+    targetId: candidates[Math.floor(Math.random() * candidates.length)]?.id ?? null,
+    direction,
+  };
+}
+
+function buildPendingDelete(nodes: NodeItem[], targetId: string | null): PendingDelete | null {
+  if (!targetId) return null;
+
+  const map = getNodeMap(nodes);
+  const target = map[targetId];
+
+  if (!target) return null;
+
+  return {
+    targetId,
+    prevId: target.prevId,
+    nextId: target.nextId,
+    linkedPrevId: null,
+    linkedNextId: null,
+  };
+}
+
+function createInitialState(): AppState {
+  const { nodes, headId, tailId } = createBaseNodes();
+  const searchIndex = getRandomSearchIndex(nodes, headId);
+  const deletePromptId = getRandomDeleteTargetId(nodes, headId, tailId);
+  const neighborProblem = getRandomNeighborProblem(nodes, headId);
+
+  return {
+    mode: "search",
+    searchMode: "fromHead",
+    neighborDirection: neighborProblem.direction,
+    nodes,
+    headId,
+    tailId,
+    selectedNodeId: null,
+    searchIndex,
+    searchStep: 0,
+    neighborPromptId: neighborProblem.targetId,
+    pendingInsert: null,
+    pendingDelete: null,
+    deletePromptId,
+    dragSourceId: null,
+    currentExec: 0,
+    totalExec: 0,
+    statusText: `랜덤 인덱스 ${searchIndex}번의 데이터를 찾으세요.`,
+    statusType: "progress",
+    logs: [
+      "이중 연결 리스트 실습을 시작합니다.",
+      "삽입/삭제 후에도 메모리 슬롯은 이동하지 않고 prev, next 주소만 변경됩니다.",
+    ],
+  };
+}
+
+function statusClasses(type: StatusType): string {
+  if (type === "success") return "border-green-200 bg-green-50 text-green-700";
+  if (type === "error") return "border-red-200 bg-red-50 text-red-700";
+  if (type === "progress") return "border-amber-200 bg-amber-50 text-amber-700";
+  return "border-slate-200 bg-slate-50 text-slate-700";
+}
+
+function MemoryNodeCard({
+  node,
+  prevAddress,
+  nextAddress,
+  isHead,
+  isTail,
+  isSelected,
+  isTarget,
+  badges,
+  onClickValue,
+  onDragStartValue,
+  onDropPrev,
+  onDropNext,
+}: {
+  node: NodeItem;
+  prevAddress: number | null;
+  nextAddress: number | null;
+  isHead: boolean;
+  isTail: boolean;
+  isSelected: boolean;
+  isTarget: boolean;
+  badges: string[];
+  onClickValue: () => void;
+  onDragStartValue: () => void;
+  onDropPrev: () => void;
+  onDropNext: () => void;
+}) {
+  return (
+    <div
+      className={[
+        "rounded-[18px] border bg-slate-50 p-2 shadow-sm transition-all",
+        isSelected ? "border-[3px] border-red-500 bg-red-50 shadow-[0_0_0_5px_rgba(239,68,68,0.15)]" : "border-slate-300",
+      ].join(" ")}
+    >
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="rounded-full bg-slate-900 px-2 py-0.5 text-[9px] font-black text-white">
+          주소 {formatAddress(node.address)}
+        </div>
+
+        <div className="flex flex-wrap justify-end gap-1">
+          {isHead ? <div className="rounded-full bg-indigo-100 px-2 py-0.5 text-[9px] font-black text-indigo-700">head</div> : null}
+          {isTail ? <div className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black text-emerald-700">tail</div> : null}
+
+          {badges.map((badge) => (
+            <div key={badge} className="rounded-full bg-red-100 px-2 py-0.5 text-[9px] font-black text-red-700">
+              {badge}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-1 grid grid-cols-[1fr_auto_1fr_auto_1fr] gap-1 text-center text-[10px] font-bold text-slate-500">
+        <div>prev</div>
+        <div></div>
+        <div>값</div>
+        <div></div>
+        <div>next</div>
+      </div>
+
+      <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-stretch gap-1">
+        <button
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={onDropPrev}
+          className="break-all overflow-hidden rounded-xl border border-slate-200 bg-white px-1 py-3 text-[10px] font-black leading-4 text-slate-800 hover:border-orange-300 hover:bg-orange-50"
+        >
+          {formatAddress(prevAddress)}
+        </button>
+
+        <div className="flex items-center justify-center text-sm font-black text-slate-400">|</div>
+
+        <button
+          onClick={onClickValue}
+          draggable
+          onDragStart={onDragStartValue}
+          className={[
+            "rounded-xl px-2 py-3 text-base font-black text-white",
+            isTarget ? "bg-gradient-to-br from-red-500 to-red-600" : "bg-gradient-to-br from-indigo-600 to-violet-600",
+          ].join(" ")}
+        >
+          {node.value}
+        </button>
+
+        <div className="flex items-center justify-center text-sm font-black text-slate-400">|</div>
+
+        <button
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={onDropNext}
+          className="break-all overflow-hidden rounded-xl border border-slate-200 bg-white px-1 py-3 text-[10px] font-black leading-4 text-slate-800 hover:border-orange-300 hover:bg-orange-50"
+        >
+          {formatAddress(nextAddress)}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EmptySlot({ address }: { address: number }) {
+  return (
+    <div className="rounded-[18px] border border-dashed border-slate-300 bg-slate-50 p-2 shadow-sm">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="rounded-full bg-slate-500 px-2 py-0.5 text-[9px] font-black text-white">
+          주소 {formatAddress(address)}
+        </div>
+        <div className="rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-black text-slate-600">빈 슬롯</div>
+      </div>
+
+      <div className="flex h-[84px] items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white text-xs font-bold text-slate-400">
+        저장된 데이터 없음
+      </div>
+    </div>
+  );
+}
+
+function DoublyLinkedListInteractiveLearningPage() {
+  const [state, setState] = useState<AppState>(createInitialState);
+
+  const nodeMap = useMemo(() => getNodeMap(state.nodes), [state.nodes]);
+  const orderedNodes = useMemo(() => getOrder(state.nodes, state.headId), [state.nodes, state.headId]);
+  const reversedNodes = useMemo(() => [...orderedNodes].reverse(), [orderedNodes]);
+
+  const headSearchTargetNode = orderedNodes[state.searchIndex] ?? null;
+  const tailSearchTargetNode = reversedNodes[state.searchIndex] ?? null;
+
+  const headAddress = nodeMap[state.headId]?.address ?? null;
+  const tailAddress = nodeMap[state.tailId]?.address ?? null;
+
+  const visibleAddresses = useMemo(
+    () => getVisibleAddresses(state.nodes, state.pendingInsert?.address ?? null),
+    [state.nodes, state.pendingInsert?.address],
+  );
+
+  const neighborTargetNode = state.neighborPromptId ? nodeMap[state.neighborPromptId] : null;
+  const neighborAnswerId = neighborTargetNode ? (state.neighborDirection === "prev" ? neighborTargetNode.prevId : neighborTargetNode.nextId) : null;
+  const neighborAnswerNode = neighborAnswerId ? nodeMap[neighborAnswerId] : null;
+
+  const neighborTraversalNodes = useMemo(() => {
+    if (!neighborTargetNode || !neighborAnswerNode) return [];
+    return [neighborTargetNode, neighborAnswerNode];
+  }, [neighborTargetNode, neighborAnswerNode]);
+
+  function resetAll() {
+    setState(createInitialState());
+  }
+
+  function switchMode(mode: Mode) {
+    setState((prev) => {
+      const nextSearch = mode === "search" ? getRandomSearchIndex(prev.nodes, prev.headId) : prev.searchIndex;
+      const nextDeletePromptId = mode === "delete" ? getRandomDeleteTargetId(prev.nodes, prev.headId, prev.tailId) : null;
+      const neighborProblem = getRandomNeighborProblem(prev.nodes, prev.headId);
+      const neighborNode = neighborProblem.targetId ? getNodeMap(prev.nodes)[neighborProblem.targetId] : null;
+
+      return {
+        ...prev,
+        mode,
+        selectedNodeId: null,
+        searchIndex: nextSearch,
+        searchStep: 0,
+        neighborPromptId: mode === "search" ? neighborProblem.targetId : null,
+        neighborDirection: mode === "search" ? neighborProblem.direction : prev.neighborDirection,
+        pendingInsert: null,
+        pendingDelete: mode === "delete" ? buildPendingDelete(prev.nodes, nextDeletePromptId) : null,
+        deletePromptId: nextDeletePromptId,
+        dragSourceId: null,
+        currentExec: 0,
+        statusText:
+          mode === "search"
+            ? prev.searchMode === "fromHead"
+              ? `head부터 시작해서 인덱스 ${nextSearch}번의 데이터를 찾으세요.`
+              : prev.searchMode === "fromTail"
+                ? `tail부터 시작해서 뒤에서 ${nextSearch}번째 데이터를 찾으세요.`
+                : neighborNode
+                  ? `특정 노드 값 ${neighborNode.value}의 ${neighborProblem.direction === "prev" ? "앞 노드" : "뒷 노드"}가 무엇인지 알아오세요.`
+                  : "이웃 노드를 찾아보세요."
+            : mode === "insert"
+              ? "새 데이터 만들기를 눌러 삽입 문제를 생성하세요."
+              : nextDeletePromptId
+                ? "삭제 대상 노드의 값을 드래그해 이전 노드의 next 칸과 다음 노드의 prev 칸에 연결하세요."
+                : "지금은 삭제 가능한 대상이 없습니다.",
+        statusType: "progress",
+        logs: [
+          mode === "search"
+            ? "탐색 모드로 전환했습니다."
+            : mode === "insert"
+              ? "삽입 모드: 기존 노드의 값 칸을 새 노드의 prev / next 칸에 드롭하거나, 새 노드의 값 칸을 왼쪽/오른쪽 노드의 next/prev 칸에 드롭하세요."
+              : "삭제 모드: 삭제 노드의 값 칸을 이전 노드의 next 칸, 다음 노드의 prev 칸에 드롭하세요.",
+          ...prev.logs,
+        ],
+      };
+    });
+  }
+
+  function stepSearch() {
+    if (state.searchMode === "neighbors") {
+      const target = neighborTargetNode;
+      const answer = neighborAnswerNode;
+      const current = neighborTraversalNodes[state.searchStep];
+
+      if (!target || !answer || !current) return;
+
+      const found = current.id === answer.id;
+
+      if (state.statusType === "success" && state.selectedNodeId === answer.id) {
+        return;
+      }
+
+      setState((prev) => ({
+        ...prev,
+        selectedNodeId: current.id,
+        searchStep: found ? prev.searchStep : Math.min(prev.searchStep + 1, neighborTraversalNodes.length - 1),
+        currentExec: prev.currentExec + 1,
+        totalExec: prev.totalExec + 1,
+        statusText: found
+          ? `성공! 특정 노드 값 ${target.value}의 ${prev.neighborDirection === "prev" ? "앞 노드" : "뒷 노드"}는 값 ${answer.value} 노드입니다.`
+          : `특정 노드 값 ${target.value}을 확인했습니다. 이제 ${prev.neighborDirection === "prev" ? "prev" : "next"} 주소를 따라 이동합니다.`,
+        statusType: found ? "success" : "progress",
+        logs: [
+          found
+            ? `특정 노드 ${target.value}의 ${prev.neighborDirection === "prev" ? "앞 노드" : "뒷 노드"} ${answer.value}를 ${formatAddress(answer.address)}에서 찾았습니다.`
+            : `특정 노드 ${target.value} 확인 → ${prev.neighborDirection === "prev" ? "prev" : "next"} ${formatAddress(answer.address)} 로 이동`,
+          ...prev.logs,
+        ],
+      }));
+
+      return;
+    }
+
+    if (state.searchMode === "fromTail") {
+      const current = reversedNodes[state.searchStep];
+      const target = reversedNodes[state.searchIndex];
+
+      if (!current || !target) return;
+
+      const found = current.id === target.id;
+
+      if (state.statusType === "success" && state.selectedNodeId === target.id) {
+        return;
+      }
+
+      setState((prev) => ({
+        ...prev,
+        selectedNodeId: current.id,
+        searchStep: found ? prev.searchStep : Math.min(prev.searchStep + 1, reversedNodes.length - 1),
+        currentExec: prev.currentExec + 1,
+        totalExec: prev.totalExec + 1,
+        statusText: found ? `성공! tail 기준 뒤에서 ${prev.searchIndex}번째 데이터를 찾았습니다.` : `${prev.searchStep + 1}번째 노드를 확인했습니다. prev를 따라 이동합니다.`,
+        statusType: found ? "success" : "progress",
+        logs: [
+          found
+            ? `tail 기준 뒤에서 ${prev.searchIndex}번째 값을 ${formatAddress(current.address)}에서 찾았습니다.`
+            : `${formatAddress(current.address)} 확인 → prev ${formatAddress(current.prevId ? nodeMap[current.prevId]?.address : null)} 로 이동`,
+          ...prev.logs,
+        ],
+      }));
+
+      return;
+    }
+
+    const current = orderedNodes[state.searchStep];
+    const target = orderedNodes[state.searchIndex];
+
+    if (!current || !target) return;
+
+    const found = current.id === target.id;
+
+    if (state.statusType === "success" && state.selectedNodeId === target.id) {
+      return;
+    }
+
+    setState((prev) => ({
+      ...prev,
+      selectedNodeId: current.id,
+      searchStep: found ? prev.searchStep : Math.min(prev.searchStep + 1, orderedNodes.length - 1),
+      currentExec: prev.currentExec + 1,
+      totalExec: prev.totalExec + 1,
+      statusText: found ? `성공! 인덱스 ${prev.searchIndex}번 데이터를 찾았습니다.` : `${prev.searchStep + 1}번째 노드를 확인했습니다. next를 따라 이동합니다.`,
+      statusType: found ? "success" : "progress",
+      logs: [
+        found
+          ? `인덱스 ${prev.searchIndex}번의 값을 ${formatAddress(current.address)}에서 찾았습니다.`
+          : `${formatAddress(current.address)} 확인 → next ${formatAddress(current.nextId ? nodeMap[current.nextId]?.address : null)} 로 이동`,
+        ...prev.logs,
+      ],
+    }));
+  }
+
+  function createInsertProblem() {
+    const freshOrder = getOrder(state.nodes, state.headId);
+    const pairIndex = getRandomInsertPairIndex(state.nodes, state.headId);
+    const left = freshOrder[pairIndex] ?? null;
+    const right = freshOrder[pairIndex + 1] ?? null;
+    const address = getFreeAddress(state.nodes);
+    const value = getRandomValue(state.nodes);
+
+    setState((prev) => ({
+      ...prev,
+      searchMode: "fromHead",
+      neighborPromptId: null,
+      pendingInsert: {
+        id: `new-${Date.now()}`,
+        value,
+        address,
+        expectedLeftId: left?.id ?? null,
+        expectedRightId: right?.id ?? null,
+        chosenPrevId: null,
+        chosenNextId: null,
+      },
+      dragSourceId: null,
+      selectedNodeId: null,
+      currentExec: 0,
+      statusText: left && right ? `값 ${left.value} 와 ${right.value} 사이에 새 노드를 삽입하세요.` : "삽입 위치를 확인하세요.",
+      statusType: "progress",
+      logs: [
+        `새 노드 ${value} 를 주소 ${formatAddress(address)} 에 만들었습니다.`,
+        left && right ? `${left.value} ↔ ${right.value} 사이에 삽입하세요.` : "삽입 위치를 확인하세요.",
+        ...prev.logs,
+      ],
+    }));
+  }
+
+  function handleDragStart(sourceId: string) {
+    if (state.mode === "insert" || state.mode === "delete") {
+      setState((prev) => ({ ...prev, dragSourceId: sourceId, selectedNodeId: sourceId }));
+    }
+  }
+
+  function chooseInsertPrev(nodeId: string) {
+    if (!state.pendingInsert) return;
+
+    const node = nodeMap[nodeId];
+
+    if (!node) return;
+
+    setState((prev) => ({
+      ...prev,
+      pendingInsert: prev.pendingInsert ? { ...prev.pendingInsert, chosenPrevId: nodeId } : null,
+      dragSourceId: null,
+      selectedNodeId: nodeId,
+      currentExec: prev.currentExec + 1,
+      totalExec: prev.totalExec + 1,
+      statusText: `${node.value} 노드의 주소를 새 노드의 prev 로 설정했습니다. 이제 새 노드의 next 를 정하세요.`,
+      statusType: "progress",
+      logs: [`새 노드의 prev 를 ${formatAddress(node.address)} 로 설정했습니다.`, ...prev.logs],
+    }));
+  }
+
+  function chooseInsertNext(nodeId: string) {
+    if (!state.pendingInsert) return;
+
+    const node = nodeMap[nodeId];
+
+    if (!node) return;
+
+    setState((prev) => ({
+      ...prev,
+      pendingInsert: prev.pendingInsert ? { ...prev.pendingInsert, chosenNextId: nodeId } : null,
+      dragSourceId: null,
+      selectedNodeId: nodeId,
+      currentExec: prev.currentExec + 1,
+      totalExec: prev.totalExec + 1,
+      statusText: `${node.value} 노드의 주소를 새 노드의 next 로 설정했습니다. 이제 삽입을 완료하세요.`,
+      statusType: "progress",
+      logs: [`새 노드의 next 를 ${formatAddress(node.address)} 로 설정했습니다.`, ...prev.logs],
+    }));
+  }
+
+  function connectInsertLeftNextSlot(nodeId: string) {
+    if (!state.pendingInsert) return;
+
+    const node = nodeMap[nodeId];
+    if (!node) return;
+
+    const isCorrectSlot = nodeId === state.pendingInsert.expectedLeftId;
+
+    setState((prev) => ({
+      ...prev,
+      pendingInsert: prev.pendingInsert ? { ...prev.pendingInsert, chosenPrevId: nodeId } : null,
+      dragSourceId: null,
+      selectedNodeId: nodeId,
+      currentExec: prev.currentExec + 1,
+      totalExec: prev.totalExec + 1,
+      statusText: isCorrectSlot
+        ? `${node.value} 노드의 next 칸을 새 노드 주소로 바꿨습니다.`
+        : "주의. 새 노드는 왼쪽 노드의 next 칸에 연결해야 합니다.",
+      statusType: isCorrectSlot ? "progress" : "error",
+      logs: [
+        isCorrectSlot
+          ? `${formatAddress(node.address)}.next = ${formatAddress(state.pendingInsert.address)} 로 임시 변경했습니다.`
+          : "삽입 연결 위치가 올바르지 않습니다.",
+        ...prev.logs,
+      ],
+    }));
+  }
+
+  function connectInsertRightPrevSlot(nodeId: string) {
+    if (!state.pendingInsert) return;
+
+    const node = nodeMap[nodeId];
+    if (!node) return;
+
+    const isCorrectSlot = nodeId === state.pendingInsert.expectedRightId;
+
+    setState((prev) => ({
+      ...prev,
+      pendingInsert: prev.pendingInsert ? { ...prev.pendingInsert, chosenNextId: nodeId } : null,
+      dragSourceId: null,
+      selectedNodeId: nodeId,
+      currentExec: prev.currentExec + 1,
+      totalExec: prev.totalExec + 1,
+      statusText: isCorrectSlot
+        ? `${node.value} 노드의 prev 칸을 새 노드 주소로 바꿨습니다.`
+        : "주의. 새 노드는 오른쪽 노드의 prev 칸에 연결해야 합니다.",
+      statusType: isCorrectSlot ? "progress" : "error",
+      logs: [
+        isCorrectSlot
+          ? `${formatAddress(node.address)}.prev = ${formatAddress(state.pendingInsert.address)} 로 임시 변경했습니다.`
+          : "삽입 연결 위치가 올바르지 않습니다.",
+        ...prev.logs,
+      ],
+    }));
+  }
+
+  function finalizeInsert() {
+    if (!state.pendingInsert) return;
+
+    const p = state.pendingInsert;
+    const correct = p.expectedLeftId === p.chosenPrevId && p.expectedRightId === p.chosenNextId;
+
+    if (!correct) {
+      setState((prev) => ({
+        ...prev,
+        statusText: "실패. 새 노드의 prev 와 next 를 올바른 양쪽 이웃으로 모두 설정해야 합니다.",
+        statusType: "error",
+        logs: ["삽입 실패: 양쪽 연결이 모두 맞아야 합니다.", ...prev.logs],
+      }));
+      return;
+    }
+
+    const leftNode = p.expectedLeftId ? nodeMap[p.expectedLeftId] : null;
+    const rightNode = p.expectedRightId ? nodeMap[p.expectedRightId] : null;
+    const newId = `n${Date.now()}`;
+
+    const nextNodes = state.nodes.map((node) => {
+      if (node.id === p.expectedLeftId) return { ...node, nextId: newId };
+      if (node.id === p.expectedRightId) return { ...node, prevId: newId };
+      return node;
+    });
+
+    nextNodes.push({
+      id: newId,
+      value: p.value,
+      address: p.address,
+      prevId: p.expectedLeftId,
+      nextId: p.expectedRightId,
+    });
+
+    nextNodes.sort((a, b) => a.address - b.address);
+
+    setState((prev) => ({
+      ...prev,
+      nodes: nextNodes,
+      pendingInsert: null,
+      dragSourceId: null,
+      selectedNodeId: newId,
+      currentExec: prev.currentExec + 1,
+      totalExec: prev.totalExec + 1,
+      statusText: "성공! 새 노드의 prev 와 next 를 모두 연결했습니다.",
+      statusType: "success",
+      logs: [
+        leftNode ? `${formatAddress(leftNode.address)}.next = ${formatAddress(p.address)}` : "",
+        rightNode ? `${formatAddress(rightNode.address)}.prev = ${formatAddress(p.address)}` : "",
+        `새 노드 ${formatAddress(p.address)} 의 prev, next 를 모두 설정했습니다.`,
+        ...prev.logs,
+      ].filter(Boolean),
+    }));
+  }
+
+  function connectDeletePrevSlot(nodeId: string) {
+    const pending = state.pendingDelete;
+    if (!pending) return;
+
+    const droppedNode = nodeMap[nodeId];
+    if (!droppedNode) return;
+
+    const isCorrectSlot = nodeId === pending.nextId;
+
+    setState((prev) => ({
+      ...prev,
+      pendingDelete: prev.pendingDelete ? { ...prev.pendingDelete, linkedNextId: nodeId } : null,
+      dragSourceId: null,
+      selectedNodeId: nodeId,
+      currentExec: prev.currentExec + 1,
+      totalExec: prev.totalExec + 1,
+      statusText: isCorrectSlot
+        ? `${droppedNode.value} 노드의 prev 칸을 삭제 대상의 이전 노드 주소로 바꿨습니다.`
+        : "주의. 삭제 대상의 다음 노드 prev 칸에 드롭해야 합니다.",
+      statusType: isCorrectSlot ? "progress" : "error",
+      logs: [
+        isCorrectSlot
+          ? `${formatAddress(droppedNode.address)}.prev = ${formatAddress(pending.prevId ? nodeMap[pending.prevId]?.address : null)} 로 임시 변경했습니다.`
+          : "삭제 연결 위치가 올바르지 않습니다.",
+        ...prev.logs,
+      ],
+    }));
+  }
+
+  function connectDeleteNextSlot(nodeId: string) {
+    const pending = state.pendingDelete;
+    if (!pending) return;
+
+    const droppedNode = nodeMap[nodeId];
+    if (!droppedNode) return;
+
+    const isCorrectSlot = nodeId === pending.prevId;
+
+    setState((prev) => ({
+      ...prev,
+      pendingDelete: prev.pendingDelete ? { ...prev.pendingDelete, linkedPrevId: nodeId } : null,
+      dragSourceId: null,
+      selectedNodeId: nodeId,
+      currentExec: prev.currentExec + 1,
+      totalExec: prev.totalExec + 1,
+      statusText: isCorrectSlot
+        ? `${droppedNode.value} 노드의 next 칸을 삭제 대상의 다음 노드 주소로 바꿨습니다.`
+        : "주의. 삭제 대상의 이전 노드 next 칸에 드롭해야 합니다.",
+      statusType: isCorrectSlot ? "progress" : "error",
+      logs: [
+        isCorrectSlot
+          ? `${formatAddress(droppedNode.address)}.next = ${formatAddress(pending.nextId ? nodeMap[pending.nextId]?.address : null)} 로 임시 변경했습니다.`
+          : "삭제 연결 위치가 올바르지 않습니다.",
+        ...prev.logs,
+      ],
+    }));
+  }
+
+  function finalizeDelete() {
+    const pending = state.pendingDelete;
+
+    if (!pending || !pending.prevId || !pending.nextId) return;
+
+    const prevNode = nodeMap[pending.prevId];
+    const nextNode = nodeMap[pending.nextId];
+    const targetNode = nodeMap[pending.targetId];
+
+    if (!prevNode || !nextNode || !targetNode) return;
+
+    const correct = pending.linkedPrevId === pending.prevId && pending.linkedNextId === pending.nextId;
+
+    if (!correct) {
+      setState((prev) => ({
+        ...prev,
+        statusText: "실패. 이전 노드의 next 칸과 다음 노드의 prev 칸을 모두 올바르게 바꿔야 합니다.",
+        statusType: "error",
+        logs: ["삭제 실패: prev / next 연결 대상이 맞지 않습니다.", ...prev.logs],
+      }));
+      return;
+    }
+
+    const nextNodes = state.nodes
+      .map((node) => {
+        if (node.id === prevNode.id) return { ...node, nextId: nextNode.id };
+        if (node.id === nextNode.id) return { ...node, prevId: prevNode.id };
+        return node;
+      })
+      .filter((node) => node.id !== targetNode.id)
+      .sort((a, b) => a.address - b.address);
+
+    const nextDeletePromptId = getRandomDeleteTargetId(nextNodes, state.headId, state.tailId);
+
+    setState((prev) => ({
+      ...prev,
+      nodes: nextNodes,
+      pendingDelete: buildPendingDelete(nextNodes, nextDeletePromptId),
+      deletePromptId: nextDeletePromptId,
+      dragSourceId: null,
+      selectedNodeId: prevNode.id,
+      currentExec: prev.currentExec + 1,
+      totalExec: prev.totalExec + 1,
+      statusText: "성공! 삭제 노드의 앞뒤 노드를 직접 연결했습니다.",
+      statusType: "success",
+      logs: [
+        `${formatAddress(prevNode.address)}.next = ${formatAddress(nextNode.address)}`,
+        `${formatAddress(nextNode.address)}.prev = ${formatAddress(prevNode.address)}`,
+        `${formatAddress(targetNode.address)} 노드는 리스트에서 제외되었습니다.`,
+        ...prev.logs,
+      ],
+    }));
+  }
+
+  function createNeighborProblem(direction: NeighborDirection) {
+    setState((prev) => {
+      const ordered = getOrder(prev.nodes, prev.headId);
+      const candidates = ordered.filter((node) => (direction === "prev" ? node.prevId !== null : node.nextId !== null));
+      const target = candidates[Math.floor(Math.random() * candidates.length)] ?? null;
+
+      return {
+        ...prev,
+        searchMode: "neighbors",
+        neighborDirection: direction,
+        neighborPromptId: target?.id ?? null,
+        searchStep: 0,
+        selectedNodeId: null,
+        currentExec: 0,
+        statusType: "progress",
+        statusText: target
+          ? `특정 노드 값 ${target.value}의 ${direction === "prev" ? "앞 노드" : "뒷 노드"}가 무엇인지 알아오세요.`
+          : "찾을 수 있는 이웃 노드가 없습니다.",
+        logs: [
+          target
+            ? `이웃 찾기 문제: 특정 노드 값 ${target.value}의 ${direction === "prev" ? "앞 노드" : "뒷 노드"}를 찾습니다.`
+            : "이웃 찾기 문제를 만들 수 없습니다.",
+          ...prev.logs,
+        ],
+      };
+    });
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f6f8fc] p-3 md:p-5">
+      <div className="mx-auto max-w-[1450px] space-y-4">
+        <section className="rounded-[28px] border border-indigo-100 bg-gradient-to-br from-white to-indigo-50 px-5 py-6 shadow-sm">
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 md:text-4xl">
+            이중 연결 리스트 탐색, 삽입, 삭제의 작동 원리 이해하기
+          </h1>
+
+          <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600 md:text-base">
+            이중 연결 리스트는 노드를 옮기지 않고 <strong>prev 주소와 next 주소를 바꾸어</strong> 연결을 변경합니다.
+            <br />
+            즉 메모리 슬롯은 그대로 두고, 앞뒤 연결만 수정합니다.
+          </p>
+
+          <div className="mt-4 rounded-[18px] border border-indigo-100 bg-white/80 px-4 py-3 text-sm font-semibold leading-7 text-slate-700">
+            탐색은 <strong>한 단계씩 따라가기</strong> 버튼을 눌러 head부터 next를 따라가며 확인해 보세요.
+            <br />
+            삽입은 기존 노드의 <strong>값 칸</strong>을 새 노드의 <strong>prev / next 칸</strong>에 드롭하거나, 새 노드의 값을 왼쪽/오른쪽 노드의 주소 칸에 드롭합니다.
+            <br />
+            삭제는 삭제 노드의 값을 이전 노드의 next 칸과 다음 노드의 prev 칸에 드롭합니다.
+          </div>
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-[1.35fr_0.9fr]">
+          <Card className="rounded-[24px] border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-xl font-black text-slate-900">메모리 화면</CardTitle>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              <div className={["rounded-xl border px-4 py-3 text-sm font-bold", statusClasses(state.statusType)].join(" ")}>
+                {state.statusText}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <div className="rounded-full bg-slate-900 px-5 py-2 text-sm font-black text-white">
+                  head | {formatAddress(headAddress)}
+                </div>
+                <div className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-black text-white">
+                  tail | {formatAddress(tailAddress)}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-2 max-[900px]:grid-cols-3 max-[640px]:grid-cols-2">
+                {visibleAddresses.map((address) => {
+                  const node = state.nodes.find((item) => item.address === address) ?? null;
+                  const pendingHere = state.pendingInsert?.address === address ? state.pendingInsert : null;
+
+                  if (!node && pendingHere) {
+                    return (
+                      <div key={`pending-${address}`} className="rounded-[18px] border border-red-300 bg-red-50 p-2 shadow-sm">
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <div className="rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-black text-white">
+                            주소 {formatAddress(pendingHere.address)}
+                          </div>
+                          <div className="rounded-full bg-red-100 px-2 py-0.5 text-[9px] font-black text-red-700">삽입 노드</div>
+                        </div>
+
+                        <div className="mb-1 grid grid-cols-[1fr_auto_1fr_auto_1fr] gap-1 text-center text-[10px] font-bold text-slate-500">
+                          <div>prev</div>
+                          <div></div>
+                          <div>값</div>
+                          <div></div>
+                          <div>next</div>
+                        </div>
+
+                        <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-stretch gap-1">
+                          <button
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={() => {
+                              if (state.mode === "insert" && state.pendingInsert && state.dragSourceId && state.dragSourceId !== state.pendingInsert.id) {
+                                chooseInsertPrev(state.dragSourceId);
+                              }
+                            }}
+                            className="rounded-xl border border-slate-200 bg-white px-2 py-3 text-center text-[11px] font-black text-slate-800 hover:border-orange-300 hover:bg-orange-50"
+                          >
+                            {formatAddress(pendingHere.chosenPrevId ? nodeMap[pendingHere.chosenPrevId]?.address : null)}
+                          </button>
+
+                          <div className="flex items-center justify-center text-sm font-black text-slate-400">|</div>
+
+                          <button
+                            draggable
+                            onDragStart={() => handleDragStart(pendingHere.id)}
+                            className="rounded-xl bg-gradient-to-br from-red-500 to-red-600 px-2 py-3 text-base font-black text-white"
+                          >
+                            {pendingHere.value}
+                          </button>
+
+                          <div className="flex items-center justify-center text-sm font-black text-slate-400">|</div>
+
+                          <button
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={() => {
+                              if (state.mode === "insert" && state.pendingInsert && state.dragSourceId && state.dragSourceId !== state.pendingInsert.id) {
+                                chooseInsertNext(state.dragSourceId);
+                              }
+                            }}
+                            className="rounded-xl border border-slate-200 bg-white px-2 py-3 text-center text-[11px] font-black text-slate-800 hover:border-orange-300 hover:bg-orange-50"
+                          >
+                            {formatAddress(pendingHere.chosenNextId ? nodeMap[pendingHere.chosenNextId]?.address : null)}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (!node) return <EmptySlot key={address} address={address} />;
+
+                  const badges: string[] = [];
+
+                  if (state.pendingInsert?.expectedLeftId === node.id) badges.push("왼쪽 노드");
+                  if (state.pendingInsert?.expectedRightId === node.id) badges.push("오른쪽 노드");
+                  if (state.pendingDelete?.prevId === node.id) badges.push("이전 노드");
+                  if (state.pendingDelete?.targetId === node.id) badges.push("삭제 노드");
+                  if (state.pendingDelete?.nextId === node.id) badges.push("다음 노드");
+                  if (state.mode === "search" && state.searchMode === "neighbors" && neighborTargetNode?.id === node.id) badges.push("특정 노드");
+
+                  const activeSearchTargetId =
+                    state.mode === "search"
+                      ? state.searchMode === "neighbors"
+                        ? neighborTargetNode?.id
+                        : state.searchMode === "fromTail"
+                          ? tailSearchTargetNode?.id
+                          : headSearchTargetNode?.id
+                      : null;
+
+                  let displayPrevAddress = node.prevId ? nodeMap[node.prevId]?.address ?? null : null;
+                  let displayNextAddress = node.nextId ? nodeMap[node.nextId]?.address ?? null : null;
+
+                  if (state.mode === "insert" && state.pendingInsert) {
+                    if (state.pendingInsert.chosenPrevId === node.id && state.pendingInsert.expectedLeftId === node.id) {
+                      displayNextAddress = state.pendingInsert.address;
+                    }
+
+                    if (state.pendingInsert.chosenNextId === node.id && state.pendingInsert.expectedRightId === node.id) {
+                      displayPrevAddress = state.pendingInsert.address;
+                    }
+                  }
+
+                  if (state.mode === "delete" && state.pendingDelete) {
+                    if (state.pendingDelete.linkedNextId === node.id && node.id === state.pendingDelete.nextId) {
+                      displayPrevAddress = state.pendingDelete.prevId ? nodeMap[state.pendingDelete.prevId]?.address ?? null : null;
+                    }
+
+                    if (state.pendingDelete.linkedPrevId === node.id && node.id === state.pendingDelete.prevId) {
+                      displayNextAddress = state.pendingDelete.nextId ? nodeMap[state.pendingDelete.nextId]?.address ?? null : null;
+                    }
+                  }
+
+                  return (
+                    <MemoryNodeCard
+                      key={node.id}
+                      node={node}
+                      prevAddress={displayPrevAddress}
+                      nextAddress={displayNextAddress}
+                      isHead={state.headId === node.id}
+                      isTail={state.tailId === node.id}
+                      isSelected={state.selectedNodeId === node.id}
+                      isTarget={activeSearchTargetId === node.id}
+                      badges={badges}
+                      onClickValue={() => setState((prev) => ({ ...prev, selectedNodeId: node.id }))}
+                      onDragStartValue={() => handleDragStart(node.id)}
+                      onDropPrev={() => {
+                        if (state.mode === "insert" && state.pendingInsert && state.dragSourceId === state.pendingInsert.id) {
+                          connectInsertRightPrevSlot(node.id);
+                        }
+
+                        if (state.mode === "delete" && state.pendingDelete && state.dragSourceId === state.pendingDelete.targetId) {
+                          connectDeletePrevSlot(node.id);
+                        }
+                      }}
+                      onDropNext={() => {
+                        if (state.mode === "insert" && state.pendingInsert && state.dragSourceId === state.pendingInsert.id) {
+                          connectInsertLeftNextSlot(node.id);
+                        }
+
+                        if (state.mode === "delete" && state.pendingDelete && state.dragSourceId === state.pendingDelete.targetId) {
+                          connectDeleteNextSlot(node.id);
+                        }
+                      }}
+                    />
+                  );
+                })}
+              </div>
+
+              <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
+                <div className="mb-3 text-sm font-black text-slate-700">현재 연결 순서</div>
+
+                <div className="flex flex-wrap items-center gap-2 text-sm font-black text-slate-700">
+                  <span className="rounded-full bg-slate-900 px-3 py-1.5 text-white">head</span>
+
+                  {orderedNodes.map((node) => (
+                    <React.Fragment key={node.id}>
+                      <span className="text-xl text-slate-400">↔</span>
+                      <span className="rounded-full bg-white px-3 py-1.5 shadow-sm">{node.value}</span>
+                    </React.Fragment>
+                  ))}
+
+                  <span className="text-xl text-slate-400">↔</span>
+                  <span className="rounded-full bg-emerald-600 px-3 py-1.5 text-white">tail</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-4">
+            <Card className="rounded-[24px] border-0 shadow-sm">
+              <CardHeader className="px-4 py-4">
+                <CardTitle className="text-lg font-black text-slate-900">조작 패널</CardTitle>
+              </CardHeader>
+
+              <CardContent className="space-y-3 px-4 pb-4">
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    onClick={() => switchMode("search")}
+                    className={state.mode === "search" ? "rounded-2xl px-2 text-xs" : "rounded-2xl bg-slate-100 px-2 text-xs text-slate-800 hover:bg-slate-200"}
+                  >
+                    탐색
+                  </Button>
+
+                  <Button
+                    onClick={() => switchMode("insert")}
+                    className={state.mode === "insert" ? "rounded-2xl bg-red-500 px-2 text-xs hover:bg-red-600" : "rounded-2xl bg-slate-100 px-2 text-xs text-slate-800 hover:bg-slate-200"}
+                  >
+                    삽입
+                  </Button>
+
+                  <Button
+                    onClick={() => switchMode("delete")}
+                    className={state.mode === "delete" ? "rounded-2xl bg-orange-500 px-2 text-xs hover:bg-orange-600" : "rounded-2xl bg-slate-100 px-2 text-xs text-slate-800 hover:bg-slate-200"}
+                  >
+                    삭제
+                  </Button>
+                </div>
+
+                {state.mode === "search" ? (
+                  <div className="space-y-3 rounded-[20px] border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-sm font-black text-slate-800">탐색 절차</div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        onClick={() =>
+                          setState((prev) => {
+                            const nextIndex = getRandomSearchIndex(prev.nodes, prev.headId);
+
+                            return {
+                              ...prev,
+                              searchMode: "fromHead",
+                              searchIndex: nextIndex,
+                              searchStep: 0,
+                              selectedNodeId: null,
+                              currentExec: 0,
+                              statusText: `head부터 시작해서 인덱스 ${nextIndex}번의 데이터를 찾으세요.`,
+                              statusType: "progress",
+                            };
+                          })
+                        }
+                        className={state.searchMode === "fromHead" ? "rounded-xl px-2 text-xs" : "rounded-xl bg-slate-100 px-2 text-xs text-slate-800 hover:bg-slate-200"}
+                      >
+                        head부터
+                      </Button>
+
+                      <Button
+                        onClick={() =>
+                          setState((prev) => {
+                            const nextIndex = getRandomSearchIndex(prev.nodes, prev.headId);
+
+                            return {
+                              ...prev,
+                              searchMode: "fromTail",
+                              searchIndex: nextIndex,
+                              searchStep: 0,
+                              selectedNodeId: null,
+                              currentExec: 0,
+                              statusText: `tail부터 시작해서 뒤에서 ${nextIndex}번째 데이터를 찾으세요.`,
+                              statusType: "progress",
+                            };
+                          })
+                        }
+                        className={state.searchMode === "fromTail" ? "rounded-xl px-2 text-xs" : "rounded-xl bg-slate-100 px-2 text-xs text-slate-800 hover:bg-slate-200"}
+                      >
+                        tail부터
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        onClick={() => createNeighborProblem("prev")}
+                        className={
+                          state.searchMode === "neighbors" && state.neighborDirection === "prev"
+                            ? "min-h-12 rounded-xl bg-indigo-600 px-2 text-[11px] leading-4 hover:bg-indigo-700"
+                            : "min-h-12 rounded-xl bg-slate-100 px-2 text-[11px] leading-4 text-slate-800 hover:bg-slate-200"
+                        }
+                      >
+                        특정 노드의 앞노드가 무엇인지 알아오기
+                      </Button>
+
+                      <Button
+                        onClick={() => createNeighborProblem("next")}
+                        className={
+                          state.searchMode === "neighbors" && state.neighborDirection === "next"
+                            ? "min-h-12 rounded-xl bg-indigo-600 px-2 text-[11px] leading-4 hover:bg-indigo-700"
+                            : "min-h-12 rounded-xl bg-slate-100 px-2 text-[11px] leading-4 text-slate-800 hover:bg-slate-200"
+                        }
+                      >
+                        특정 노드의 뒷노드가 무엇인지 알아오기
+                      </Button>
+                    </div>
+
+                    <div className="rounded-xl bg-white px-3 py-2.5 text-xs font-semibold leading-5 text-slate-700">
+                      {state.searchMode === "fromHead" ? (
+                        <>
+                          head부터 시작해 <strong>{state.searchIndex}</strong>번 인덱스의 데이터를 찾으세요.
+                          <br />
+                          목표 값: <strong>{headSearchTargetNode?.value ?? "-"}</strong>
+                        </>
+                      ) : state.searchMode === "fromTail" ? (
+                        <>
+                          tail부터 시작해 뒤에서 <strong>{state.searchIndex}</strong>번째 데이터를 찾으세요.
+                          <br />
+                          목표 값: <strong>{tailSearchTargetNode?.value ?? "-"}</strong>
+                        </>
+                      ) : (
+                        <>
+                          특정 노드: 값 <strong>{neighborTargetNode?.value ?? "-"}</strong>
+                          <br />
+                          해야 할 일: 특정 노드의 <strong>{state.neighborDirection === "prev" ? "앞 노드" : "뒷 노드"}</strong>가 무엇인지 알아오기
+                          <br />
+                          시작 위치: 특정 노드 값 <strong>{neighborTargetNode?.value ?? "-"}</strong>
+                          <br />
+                          이동 방향: <strong>{state.neighborDirection === "prev" ? "prev 주소" : "next 주소"}</strong>
+                          {state.statusType === "success" && neighborAnswerNode ? (
+                            <>
+                              <br />
+                              정답: 값 <strong>{neighborAnswerNode.value}</strong>
+                            </>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+
+                    <Button onClick={stepSearch} className="w-full rounded-xl bg-slate-900 text-xs hover:bg-slate-800">
+                      한 단계씩 따라가기
+                    </Button>
+                  </div>
+                ) : null}
+
+                {state.mode === "insert" ? (
+                  <div className="space-y-3 rounded-[20px] border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-sm font-black text-slate-800">삽입 절차</div>
+
+                    <div className="rounded-xl bg-white px-3 py-2.5 text-xs font-semibold leading-6 text-slate-700">
+                      1. 새 데이터 만들기를 눌러 새 노드를 만듭니다.
+                      <br />
+                      2. 왼쪽 노드의 <strong>값 칸</strong>을 새 노드의 <strong>prev 칸</strong>에 드롭하거나, 새 노드의 <strong>값 칸</strong>을 왼쪽 노드의 <strong>next 칸</strong>에 드롭합니다.
+                      <br />
+                      3. 오른쪽 노드의 <strong>값 칸</strong>을 새 노드의 <strong>next 칸</strong>에 드롭하거나, 새 노드의 <strong>값 칸</strong>을 오른쪽 노드의 <strong>prev 칸</strong>에 드롭합니다.
+                      <br />
+                      4. 두 방향이 모두 맞으면 삽입 완료 버튼을 누르세요.
+                    </div>
+
+                    <Button onClick={createInsertProblem} className="w-full rounded-xl bg-red-500 text-xs hover:bg-red-600">
+                      새 데이터 만들기
+                    </Button>
+
+                    {state.pendingInsert ? (
+                      <Button onClick={finalizeInsert} variant="outline" className="w-full rounded-xl text-xs">
+                        삽입 완료
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {state.mode === "delete" ? (
+                  <div className="space-y-3 rounded-[20px] border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-sm font-black text-slate-800">삭제 절차</div>
+
+                    <div className="rounded-xl bg-white px-3 py-2.5 text-xs font-semibold leading-6 text-slate-700">
+                      삭제 대상: {" "}
+                      <strong>
+                        {state.deletePromptId ? `${nodeMap[state.deletePromptId]?.value} (${formatAddress(nodeMap[state.deletePromptId]?.address)})` : "없음"}
+                      </strong>
+                      <br />
+                      삭제 노드의 <strong>값 칸</strong>을 이전 노드의 <strong>next 칸</strong>, 다음 노드의 <strong>prev 칸</strong>에 각각 드롭한 뒤 완료 버튼을 누르세요.
+                    </div>
+
+                    <Button onClick={finalizeDelete} className="w-full rounded-xl bg-orange-500 text-xs hover:bg-orange-600" disabled={!state.pendingDelete}>
+                      삭제 연결 완료
+                    </Button>
+                  </div>
+                ) : null}
+
+                <Button onClick={resetAll} variant="outline" className="w-full rounded-xl text-xs">
+                  전체 초기화
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-[24px] border-0 shadow-sm">
+              <CardHeader className="px-4 py-4">
+                <CardTitle className="text-lg font-black text-slate-900">현재 상태</CardTitle>
+              </CardHeader>
+
+              <CardContent className="grid gap-3 px-4 pb-4">
+                <div className="rounded-[18px] bg-slate-50 p-3">
+                  <div className="text-xs font-black text-slate-500">현재 실행 횟수</div>
+                  <div className="mt-1 text-2xl font-black text-slate-900">{state.currentExec}</div>
+                </div>
+
+                <div className="rounded-[18px] bg-slate-50 p-3">
+                  <div className="text-xs font-black text-slate-500">총 실행 횟수</div>
+                  <div className="mt-1 text-2xl font-black text-slate-900">{state.totalExec}</div>
+                </div>
+
+                <div className="rounded-[18px] bg-slate-50 p-3">
+                  <div className="mb-2 text-xs font-black text-slate-500">최근 로그</div>
+                  <div className="max-h-64 overflow-auto whitespace-pre-wrap text-xs font-semibold leading-5 text-slate-700">
+                    {state.logs.slice(0, 8).join("\n\n")}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<DoublyLinkedListInteractiveLearningPage />);
+
+  </script>
+</body>
+</html>
