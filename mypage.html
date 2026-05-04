@@ -144,7 +144,7 @@ margin-top:6px;
 
 <div class="search">
 
-<div class="search-bar">
+<form class="search-bar" onsubmit="search(event)">
 
 <select id="engine">
 <option value="naver">네이버</option>
@@ -153,9 +153,9 @@ margin-top:6px;
 
 <input id="query" placeholder="검색">
 
-<button onclick="search()">검색</button>
+<button type="submit">검색</button>
 
-</div>
+</form>
 
 </div>
 
@@ -179,29 +179,14 @@ margin-top:6px;
 <span>네이버</span>
 </a>
 
-<a href="https://weather.naver.com/today/">
-<img src="./logo/weather.png">
-<span>네이버 날씨</span>
-</a>
-  
-<a href="https://comic.naver.com/webtoon?tab=finish">
-<img src="./logo/comicnaver.png">
-<span>네이버 웹툰</span>
-</a>
-
-<a href="https://etoland.co.kr/">
-<img src="./logo/etoland.png">
-<span>이토랜드</span>
-</a>
-
 <a href="https://namu.wiki/">
 <img src="./logo/namuwiki.png">
 <span>나무위키</span>
 </a>
-
-<a href="https://news.naver.com">
-<img src="./logo/news.png">
-<span>뉴스</span>
+  
+<a href="https://weather.naver.com/today/">
+<img src="./logo/weather.png">
+<span>네이버 날씨</span>
 </a>
 
 <a href="https://google.com">
@@ -209,9 +194,29 @@ margin-top:6px;
 <span>구글</span>
 </a>
 
+<a href="https://etoland.co.kr/">
+<img src="./logo/etoland.png">
+<span>이토랜드</span>
+</a>
+
+<a href="https://comic.naver.com/webtoon?tab=finish">
+<img src="./logo/comicnaver.png">
+<span>네이버 웹툰</span>
+</a>
+
+<a href="https://aagag.com">
+<img src="./logo/aagag.png">
+<span>AAGAG</span>
+</a>
+
 <a href="https://youtube.com">
 <img src="./logo/youtube.png">
 <span>유튜브</span>
+</a>
+
+<a href="https://news.naver.com">
+<img src="./logo/news.png">
+<span>뉴스</span>
 </a>
 
 <a href="https://maps.google.com">
@@ -230,15 +235,21 @@ margin-top:6px;
 
 <script>
 
-function search(){
+function search(event){
 
-let q=document.getElementById("query").value
+event.preventDefault()
+
+let q=document.getElementById("query").value.trim()
 let engine=document.getElementById("engine").value
 
+if(!q) return
+
+let encodedQ=encodeURIComponent(q)
+
 if(engine==="naver"){
-location.href="https://search.naver.com/search.naver?query="+q
+location.href="https://search.naver.com/search.naver?query="+encodedQ
 }else{
-location.href="https://www.google.com/search?q="+q
+location.href="https://www.google.com/search?q="+encodedQ
 }
 
 }
