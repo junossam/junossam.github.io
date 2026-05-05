@@ -545,7 +545,7 @@
     <h1>탐색 알고리즘 카드 실습</h1>
     <p class="desc">
       정렬된 카드 데이터에서 목표 숫자를 찾는 과정을 단계별로 확인해 보세요.
-      <b>순차 탐색</b>, <b>이진 탐색</b>, <b>보간 탐색</b>을 선택할 수 있으며,
+      <b>순차 탐색</b>, <b>이진 탐색</b>, <b>피보나치 탐색</b>, <b>보간 탐색</b>을 선택할 수 있으며,
       진행 방식을 <b>수동</b> 또는 <b>자동</b>으로 바꿔 단계별 흐름을 확인할 수 있습니다.
     </p>
 
@@ -556,6 +556,7 @@
           <select id="algorithmSelect">
             <option value="linear" selected>순차 탐색</option>
             <option value="binary">이진 탐색</option>
+            <option value="fibonacci">피보나치 탐색</option>
             <option value="interpolation">보간 탐색</option>
           </select>
         </div>
@@ -701,12 +702,14 @@
     const historyByAlgorithm = {
       linear: [],
       binary: [],
+      fibonacci: [],
       interpolation: []
     };
 
     const roundCountByAlgorithm = {
       linear: 0,
       binary: 0,
+      fibonacci: 0,
       interpolation: 0
     };
 
@@ -746,6 +749,7 @@
 
     function algorithmLabel(value) {
       if (value === 'binary') return '이진';
+      if (value === 'fibonacci') return '피보나치';
       if (value === 'interpolation') return '보간';
       return '순차';
     }
@@ -1134,6 +1138,211 @@
       return ops;
     }
 
+    function buildFibonacciStatusCard(data) {
+      const {
+        rangeText,
+        remainCount,
+        fibonacciText,
+        offsetText,
+        selectedText,
+        selectedReason,
+        stateText,
+        stateClass
+      } = data;
+
+      return `
+        <span class="status-title">현재 단계</span>
+        <div class="status-grid">
+          <div class="status-box">
+            <div class="status-label">현재 탐색 범위</div>
+            <div class="status-value">${escapeHtml(rangeText)}</div>
+          </div>
+          <div class="status-box">
+            <div class="status-label">총 남은 카드 개수</div>
+            <div class="status-value">${escapeHtml(remainCount)}</div>
+          </div>
+          <div class="status-box">
+            <div class="status-label">사용한 피보나치 수</div>
+            <div class="status-value small">${escapeHtml(fibonacciText)}</div>
+          </div>
+          <div class="status-box">
+            <div class="status-label">제외 기준점</div>
+            <div class="status-value">${escapeHtml(offsetText)}</div>
+          </div>
+          <div class="status-box">
+            <div class="status-label">선택 카드</div>
+            <div class="status-value">
+              ${escapeHtml(selectedText)}
+              ${selectedReason ? `<div class="status-value small">${escapeHtml(selectedReason)}</div>` : ''}
+            </div>
+          </div>
+          <div class="status-box wide">
+            <div class="status-label">현재 상태</div>
+            <div class="status-value small ${stateClass}">${stateText}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function getFibonacciRange(offset, fibM) {
+      const left = Math.max(0, offset + 1);
+      const right = Math.min(numbers.length - 1, offset + fibM);
+      return { left, right, range: makeRange(left, right) };
+    }
+
+    function getFibonacciSelectionReason(offset, fibMm2) {
+      const baseCardNo = offset + 1;
+      return `(F(k-2)=${fibMm2} + ${baseCardNo}번)`;
+    }
+
+    function buildFibonacciStepExplanation(selectedCardNo, offset, fibM, fibMm1, fibMm2, remainCount) {
+      const baseCardNo = offset + 1;
+      return (
+        `현재 남아 있는 카드는 총 ${remainCount}개입니다. 이 개수보다 크거나 같은 피보나치 수는 F(k)=${fibM}입니다.<br>` +
+        `그보다 두 단계 작은 F(k-2)=${fibMm2}를 이용해 다음으로 확인할 카드를 정합니다.<br>` +
+        `이미 제외한 기준은 ${baseCardNo}번까지이므로, 기준에서 ${fibMm2}칸 떨어진 ${selectedCardNo}번 카드를 확인합니다.<br>`
+      );
+    }
+
+    function buildFibonacciOperations() {
+      const ops = [];
+      const n = numbers.length;
+      let fibMm2 = 0;
+      let fibMm1 = 1;
+      let fibM = fibMm2 + fibMm1;
+      let offset = -1;
+
+      while (fibM < n) {
+        fibMm2 = fibMm1;
+        fibMm1 = fibM;
+        fibM = fibMm2 + fibMm1;
+      }
+
+      while (fibM > 1) {
+        const i = Math.min(offset + fibMm2, n - 1);
+        const selectedValue = numbers[i];
+        const currentRange = getFibonacciRange(offset, fibM);
+        const rangeText = `${currentRange.left + 1}번 ~ ${currentRange.right + 1}번`;
+        const remainCount = `${currentRange.range.length}개`;
+        const fibonacciText = `F(k)=${fibM}, F(k-1)=${fibMm1}, F(k-2)=${fibMm2}`;
+        const offsetText = offset < 0 ? '아직 없음' : `${offset + 1}번`;
+        const selectedCardNo = i + 1;
+        const selectedText = `${selectedCardNo}번`;
+        const selectedReason = getFibonacciSelectionReason(offset, fibMm2);
+        const stepExplanation = buildFibonacciStepExplanation(
+          selectedCardNo,
+          offset,
+          fibM,
+          fibMm1,
+          fibMm2,
+          currentRange.range.length
+        );
+
+        if (selectedValue === targetNumber) {
+          ops.push({
+            type: 'found',
+            index: i,
+            range: [i],
+            statusHtml: buildFibonacciStatusCard({
+              rangeText,
+              remainCount,
+              fibonacciText,
+              offsetText,
+              selectedText,
+              selectedReason,
+              stateText:
+                `${stepExplanation} ` +
+                `값이 ${selectedValue}이고 목표 숫자 ${targetNumber}와 같으므로 찾기에 성공했습니다.`,
+              stateClass: 'state-success'
+            })
+          });
+          return ops;
+        }
+
+        if (selectedValue < targetNumber) {
+          const excluded = makeRange(currentRange.left, i);
+          const excludedText = `${currentRange.left + 1}번 ~ ${i + 1}번`;
+
+          fibM = fibMm1;
+          fibMm1 = fibMm2;
+          fibMm2 = fibM - fibMm1;
+          offset = i;
+
+          const nextRange = getFibonacciRange(offset, fibM);
+          ops.push({
+            type: 'binaryMiss',
+            index: i,
+            excluded,
+            range: nextRange.range,
+            direction: 'right',
+            statusHtml: buildFibonacciStatusCard({
+              rangeText,
+              remainCount,
+              fibonacciText,
+              offsetText,
+              selectedText,
+              selectedReason,
+              stateText:
+                `${stepExplanation} ${i + 1}번 카드의 값 ${selectedValue}는 목표 숫자 ${targetNumber}보다 작습니다. ` +
+                `따라서 ${excludedText} 카드를 제외하고 오른쪽 범위에서 더 작은 피보나치 간격으로 계속 탐색합니다.`,
+              stateClass: 'state-right'
+            })
+          });
+        } else {
+          const excluded = makeRange(i, currentRange.right);
+          const excludedText = `${i + 1}번 ~ ${currentRange.right + 1}번`;
+
+          fibM = fibMm2;
+          fibMm1 = fibMm1 - fibMm2;
+          fibMm2 = fibM - fibMm1;
+
+          const nextRange = getFibonacciRange(offset, fibM);
+          ops.push({
+            type: 'binaryMiss',
+            index: i,
+            excluded,
+            range: nextRange.range,
+            direction: 'left',
+            statusHtml: buildFibonacciStatusCard({
+              rangeText,
+              remainCount,
+              fibonacciText,
+              offsetText,
+              selectedText,
+              selectedReason,
+              stateText:
+                `${stepExplanation} ${i + 1}번 카드의 값 ${selectedValue}는 목표 숫자 ${targetNumber}보다 큽니다. ` +
+                `따라서 ${excludedText} 카드를 제외하고 왼쪽 범위에서 더 작은 피보나치 간격으로 계속 탐색합니다.`,
+              stateClass: 'state-left'
+            })
+          });
+        }
+      }
+
+      if (fibMm1 && offset + 1 < n && numbers[offset + 1] === targetNumber) {
+        const index = offset + 1;
+        ops.push({
+          type: 'found',
+          index,
+          range: [index],
+          statusHtml: buildFibonacciStatusCard({
+            rangeText: `${index + 1}번 ~ ${index + 1}번`,
+            remainCount: '1개',
+            fibonacciText: `F(k)=${fibM}, F(k-1)=${fibMm1}, F(k-2)=${fibMm2}`,
+            offsetText: offset < 0 ? '아직 없음' : `${offset + 1}번`,
+            selectedText: `${index + 1}번`,
+            selectedReason: `(마지막 확인: ${offset + 1}번 + 1칸)`,
+            stateText:
+              `피보나치 간격으로 범위를 줄인 뒤 마지막으로 ${offset + 1}번 기준 바로 다음 카드인 ${index + 1}번을 확인합니다. ` +
+              `값이 ${numbers[index]}이고 목표 숫자 ${targetNumber}와 같으므로 찾기에 성공했습니다.`,
+            stateClass: 'state-success'
+          })
+        });
+      }
+
+      return ops;
+    }
+
     function buildInterpolationStatusCard(data) {
       const {
         rangeText,
@@ -1379,6 +1588,7 @@
 
     function buildOperations() {
       if (algorithmSelect.value === 'binary') return buildBinaryOperations();
+      if (algorithmSelect.value === 'fibonacci') return buildFibonacciOperations();
       if (algorithmSelect.value === 'interpolation') return buildInterpolationOperations();
       return buildLinearOperations();
     }
@@ -1541,15 +1751,17 @@
       clearAutoTimer();
       historyByAlgorithm.linear = [];
       historyByAlgorithm.binary = [];
+      historyByAlgorithm.fibonacci = [];
       historyByAlgorithm.interpolation = [];
       roundCountByAlgorithm.linear = 0;
       roundCountByAlgorithm.binary = 0;
+      roundCountByAlgorithm.fibonacci = 0;
       roundCountByAlgorithm.interpolation = 0;
       currentProblemSearchCount = 0;
       resultEl.textContent = '';
       updateStats();
       updatePlayModeUI();
-      setStatus('순차 탐색, 이진 탐색, 보간 탐색의 누적 통계를 초기화했습니다.');
+      setStatus('순차 탐색, 이진 탐색, 피보나치 탐색, 보간 탐색의 누적 통계를 초기화했습니다.');
     });
 
     algorithmSelect.addEventListener('change', () => {
@@ -1599,10 +1811,12 @@
       targetNumber = 40;
       let linearOps = buildLinearOperations();
       let binaryOps = buildBinaryOperations();
+      let fibonacciOps = buildFibonacciOperations();
       let interpolationOps = buildInterpolationOperations();
 
       console.assert(linearOps.some((op) => op.type === 'found' && op.index === 3), '순차 탐색 동작 오류');
       console.assert(binaryOps.some((op) => op.type === 'found' && op.index === 3), '이진 탐색 동작 오류');
+      console.assert(fibonacciOps.some((op) => op.type === 'found' && op.index === 3), '피보나치 탐색 동작 오류');
       console.assert(interpolationOps.some((op) => op.type === 'found' && op.index === 3), '보간 탐색 동작 오류');
       console.assert(linearOps.filter((op) => op.type === 'miss').length === 3, '순차 탐색 miss 단계 오류');
     }
