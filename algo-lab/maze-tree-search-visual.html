@@ -368,6 +368,41 @@
       font-size: .9rem;
     }
 
+    .answer-panel {
+      margin-top: 0;
+    }
+
+    .answer-row {
+      display: grid;
+      grid-template-columns: 86px minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+      margin: 8px 0;
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .answer-row input,
+    .answer-panel textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      padding: 9px 10px;
+    }
+
+    .answer-panel textarea {
+      resize: vertical;
+      min-height: 150px;
+      line-height: 1.5;
+    }
+
+    .hidden-search-list {
+      display: none;
+    }
+
     .dot {
       display: inline-block;
       width: 11px;
@@ -430,51 +465,19 @@
         <div class="tree-wrap">
           <svg id="treeSvg" viewBox="0 0 900 620" role="img" aria-label="미로에서 만든 탐색 트리"></svg>
         </div>
-        <div class="controls bottom-controls" aria-label="탐색 알고리즘 선택">
-          <button class="btn primary" id="dfsBtn" type="button" aria-pressed="true">깊이 우선</button>
-          <button class="btn" id="bfsBtn" type="button" aria-pressed="false">너비 우선</button>
-          <button class="btn" id="bestBtn" type="button" aria-pressed="false">최상 우선</button>
-          <button class="btn" id="astarBtn" type="button" aria-pressed="false">A*</button>
-        </div>
       </section>
 
       <aside class="panel side-panel">
-        <div class="status-grid">
-          <div class="stat">
-            <div class="stat-label">목표 상태</div>
-            <div class="stat-value" id="goalText">-</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">현재 노드</div>
-            <div class="stat-value" id="currentText">-</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">이동 횟수 g</div>
-            <div class="stat-value" id="costText">0</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">평가값</div>
-            <div class="stat-value" id="evalText">-</div>
-          </div>
-        </div>
+        <section class="answer-panel" aria-label="학생 탐색 결과 입력">
+          <h2 class="section-title">직접 탐색한 순서</h2>
+          <label class="answer-row">깊이 우선 <input id="dfsAnswer" type="text" placeholder="예: SAEF"></label>
+          <label class="answer-row">너비 우선 <input id="bfsAnswer" type="text" placeholder="예: SABE"></label>
+          <label class="answer-row">최상 우선 <input id="bestAnswer" type="text" placeholder="예: SBCD"></label>
+          <label class="answer-row">A* <input id="astarAnswer" type="text" placeholder="예: SAFKX"></label>
 
-        <h2 class="section-title">탐색 순서</h2>
-        <div class="list" id="visitedList"></div>
-
-        <h2 class="section-title">대기 노드</h2>
-        <div class="list" id="frontierList"></div>
-
-        <p class="explain" id="explainText">노드 옆 + 버튼을 클릭하면 글자 한 글자를 입력할 수 있습니다. 탈출 지점은 X로 입력합니다.</p>
-
-        <div class="formula" id="formulaText"></div>
-
-        <div class="legend">
-          <span><i class="dot" style="background:var(--start)"></i>시작 S</span>
-          <span><i class="dot" style="background:var(--goal)"></i>목표 또는 탈출 X</span>
-          <span><i class="dot" style="background:var(--frontier)"></i>대기 노드</span>
-          <span><i class="dot" style="background:var(--current)"></i>현재 탐색</span>
-          <span><i class="dot" style="background:var(--path)"></i>찾은 경로</span>
-        </div>
+          <h2 class="section-title">알고리즘 비교 설명</h2>
+          <textarea id="reflectionAnswer" rows="7" placeholder="정답을 찾는 것뿐 아니라 왜 이 알고리즘이 이 문제에 적합한지 적어 보세요. 방문한 상태 수, 경로 길이, 메모리 사용, 설명하기 쉬움 등을 비교할 수 있습니다."></textarea>
+        </section>
       </aside>
     </div>
   </main>
@@ -586,12 +589,23 @@
     const frontierList = document.getElementById("frontierList");
     const explainText = document.getElementById("explainText");
     const formulaText = document.getElementById("formulaText");
-    const dfsBtn = document.getElementById("dfsBtn");
-    const bfsBtn = document.getElementById("bfsBtn");
-    const bestBtn = document.getElementById("bestBtn");
-    const astarBtn = document.getElementById("astarBtn");
+    const answerInputs = {
+      dfs: document.getElementById("dfsAnswer"),
+      bfs: document.getElementById("bfsAnswer"),
+      best: document.getElementById("bestAnswer"),
+      astar: document.getElementById("astarAnswer")
+    };
+    const reflectionAnswer = document.getElementById("reflectionAnswer");
     const saveBtn = document.getElementById("saveBtn");
     const resetBtn = document.getElementById("resetBtn");
+
+    function setText(element, value) {
+      if (element) element.textContent = value;
+    }
+
+    function setHtml(element, value) {
+      if (element) element.innerHTML = value;
+    }
 
     function depthOf(node) {
       let depth = 0;
@@ -641,7 +655,7 @@
       const label = raw.trim().slice(0, 1).toUpperCase();
       if (!label) return;
       if (Object.values(nodes).some(node => !node.isEmpty && node.label === label)) {
-        explainText.textContent = `${label} 노드는 이미 있습니다. 다른 글자를 입력하세요.`;
+        setText(explainText, `${label} 노드는 이미 있습니다. 다른 글자를 입력하세요.`);
         return;
       }
       nodes[slotId].label = label;
@@ -649,7 +663,7 @@
       nodes[slotId].color = palette[Object.keys(nodes).filter(key => !nodes[key].isEmpty).length % palette.length];
       createEmptyChoices(slotId);
       resetSearch();
-      explainText.textContent = `${label} 노드를 추가했습니다. 그 아래에 빈 노드 3개가 생겼습니다.`;
+      setText(explainText, `${label} 노드를 추가했습니다. 그 아래에 빈 노드 3개가 생겼습니다.`);
     }
 
     function addChildNode(parentId) {
@@ -658,7 +672,7 @@
       const label = normalizeNodeLabel(raw);
       if (!label) return;
       if (label !== "X" && Object.values(nodes).some(node => !node.isEmpty && node.label === label)) {
-        explainText.textContent = `${label} 노드는 이미 있습니다. 다른 글자를 입력하세요.`;
+        setText(explainText, `${label} 노드는 이미 있습니다. 다른 글자를 입력하세요.`);
         return;
       }
       const id = makeNodeId(label);
@@ -667,12 +681,12 @@
       tree[parentId].push(id);
       resetPracticeRecords();
       resetSearch();
-      explainText.textContent = `${nodes[parentId].label} 노드 아래에 ${label} 노드를 추가했습니다. X는 탈출 노드이므로 여러 곳에 추가할 수 있습니다.`;
+      setText(explainText, `${nodes[parentId].label} 노드 아래에 ${label} 노드를 추가했습니다. X는 탈출 노드이므로 여러 곳에 추가할 수 있습니다.`);
     }
 
     function deleteSubtree(id) {
       if (id === "S") {
-        explainText.textContent = "시작 노드 S는 삭제할 수 없습니다.";
+        setText(explainText, "시작 노드 S는 삭제할 수 없습니다.");
         return;
       }
       const label = nodes[id].label;
@@ -690,7 +704,7 @@
       }
       resetPracticeRecords();
       resetSearch();
-      explainText.textContent = `${label} 노드와 그 아래 가지를 삭제했습니다.`;
+      setText(explainText, `${label} 노드와 그 아래 가지를 삭제했습니다.`);
     }
 
     function pathToRoot(node) {
@@ -758,21 +772,11 @@
       state.solved = false;
       state.solutionPath = [];
       render();
-      explainText.textContent = `${algorithmLabel()}을 선택했습니다. 이제 다음에 방문해야 할 노드를 직접 클릭하세요. 처음은 S입니다.`;
+      setText(explainText, "트리를 만든 뒤 오른쪽 아래에 알고리즘별 탐색 순서를 직접 입력하세요.");
     }
 
     function setAlgorithm(algorithm) {
       state.algorithm = algorithm;
-      [
-        [dfsBtn, "dfs"],
-        [bfsBtn, "bfs"],
-        [bestBtn, "best"],
-        [astarBtn, "astar"]
-      ].forEach(([button, value]) => {
-        const active = value === algorithm;
-        button.classList.toggle("primary", active);
-        button.setAttribute("aria-pressed", String(active));
-      });
       resetCurrentPracticeRecord();
       resetSearch();
     }
@@ -808,18 +812,18 @@
 
     function visitNodeByUser(id) {
       if (state.solved) {
-        explainText.textContent = "이미 탈출 노드를 찾았습니다. 다른 알고리즘 버튼을 눌러 다시 시작할 수 있습니다.";
+        setText(explainText, "이미 탈출 노드를 찾았습니다. 다른 알고리즘 버튼을 눌러 다시 시작할 수 있습니다.");
         return;
       }
       if (!state.frontier.length) {
-        explainText.textContent = "더 탐색할 노드가 없습니다. 트리를 더 만들거나 알고리즘을 다시 선택하세요.";
+        setText(explainText, "더 탐색할 노드가 없습니다. 트리를 더 만들거나 알고리즘을 다시 선택하세요.");
         return;
       }
       const expected = nextSearchItem();
       if (!expected || expected.id !== id) {
         const expectedLabel = expected ? nodes[expected.id].label : "-";
         practiceRecords[state.algorithm].wrongClicks.push({ clicked: id, expected: expected ? expected.id : null });
-        explainText.textContent = `아직 ${nodes[id].label} 차례가 아닙니다. ${algorithmLabel()}에서는 지금 ${expectedLabel} 노드를 클릭해야 합니다.`;
+        setText(explainText, `아직 ${nodes[id].label} 차례가 아닙니다. ${algorithmLabel()}에서는 지금 ${expectedLabel} 노드를 클릭해야 합니다.`);
         render();
         return;
       }
@@ -841,7 +845,7 @@
         state.solutionPath = item.path;
         practiceRecords[state.algorithm].found = true;
         practiceRecords[state.algorithm].path = item.path.slice();
-        explainText.textContent = `탈출 X를 찾았습니다. 경로는 ${item.path.map(pathId => nodes[pathId].label).join(" → ")}입니다.`;
+        setText(explainText, `탈출 X를 찾았습니다. 경로는 ${item.path.map(pathId => nodes[pathId].label).join(" → ")}입니다.`);
         render(state.solutionPath);
         return;
       }
@@ -858,7 +862,7 @@
       }
 
       const next = nextSearchItem();
-      explainText.textContent = `${nodes[item.id].label}를 맞게 방문했습니다. 새로 열린 노드: ${children.length ? children.map(child => nodes[child].label).join(", ") : "없음"}. 다음 클릭: ${next ? nodes[next.id].label : "없음"}.`;
+      setText(explainText, `${nodes[item.id].label}를 맞게 방문했습니다. 새로 열린 노드: ${children.length ? children.map(child => nodes[child].label).join(", ") : "없음"}. 다음 클릭: ${next ? nodes[next.id].label : "없음"}.`);
       render();
     }
 
@@ -867,14 +871,18 @@
         addLabelToSlot(node);
         return;
       }
-      visitNodeByUser(node);
+      setText(explainText, `${nodes[node].label} 노드입니다. 자식은 + 버튼으로 추가하고, 잘못 만든 노드는 × 버튼으로 삭제하세요.`);
     }
 
     function resetAll() {
       buildInitialTree();
       resetPracticeRecords();
+      Object.values(answerInputs).forEach(input => {
+        input.value = "";
+      });
+      reflectionAnswer.value = "";
       resetSearch();
-      explainText.textContent = "S, A, B만 남기고 트리를 초기화했습니다. 노드 옆 + 버튼으로 직접 트리를 만들고, 탈출 지점은 X로 추가하세요.";
+      setText(explainText, "S, A, B만 남기고 트리를 초기화했습니다. 노드 옆 + 버튼으로 직접 트리를 만들고, 탈출 지점은 X로 추가하세요.");
     }
 
     function escapeHtml(value) {
@@ -987,12 +995,19 @@
       }).join("");
     }
 
+    function manualAnswerRows() {
+      return algorithmOrder.map(algorithm => {
+        const value = answerInputs[algorithm].value.trim() || "미작성";
+        return `<tr>
+          <td>${escapeHtml(algorithmName(algorithm))}</td>
+          <td>${escapeHtml(value)}</td>
+        </tr>`;
+      }).join("");
+    }
+
     function downloadReport() {
       const hasExit = Object.values(nodes).some(node => node.label === "X");
-      const results = algorithmOrder.map(algorithm => ({
-        algorithm,
-        ...(practiceRecords[algorithm] || blankPracticeRecord())
-      }));
+      const reflection = reflectionAnswer.value.trim() || "미작성";
       const nodeSummary = Object.keys(nodes)
         .filter(id => !nodes[id].isEmpty)
         .map(id => `<span class="chip">${escapeHtml(labelOf(id))}</span>`)
@@ -1037,19 +1052,18 @@
   <div class="chips">${nodeSummary}</div>
   <h2>최종 트리</h2>
   <div class="tree">${cleanSvgForReport()}</div>
-  <h2>알고리즘별 탐색 결과</h2>
+  <h2>학생이 직접 입력한 탐색 순서</h2>
   <table>
     <thead>
       <tr>
         <th>알고리즘</th>
-        <th>노드 탐색 순서</th>
-        <th>탈출 경로</th>
-        <th>평가값</th>
-        <th>틀린 클릭</th>
+        <th>입력한 탐색 순서</th>
       </tr>
     </thead>
-    <tbody>${resultRows(results)}</tbody>
+    <tbody>${manualAnswerRows()}</tbody>
   </table>
+  <h2>알고리즘 비교 설명</h2>
+  <p>${escapeHtml(reflection).replace(/\n/g, "<br>")}</p>
 </body>
 </html>`;
       const blob = new Blob([report], { type: "text/html;charset=utf-8" });
@@ -1061,7 +1075,7 @@
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-      explainText.textContent = "현재 트리와 네 알고리즘의 탐색 결과를 HTML 파일로 저장했습니다.";
+      setText(explainText, "현재 트리와 학생이 직접 입력한 탐색 순서, 비교 설명을 HTML 파일로 저장했습니다.");
     }
 
     function render(solutionPath = state.solutionPath) {
@@ -1223,31 +1237,19 @@
         svg.appendChild(group);
       });
 
-      currentText.textContent = state.current ? nodes[state.current].label : "-";
-      costText.textContent = state.current ? depthOf(state.current) : "0";
-      evalText.textContent = state.current && evaluation(state.current) !== null ? evaluationTextFor(state.algorithm, state.current) : "-";
-      goalText.textContent = Object.values(nodes).some(node => node.label === "X") ? "X" : "-";
-      visitedList.innerHTML = state.visited.map(id => `<span class="chip${id === state.current ? " current" : ""}">${nodes[id].label}</span>`).join("");
-      frontierList.innerHTML = state.frontier.map(item => `<span class="chip frontier">${nodes[item.id].label}${evaluation(item.id) !== null ? `(${evaluationTextFor(state.algorithm, item.id)})` : ""}</span>`).join("");
+      setText(currentText, state.current ? nodes[state.current].label : "-");
+      setText(costText, state.current ? depthOf(state.current) : "0");
+      setText(evalText, state.current && evaluation(state.current) !== null ? evaluationTextFor(state.algorithm, state.current) : "-");
+      setText(goalText, Object.values(nodes).some(node => node.label === "X") ? "X" : "-");
+      setHtml(visitedList, state.visited.map(id => `<span class="chip${id === state.current ? " current" : ""}">${nodes[id].label}</span>`).join(""));
+      setHtml(frontierList, state.frontier.map(item => `<span class="chip frontier">${nodes[item.id].label}${evaluation(item.id) !== null ? `(${evaluationTextFor(state.algorithm, item.id)})` : ""}</span>`).join(""));
       renderFormula();
     }
 
     function renderFormula() {
-      if (state.algorithm === "dfs") {
-        formulaText.innerHTML = "<strong>깊이 우선 탐색</strong><br>가장 나중에 발견한 노드를 먼저 탐색합니다. 왼쪽 노드를 먼저 내려가도록 자식은 왼쪽 순서로 표시합니다.";
-      } else if (state.algorithm === "bfs") {
-        formulaText.innerHTML = "<strong>너비 우선 탐색</strong><br>먼저 발견한 노드를 먼저 탐색합니다. 같은 깊이의 왼쪽 노드부터 방문합니다.";
-      } else if (state.algorithm === "best") {
-        formulaText.innerHTML = "<strong>최상 우선 탐색</strong><br>평가 함수 h(n)=목표까지의 노드 수입니다. h가 가장 작은 대기 노드를 먼저 탐색합니다.";
-      } else {
-        formulaText.innerHTML = "<strong>A* 알고리즘</strong><br>평가 함수 f(n)=g(n)+h(n)입니다. g는 이동 횟수, h는 목표까지의 노드 수입니다.";
-      }
+      setHtml(formulaText, "<strong>작성 안내</strong><br>트리를 완성한 뒤 각 알고리즘으로 직접 탐색한 순서를 오른쪽 아래 입력칸에 적습니다. A*는 g, h, f 값을 함께 생각하며 비교 설명에 활용하세요.");
     }
 
-    dfsBtn.addEventListener("click", () => setAlgorithm("dfs"));
-    bfsBtn.addEventListener("click", () => setAlgorithm("bfs"));
-    bestBtn.addEventListener("click", () => setAlgorithm("best"));
-    astarBtn.addEventListener("click", () => setAlgorithm("astar"));
     saveBtn.addEventListener("click", downloadReport);
     resetBtn.addEventListener("click", resetAll);
 
