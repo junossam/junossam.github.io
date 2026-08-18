@@ -1,0 +1,1466 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>틱택토 미니맥스 탐색</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: light-dark(#f7f4ef, #17191c);
+      --surface: light-dark(#fffdf8, #22252a);
+      --surface-2: light-dark(#eef6f5, #202b2d);
+      --text: light-dark(#232322, #f2f0eb);
+      --muted: light-dark(#68645d, #b8b2a7);
+      --line: light-dark(#d7d0c4, #3c4148);
+      --accent: light-dark(#0f766e, #5eead4);
+      --accent-2: light-dark(#b45309, #fbbf24);
+      --danger: light-dark(#b42318, #fb7185);
+      --ok: light-dark(#15803d, #86efac);
+      --draw: light-dark(#6d5f11, #fde68a);
+      --shadow: light-dark(0 18px 40px rgba(50, 42, 30, .12), 0 18px 40px rgba(0, 0, 0, .25));
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 10% 0%, light-dark(rgba(15, 118, 110, .13), rgba(94, 234, 212, .10)), transparent 28rem),
+        linear-gradient(145deg, var(--bg), light-dark(#ece7dc, #101114));
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    button, select {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 36px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.45rem, 2.8vw, 2.3rem);
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      max-width: 720px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 440px) 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .game-panel {
+      padding: 18px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      padding: 8px 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
+    }
+
+    .btn.primary, .btn[aria-pressed="true"] {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: light-dark(#ffffff, #071312);
+    }
+
+    .btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      border-radius: 8px;
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: .82rem;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: min(100%, 360px);
+      margin: 0 auto 16px;
+      aspect-ratio: 1;
+    }
+
+    .cell {
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      background: light-dark(#fffaf1, #262a30);
+      color: var(--text);
+      font-size: clamp(2.2rem, 10vw, 4.2rem);
+      font-weight: 800;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      aspect-ratio: 1;
+    }
+
+    .cell:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    }
+
+    .cell:disabled {
+      cursor: default;
+    }
+
+    .cell.win {
+      border-color: var(--ok);
+      background: color-mix(in srgb, var(--ok) 18%, var(--surface));
+    }
+
+    .message {
+      min-height: 28px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .log {
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+
+    .log h2, .tree-panel h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .reason {
+      color: var(--muted);
+      margin: 0 0 10px;
+      min-height: 42px;
+    }
+
+    .analysis-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      width: min(100%, 390px);
+      margin: 0 auto;
+    }
+
+    .analysis-cell {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      min-height: 118px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .analysis-cell.chosen {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    }
+
+    .analysis-cell.fixed {
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--muted);
+      background: color-mix(in srgb, var(--line) 18%, var(--surface));
+    }
+
+    .analysis-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: .92rem;
+    }
+
+    .analysis-choice {
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .analysis-score {
+      font-weight: 800;
+    }
+
+    .outcome {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-size: .78rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .outcome.win {
+      color: light-dark(#14532d, #052e16);
+      background: var(--ok);
+    }
+
+    .outcome.draw {
+      color: light-dark(#3f3306, #292000);
+      background: var(--draw);
+    }
+
+    .outcome.loss {
+      color: light-dark(#ffffff, #3a0308);
+      background: var(--danger);
+    }
+
+    .analysis-meta {
+      color: var(--muted);
+      font-size: .82rem;
+      display: grid;
+      gap: 2px;
+    }
+
+    .bars {
+      display: grid;
+      grid-template-columns: var(--win, 1fr) var(--drawn, 1fr) var(--loss, 1fr);
+      height: 8px;
+      border-radius: 99px;
+      overflow: hidden;
+      background: var(--line);
+    }
+
+    .bars span:nth-child(1) { background: var(--ok); }
+    .bars span:nth-child(2) { background: var(--draw); }
+    .bars span:nth-child(3) { background: var(--danger); }
+
+    .tree-panel {
+      padding: 18px;
+      min-height: 620px;
+    }
+
+    .tree-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .tree-note {
+      color: var(--muted);
+      margin: 0 0 12px;
+    }
+
+    .tree-shell {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .depth-list {
+      border-right: 1px solid var(--line);
+      padding-right: 12px;
+    }
+
+    .depth-row {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      gap: 6px;
+      align-items: center;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: .88rem;
+    }
+
+    .depth-bar {
+      height: 9px;
+      border-radius: 99px;
+      background: color-mix(in srgb, var(--accent) 72%, transparent);
+      min-width: 2px;
+    }
+
+    .tree-view {
+      max-height: 640px;
+      overflow: auto;
+      padding-bottom: 8px;
+    }
+
+    .outcome-tree-view {
+      max-height: 640px;
+      overflow: auto;
+      padding-bottom: 8px;
+    }
+
+    .outcome-level {
+      margin-bottom: 18px;
+    }
+
+    .outcome-level h3 {
+      margin: 0 0 8px;
+      font-size: .98rem;
+      font-weight: 700;
+    }
+
+    .tree-step {
+      border-bottom: 1px solid var(--line);
+      padding: 0 0 16px;
+      margin-bottom: 16px;
+    }
+
+    .tree-step:last-child {
+      border-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    .step-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .step-title h3 {
+      margin: 0;
+      font-size: .98rem;
+      font-weight: 700;
+    }
+
+    .step-title span {
+      color: var(--muted);
+      font-size: .86rem;
+      text-align: right;
+    }
+
+    .tree-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      width: min(100%, 240px);
+      margin-bottom: 12px;
+    }
+
+    .tree-board span {
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: light-dark(#faf7ef, #1b1e22);
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .tree-choice-board {
+      width: min(100%, 390px);
+      margin: 0;
+      gap: 5px;
+    }
+
+    .tree-choice-board .analysis-cell {
+      min-height: 84px;
+      padding: 6px;
+      gap: 4px;
+    }
+
+    .tree-choice-board .analysis-head {
+      font-size: .78rem;
+    }
+
+    .tree-choice-board .analysis-score {
+      font-size: .86rem;
+    }
+
+    .tree-choice-board .analysis-meta {
+      font-size: .72rem;
+      gap: 1px;
+    }
+
+    .tree-choice-board .bars {
+      height: 6px;
+    }
+
+    .tree-choice-board .outcome {
+      align-self: flex-start;
+      font-size: .7rem;
+      padding: 1px 6px;
+    }
+
+    .analysis-cell.choice {
+      cursor: pointer;
+      text-align: left;
+      color: var(--text);
+      font: inherit;
+    }
+
+    .analysis-cell.choice:hover {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    }
+
+    .analysis-cell.selected-path {
+      outline: 2px solid var(--accent-2);
+      outline-offset: 2px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: .88rem;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    .win-dot { background: var(--ok); }
+    .draw-dot { background: var(--draw); }
+    .loss-dot { background: var(--danger); }
+
+    @media (max-width: 880px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .tree-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .depth-list {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        padding-right: 0;
+        padding-bottom: 10px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .app {
+        width: min(100% - 20px, 1180px);
+        padding-top: 18px;
+      }
+
+      .topbar {
+        display: block;
+      }
+
+      .status {
+        grid-template-columns: 1fr;
+      }
+
+      .analysis-board {
+        gap: 6px;
+      }
+
+      .analysis-cell {
+        min-height: 108px;
+        padding: 6px;
+      }
+
+      .analysis-meta {
+        font-size: .76rem;
+      }
+
+      .tree-choice-board {
+        width: min(100%, 330px);
+      }
+
+      .tree-choice-board .analysis-cell {
+        min-height: 74px;
+        padding: 5px;
+      }
+
+      .tree-choice-board .analysis-meta {
+        font-size: .68rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="topbar">
+      <div>
+        <h1>틱택토 미니맥스 탐색</h1>
+        <p class="subtitle">컴퓨터는 가능한 모든 다음 수를 끝까지 탐색하고, 이길 수 있으면 가장 빠른 승리, 질 수밖에 없으면 가장 늦은 패배를 고릅니다.</p>
+      </div>
+      <button class="btn" id="resetBtn" type="button">새 게임</button>
+    </div>
+
+    <div class="layout">
+      <section class="panel game-panel" aria-label="틱택토 게임">
+        <div class="controls" aria-label="선후공 선택">
+          <button class="btn primary" id="humanFirstBtn" type="button" aria-pressed="true">사람 선공 X</button>
+          <button class="btn" id="computerFirstBtn" type="button" aria-pressed="false">컴퓨터 선공 X</button>
+        </div>
+        <div class="controls" aria-label="탐색 방식 선택">
+          <button class="btn primary" id="blindModeBtn" type="button" aria-pressed="true">맹목적 탐색</button>
+          <button class="btn" id="outcomeModeBtn" type="button" aria-pressed="false">승-패 트리</button>
+        </div>
+
+        <div class="status">
+          <div class="stat">
+            <div class="stat-label">사람</div>
+            <div class="stat-value" id="humanMark">X</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">컴퓨터</div>
+            <div class="stat-value" id="computerMark">O</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">현재 차례</div>
+            <div class="stat-value" id="turnText">사람</div>
+          </div>
+        </div>
+
+        <div class="board" id="board" aria-label="틱택토 판"></div>
+        <div class="message" id="message">칸을 선택하세요.</div>
+
+        <div class="log" aria-live="polite">
+          <h2>컴퓨터 판단 과정</h2>
+          <p class="reason" id="reason">컴퓨터 차례가 되면 각 후보 수를 끝까지 탐색한 결과가 여기에 표시됩니다.</p>
+          <div class="moves" id="moves"></div>
+        </div>
+      </section>
+
+      <section class="panel tree-panel" aria-label="컴퓨터 판단 탐색 트리">
+        <h2 id="treeTitle">방금 컴퓨터 수의 맹목적 탐색</h2>
+        <div class="tree-actions">
+          <button class="btn" id="openFullTreeBtn" type="button" disabled>새창 전체 트리</button>
+          <button class="btn" id="collapseTreeBtn" type="button" disabled>선택 경로 초기화</button>
+        </div>
+        <p class="tree-note" id="treeNote">컴퓨터가 두면 선택한 방식의 탐색 결과가 자동으로 표시됩니다.</p>
+        <div class="tree-shell" id="treeShell" hidden>
+          <div>
+            <div class="depth-list" id="depthList"></div>
+            <div class="legend">
+              <span><i class="dot win-dot"></i>컴퓨터 승</span>
+              <span><i class="dot draw-dot"></i>무승부</span>
+              <span><i class="dot loss-dot"></i>컴퓨터 패</span>
+            </div>
+          </div>
+          <div>
+            <div class="tree-view" id="treeView" aria-live="polite"></div>
+            <div class="outcome-tree-view" id="outcomeTreeView" aria-live="polite" hidden></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const WIN_LINES = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
+    ];
+    const POS_NAME = ["좌상", "상", "우상", "좌", "중앙", "우", "좌하", "하", "우하"];
+
+    const state = {
+      board: Array(9).fill(""),
+      human: "X",
+      computer: "O",
+      turn: "human",
+      gameOver: false,
+      lastComputerRows: [],
+      lastDecisionBoard: null,
+      lastDecisionMove: null,
+      treeRoot: null,
+      selectedTreePath: [],
+      searchMode: "blind"
+    };
+
+    const boardEl = document.getElementById("board");
+    const messageEl = document.getElementById("message");
+    const reasonEl = document.getElementById("reason");
+    const movesEl = document.getElementById("moves");
+    const humanMarkEl = document.getElementById("humanMark");
+    const computerMarkEl = document.getElementById("computerMark");
+    const turnTextEl = document.getElementById("turnText");
+    const humanFirstBtn = document.getElementById("humanFirstBtn");
+    const computerFirstBtn = document.getElementById("computerFirstBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const openFullTreeBtn = document.getElementById("openFullTreeBtn");
+    const collapseTreeBtn = document.getElementById("collapseTreeBtn");
+    const treeShell = document.getElementById("treeShell");
+    const treeNote = document.getElementById("treeNote");
+    const treeTitle = document.getElementById("treeTitle");
+    const depthList = document.getElementById("depthList");
+    const treeView = document.getElementById("treeView");
+    const outcomeTreeView = document.getElementById("outcomeTreeView");
+    const blindModeBtn = document.getElementById("blindModeBtn");
+    const outcomeModeBtn = document.getElementById("outcomeModeBtn");
+
+    function winner(board) {
+      for (const line of WIN_LINES) {
+        const [a, b, c] = line;
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          return { mark: board[a], line };
+        }
+      }
+      if (board.every(Boolean)) return { mark: "draw", line: [] };
+      return null;
+    }
+
+    function availableMoves(board) {
+      return board.map((v, i) => v ? null : i).filter(v => v !== null);
+    }
+
+    function other(mark) {
+      return mark === "X" ? "O" : "X";
+    }
+
+    function scoreForTerminal(result, depth, computer) {
+      if (!result) return null;
+      if (result.mark === "draw") return 0;
+      return result.mark === computer ? 10 - depth : depth - 10;
+    }
+
+    function emptyStats() {
+      return { win: 0, draw: 0, loss: 0, terminals: 0 };
+    }
+
+    function mergeStats(target, source) {
+      target.win += source.win;
+      target.draw += source.draw;
+      target.loss += source.loss;
+      target.terminals += source.terminals;
+    }
+
+    function minimax(board, current, computer, depth = 0) {
+      const result = winner(board);
+      if (result) {
+        const stats = emptyStats();
+        stats.terminals = 1;
+        if (result.mark === "draw") stats.draw = 1;
+        else if (result.mark === computer) stats.win = 1;
+        else stats.loss = 1;
+        return {
+          score: scoreForTerminal(result, depth, computer),
+          stats,
+          move: null,
+          children: []
+        };
+      }
+
+      const maximizing = current === computer;
+      let bestScore = maximizing ? -Infinity : Infinity;
+      let bestMove = null;
+      const stats = emptyStats();
+      const children = [];
+
+      for (const move of availableMoves(board)) {
+        const nextBoard = board.slice();
+        nextBoard[move] = current;
+        const child = minimax(nextBoard, other(current), computer, depth + 1);
+        child.move = move;
+        child.mark = current;
+        child.board = nextBoard;
+        children.push(child);
+        mergeStats(stats, child.stats);
+
+        if (maximizing) {
+          if (child.score > bestScore) {
+            bestScore = child.score;
+            bestMove = move;
+          }
+        } else if (child.score < bestScore) {
+          bestScore = child.score;
+          bestMove = move;
+        }
+      }
+
+      children.sort((a, b) => {
+        if (b.score !== a.score) return maximizing ? b.score - a.score : a.score - b.score;
+        return a.move - b.move;
+      });
+
+      return { score: bestScore, stats, move: bestMove, children };
+    }
+
+    function moveSummary(child) {
+      const total = Math.max(child.stats.terminals, 1);
+      return {
+        winPct: child.stats.win / total,
+        drawPct: child.stats.draw / total,
+        lossPct: child.stats.loss / total
+      };
+    }
+
+    function outcomeInfo(score) {
+      if (score > 0) return { label: "컴승", className: "win" };
+      if (score < 0) return { label: "컴패", className: "loss" };
+      return { label: "무승부", className: "draw" };
+    }
+
+    function chooseComputerMove() {
+      const decisionBoard = state.board.slice();
+      const result = minimax(state.board, state.computer, state.computer);
+      const rows = result.children.map(child => ({
+        move: child.move,
+        score: child.score,
+        stats: child.stats,
+        chosen: child.move === result.move,
+        summary: moveSummary(child)
+      }));
+      state.lastComputerRows = rows;
+      state.lastDecisionBoard = decisionBoard;
+      state.lastDecisionMove = result.move;
+      renderReason(rows, result.move);
+      return result.move;
+    }
+
+    function computerPlay() {
+      if (state.gameOver || state.turn !== "computer") return;
+      const move = chooseComputerMove();
+      if (move !== null && move !== undefined) {
+        state.board[move] = state.computer;
+      }
+      renderSearchTree();
+      state.turn = "human";
+      updateAfterMove();
+    }
+
+    function updateAfterMove() {
+      const result = winner(state.board);
+      if (result) {
+        state.gameOver = true;
+        if (result.mark === "draw") {
+          messageEl.textContent = "무승부입니다. 완벽한 플레이끼리는 보통 이렇게 끝납니다.";
+        } else if (result.mark === state.human) {
+          messageEl.textContent = "사람이 이겼습니다.";
+        } else {
+          messageEl.textContent = "컴퓨터가 이겼습니다.";
+        }
+      } else {
+        messageEl.textContent = state.turn === "human" ? "칸을 선택하세요." : "컴퓨터가 탐색 중입니다.";
+      }
+      renderBoard();
+      renderStatus();
+      if (!state.gameOver && state.turn === "computer") {
+        window.setTimeout(computerPlay, 260);
+      }
+    }
+
+    function renderBoard() {
+      const result = winner(state.board);
+      const winLine = result && result.line ? result.line : [];
+      boardEl.innerHTML = "";
+      state.board.forEach((mark, i) => {
+        const cell = document.createElement("button");
+        cell.className = "cell";
+        if (winLine.includes(i)) cell.classList.add("win");
+        cell.type = "button";
+        cell.textContent = mark;
+        cell.setAttribute("aria-label", `${POS_NAME[i]} ${mark || "빈칸"}`);
+        cell.disabled = Boolean(mark) || state.gameOver || state.turn !== "human";
+        cell.addEventListener("click", () => {
+          if (state.board[i] || state.gameOver || state.turn !== "human") return;
+          setModeButtonsEnabled(false);
+          state.board[i] = state.human;
+          state.turn = "computer";
+          updateAfterMove();
+        });
+        boardEl.appendChild(cell);
+      });
+    }
+
+    function renderStatus() {
+      humanMarkEl.textContent = state.human;
+      computerMarkEl.textContent = state.computer;
+      if (state.gameOver) {
+        turnTextEl.textContent = "종료";
+      } else {
+        turnTextEl.textContent = state.turn === "human" ? "사람" : "컴퓨터";
+      }
+      humanFirstBtn.setAttribute("aria-pressed", String(state.human === "X"));
+      computerFirstBtn.setAttribute("aria-pressed", String(state.computer === "X"));
+      humanFirstBtn.classList.toggle("primary", state.human === "X");
+      computerFirstBtn.classList.toggle("primary", state.computer === "X");
+    }
+
+    function renderReason(rows, chosenMove) {
+      if (!rows.length) {
+        reasonEl.textContent = "더 둘 수 있는 칸이 없습니다.";
+        movesEl.innerHTML = "";
+        return;
+      }
+      const chosen = rows.find(row => row.move === chosenMove);
+      reasonEl.textContent = `${POS_NAME[chosenMove]} 칸을 선택합니다. 후보 ${rows.length}개를 끝까지 탐색했고, 선택한 수의 점수는 ${chosen.score}입니다.`;
+      movesEl.innerHTML = "";
+      movesEl.className = "analysis-board";
+      const byMove = new Map(rows.map(row => [row.move, row]));
+
+      for (let i = 0; i < 9; i += 1) {
+        const item = document.createElement("div");
+        const existingMark = state.lastDecisionBoard ? state.lastDecisionBoard[i] : state.board[i];
+        const row = byMove.get(i);
+
+        if (!row) {
+          item.className = "analysis-cell fixed";
+          item.textContent = existingMark || "";
+          item.setAttribute("aria-label", `${POS_NAME[i]} 이미 놓인 칸 ${existingMark || ""}`);
+          movesEl.appendChild(item);
+          continue;
+        }
+
+        item.className = `analysis-cell${row.chosen ? " chosen" : ""}`;
+        const total = Math.max(row.stats.terminals, 1);
+        const win = `${Math.max(row.summary.winPct, .001)}fr`;
+        const drawn = `${Math.max(row.summary.drawPct, .001)}fr`;
+        const loss = `${Math.max(row.summary.lossPct, .001)}fr`;
+        item.innerHTML = `
+          <div class="analysis-head">
+            <span class="analysis-choice">${row.chosen ? "선택" : "후보"}</span>
+            <span class="analysis-score">${row.score}</span>
+          </div>
+          <div class="bars" style="--win:${win};--drawn:${drawn};--loss:${loss}" aria-label="승 ${row.stats.win}, 무 ${row.stats.draw}, 패 ${row.stats.loss}">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="analysis-meta">
+            <span>경로 ${total.toLocaleString("ko-KR")}</span>
+            <span>승 ${row.stats.win.toLocaleString("ko-KR")} · 무 ${row.stats.draw.toLocaleString("ko-KR")}</span>
+            <span>패 ${row.stats.loss.toLocaleString("ko-KR")}</span>
+          </div>
+        `;
+        movesEl.appendChild(item);
+      }
+    }
+
+    function resetGame(humanFirst = state.human === "X") {
+      state.board = Array(9).fill("");
+      state.human = humanFirst ? "X" : "O";
+      state.computer = humanFirst ? "O" : "X";
+      state.turn = humanFirst ? "human" : "computer";
+      state.gameOver = false;
+      state.lastComputerRows = [];
+      state.lastDecisionBoard = null;
+      state.lastDecisionMove = null;
+      state.treeRoot = null;
+      state.selectedTreePath = [];
+      reasonEl.textContent = "컴퓨터 차례가 되면 각 후보 수를 끝까지 탐색한 결과가 여기에 표시됩니다.";
+      movesEl.innerHTML = "";
+      movesEl.className = "analysis-board";
+      treeShell.hidden = true;
+      depthList.innerHTML = "";
+      treeView.innerHTML = "";
+      outcomeTreeView.innerHTML = "";
+      treeNote.textContent = `${modeLabel()} 방식으로 게임을 시작합니다. 컴퓨터가 두면 탐색 결과가 자동으로 표시됩니다.`;
+      openFullTreeBtn.disabled = true;
+      collapseTreeBtn.disabled = true;
+      setModeButtonsEnabled(true);
+      setTreeViewMode(state.searchMode);
+      renderBoard();
+      renderStatus();
+      messageEl.textContent = humanFirst ? "칸을 선택하세요." : "컴퓨터가 먼저 둡니다.";
+      if (!humanFirst) {
+        setModeButtonsEnabled(false);
+        window.setTimeout(computerPlay, 260);
+      }
+    }
+
+    function renderSearchTree() {
+      if (!state.lastDecisionBoard || state.lastDecisionMove === null) {
+        return;
+      }
+      state.treeRoot = buildTreeNode(state.lastDecisionBoard.slice(), state.computer, state.computer, 0, "root");
+      state.selectedTreePath = [];
+      renderDepthStats(state.treeRoot.depthCounts);
+      renderTree();
+      renderOutcomeTree();
+      setTreeViewMode(state.searchMode);
+      treeShell.hidden = false;
+      openFullTreeBtn.disabled = false;
+      collapseTreeBtn.disabled = false;
+      treeNote.textContent = `${POS_NAME[state.lastDecisionMove]} 선택 직전 판에서 말단 경로 ${state.treeRoot.stats.terminals.toLocaleString("ko-KR")}개를 탐색했습니다. 아래 후보 칸을 누르면 그 다음 탐색 단계가 이어집니다.`;
+    }
+
+    function buildTreeNode(board, current, computer, depth, id) {
+      const result = winner(board);
+      const node = {
+        id,
+        board,
+        current,
+        depth,
+        move: null,
+        mark: null,
+        score: 0,
+        bestMove: null,
+        stats: emptyStats(),
+        children: [],
+        depthCounts: { [depth]: 1 }
+      };
+
+      if (result) {
+        node.stats.terminals = 1;
+        if (result.mark === "draw") node.stats.draw = 1;
+        else if (result.mark === computer) node.stats.win = 1;
+        else node.stats.loss = 1;
+        node.score = scoreForTerminal(result, depth, computer);
+        return node;
+      }
+
+      const maximizing = current === computer;
+      node.score = maximizing ? -Infinity : Infinity;
+
+      for (const move of availableMoves(board)) {
+        const nextBoard = board.slice();
+        nextBoard[move] = current;
+        const child = buildTreeNode(nextBoard, other(current), computer, depth + 1, `${id}-${move}`);
+        child.move = move;
+        child.mark = current;
+        node.children.push(child);
+        mergeStats(node.stats, child.stats);
+        for (const [d, count] of Object.entries(child.depthCounts)) {
+          node.depthCounts[d] = (node.depthCounts[d] || 0) + count;
+        }
+        if (maximizing) {
+          if (child.score > node.score) {
+            node.score = child.score;
+            node.bestMove = move;
+          }
+        } else if (child.score < node.score) {
+          node.score = child.score;
+          node.bestMove = move;
+        }
+      }
+
+      node.children.sort((a, b) => {
+        const aBest = a.move === node.bestMove ? -1 : 0;
+        const bBest = b.move === node.bestMove ? -1 : 0;
+        if (aBest !== bBest) return aBest - bBest;
+        if (b.stats.terminals !== a.stats.terminals) return b.stats.terminals - a.stats.terminals;
+        return a.move - b.move;
+      });
+      return node;
+    }
+
+    function renderDepthStats(counts) {
+      const entries = Object.entries(counts).map(([depth, count]) => [Number(depth), count]).sort((a, b) => a[0] - b[0]);
+      const max = Math.max(...entries.map(entry => entry[1]));
+      depthList.innerHTML = "";
+      entries.forEach(([depth, count]) => {
+        const row = document.createElement("div");
+        row.className = "depth-row";
+        row.innerHTML = `
+          <span>${depth}</span>
+          <span class="depth-bar" style="width:${Math.max(2, (count / max) * 100)}%"></span>
+          <span>${count.toLocaleString("ko-KR")}</span>
+        `;
+        depthList.appendChild(row);
+      });
+    }
+
+    function renderTree() {
+      if (!state.treeRoot) return;
+      treeView.innerHTML = "";
+      let node = state.treeRoot;
+      renderTreeStep(node, 0, null);
+      for (let depth = 0; depth < state.selectedTreePath.length; depth += 1) {
+        const move = state.selectedTreePath[depth];
+        const child = node.children.find(item => item.move === move);
+        if (!child) break;
+        node = child;
+        renderTreeStep(node, depth + 1, move);
+      }
+    }
+
+    function modeLabel() {
+      return state.searchMode === "blind" ? "맹목적 탐색" : "승-패 트리";
+    }
+
+    function setModeButtonsEnabled(enabled) {
+      blindModeBtn.disabled = !enabled;
+      outcomeModeBtn.disabled = !enabled;
+    }
+
+    function setSearchMode(mode) {
+      state.searchMode = mode;
+      const blindActive = mode === "blind";
+      blindModeBtn.setAttribute("aria-pressed", String(blindActive));
+      outcomeModeBtn.setAttribute("aria-pressed", String(!blindActive));
+      blindModeBtn.classList.toggle("primary", blindActive);
+      outcomeModeBtn.classList.toggle("primary", !blindActive);
+      treeTitle.textContent = blindActive ? "방금 컴퓨터 수의 맹목적 탐색" : "방금 컴퓨터 수의 승-패 트리";
+      if (!state.treeRoot) {
+        treeNote.textContent = `${modeLabel()} 방식으로 게임을 시작합니다. 컴퓨터가 두면 탐색 결과가 자동으로 표시됩니다.`;
+      }
+      setTreeViewMode(mode);
+    }
+
+    function setTreeViewMode(mode) {
+      const decisionActive = mode === "blind";
+      treeView.hidden = !decisionActive;
+      outcomeTreeView.hidden = decisionActive;
+      treeTitle.textContent = decisionActive ? "방금 컴퓨터 수의 맹목적 탐색" : "방금 컴퓨터 수의 승-패 트리";
+    }
+
+    function renderOutcomeTree() {
+      if (!state.treeRoot) return;
+      outcomeTreeView.innerHTML = "";
+      let node = state.treeRoot;
+      renderOutcomeLevel(node, 0, null);
+      for (let depth = 0; depth < state.selectedTreePath.length; depth += 1) {
+        const move = state.selectedTreePath[depth];
+        const child = node.children.find(item => item.move === move);
+        if (!child) break;
+        node = child;
+        renderOutcomeLevel(node, depth + 1, move);
+      }
+    }
+
+    function renderOutcomeLevel(node, depth, selectedMove) {
+      const terminal = winner(node.board);
+      const isComputerTurn = !terminal && node.current === state.computer;
+      const isHumanTurn = !terminal && node.current === state.human;
+      const title = depth === 0
+        ? `승-패 탐색 시작: 컴퓨터(${state.computer}) 차례`
+        : `${depth}단계 이후: ${terminal ? "종료" : `${node.current} 차례`}`;
+      const section = document.createElement("section");
+      section.className = "outcome-level";
+      section.innerHTML = `<h3>${title}</h3>`;
+
+      const grid = document.createElement("div");
+      grid.className = "analysis-board tree-choice-board";
+
+      if (!node.children.length) {
+        const terminalOutcome = outcomeInfo(node.score);
+        node.board.forEach((mark, i) => {
+          const cell = document.createElement("div");
+          cell.className = "analysis-cell fixed";
+          cell.textContent = mark || "";
+          cell.setAttribute("aria-label", `${POS_NAME[i]} ${mark || "빈칸"}`);
+          grid.appendChild(cell);
+        });
+        const resultLine = document.createElement("p");
+        resultLine.className = "tree-note";
+        resultLine.innerHTML = `<span class="outcome ${terminalOutcome.className}">${terminalOutcome.label}</span> 점수 ${node.score} · 더 이상 가능한 수 없음`;
+        section.appendChild(resultLine);
+      } else {
+        const byMove = new Map(node.children.map(child => [child.move, child]));
+        for (let i = 0; i < 9; i += 1) {
+          const child = byMove.get(i);
+          const mark = node.board[i];
+          if (!child) {
+            const fixed = document.createElement("div");
+            fixed.className = "analysis-cell fixed";
+            fixed.textContent = mark || "";
+            fixed.setAttribute("aria-label", `${POS_NAME[i]} 이미 놓인 칸 ${mark || ""}`);
+            grid.appendChild(fixed);
+            continue;
+          }
+
+          const outcome = outcomeInfo(child.score);
+          const isRecommended = isComputerTurn && child.move === node.bestMove;
+          const isSelected = selectedMove === child.move;
+          const isRootChosen = depth === 0 && child.move === state.lastDecisionMove;
+          const choice = document.createElement("button");
+          choice.className = `analysis-cell choice${isRecommended ? " chosen" : ""}${isSelected ? " selected-path" : ""}`;
+          choice.type = "button";
+          const choiceLabel = isRootChosen ? "실제 선택" : isRecommended ? "추천" : isHumanTurn ? "응답" : "후보";
+          choice.innerHTML = `
+            <div class="analysis-head">
+              <span class="analysis-choice">${choiceLabel}</span>
+              <span class="analysis-score">${child.score}</span>
+            </div>
+            <span class="outcome ${outcome.className}">${outcome.label}</span>
+            <div class="analysis-meta">
+              <span>${child.mark} → ${POS_NAME[child.move]}</span>
+              <span>경로 ${child.stats.terminals.toLocaleString("ko-KR")}</span>
+            </div>
+          `;
+          choice.addEventListener("click", () => {
+            state.selectedTreePath = state.selectedTreePath.slice(0, depth);
+            state.selectedTreePath.push(child.move);
+            renderTree();
+            renderOutcomeTree();
+          });
+          grid.appendChild(choice);
+        }
+      }
+
+      section.appendChild(grid);
+      outcomeTreeView.appendChild(section);
+    }
+
+    function renderTreeStep(node, depth, selectedMove) {
+      const el = document.createElement("div");
+      el.className = "tree-step";
+      const total = Math.max(node.stats.terminals, 1);
+      const terminal = winner(node.board);
+      const isComputerTurn = !terminal && node.current === state.computer;
+      const isHumanTurn = !terminal && node.current === state.human;
+      const turnLabel = terminal ? "종료" : `${node.current} 차례`;
+      const title = depth === 0 ? "시작 판" : `${depth}단계: ${node.mark}가 ${POS_NAME[node.move]}에 둔 뒤`;
+      const stepText = terminal
+        ? "말단 상태"
+        : isComputerTurn
+          ? `컴퓨터 추천 ${POS_NAME[node.bestMove]}`
+          : "사람의 모든 응답 후보";
+
+      el.innerHTML = `
+        <div class="step-title">
+          <h3>${title}</h3>
+          <span>${turnLabel} · 점수 ${node.score} · 경로 ${total.toLocaleString("ko-KR")} · ${stepText}</span>
+        </div>
+        ${boardHtml(node.board)}
+      `;
+
+      if (node.children.length) {
+        const choiceBoard = document.createElement("div");
+        choiceBoard.className = "analysis-board tree-choice-board";
+        const byMove = new Map(node.children.map(child => [child.move, child]));
+        for (let i = 0; i < 9; i += 1) {
+          const child = byMove.get(i);
+          const mark = node.board[i];
+          if (!child) {
+            const fixed = document.createElement("div");
+            fixed.className = "analysis-cell fixed";
+            fixed.textContent = mark || "";
+            fixed.setAttribute("aria-label", `${POS_NAME[i]} 이미 놓인 칸 ${mark || ""}`);
+            choiceBoard.appendChild(fixed);
+            continue;
+          }
+
+          const choice = document.createElement("button");
+          const childTotal = Math.max(child.stats.terminals, 1);
+          const win = `${Math.max(child.stats.win / childTotal, .001)}fr`;
+          const drawn = `${Math.max(child.stats.draw / childTotal, .001)}fr`;
+          const loss = `${Math.max(child.stats.loss / childTotal, .001)}fr`;
+          const isBest = isComputerTurn && child.move === node.bestMove;
+          const isSelected = selectedMove === child.move;
+          const isRootChosen = depth === 0 && child.move === state.lastDecisionMove;
+          choice.className = `analysis-cell choice${isBest ? " chosen" : ""}${isSelected ? " selected-path" : ""}`;
+          choice.type = "button";
+          const choiceLabel = isRootChosen ? "실제 선택" : isComputerTurn && isBest ? "추천" : isHumanTurn ? "응답" : "후보";
+          choice.innerHTML = `
+            <div class="analysis-head">
+              <span class="analysis-choice">${choiceLabel}</span>
+              <span class="analysis-score">${child.score}</span>
+            </div>
+            <div class="bars" style="--win:${win};--drawn:${drawn};--loss:${loss}" aria-label="승 ${child.stats.win}, 무 ${child.stats.draw}, 패 ${child.stats.loss}">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="analysis-meta">
+              <span>${child.mark} → ${POS_NAME[child.move]}</span>
+              <span>경로 ${childTotal.toLocaleString("ko-KR")}</span>
+              <span>승 ${child.stats.win.toLocaleString("ko-KR")} · 무 ${child.stats.draw.toLocaleString("ko-KR")}</span>
+              <span>패 ${child.stats.loss.toLocaleString("ko-KR")}</span>
+            </div>
+          `;
+          choice.addEventListener("click", () => {
+            state.selectedTreePath = state.selectedTreePath.slice(0, depth);
+            state.selectedTreePath.push(child.move);
+            renderTree();
+            renderOutcomeTree();
+          });
+          choiceBoard.appendChild(choice);
+        }
+        el.appendChild(choiceBoard);
+      }
+
+      treeView.appendChild(el);
+    }
+
+    function boardHtml(board) {
+      return `<div class="tree-board" aria-label="현재 탐색 판">${board.map(mark => `<span>${mark || ""}</span>`).join("")}</div>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      })[char]);
+    }
+
+    function openFullTreeWindow() {
+      if (!state.treeRoot) return;
+      const win = window.open("", "_blank");
+      if (!win) {
+        treeNote.textContent = "팝업이 차단되었습니다. 브라우저에서 새 창 열기를 허용해 주세요.";
+        return;
+      }
+      const modeName = modeLabel();
+      const title = `틱택토 ${modeName} 전체 트리`;
+      win.__treeRoot = state.treeRoot;
+      win.__treeMode = state.searchMode;
+      const html = `<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    :root { color-scheme: light dark; font-family: "Segoe UI", system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; overflow: hidden; background: light-dark(#f7f4ef, #17191c); color: light-dark(#232322, #f2f0eb); }
+    header { position: fixed; top: 0; left: 0; right: 0; z-index: 2; padding: 16px 20px; border-bottom: 1px solid light-dark(#d7d0c4, #3c4148); background: light-dark(rgba(247,244,239,.96), rgba(23,25,28,.96)); backdrop-filter: blur(8px); }
+    h1 { margin: 0 0 8px; font-size: 1.25rem; }
+    .note { margin: 0; color: light-dark(#68645d, #b8b2a7); }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+    button { min-height: 34px; border: 1px solid light-dark(#d7d0c4, #3c4148); border-radius: 8px; background: light-dark(#fffdf8, #22252a); color: inherit; padding: 6px 10px; cursor: pointer; }
+    button:hover { border-color: light-dark(#0f766e, #5eead4); }
+    .stage { position: fixed; inset: 116px 0 0; overflow: auto; padding: 28px 32px 48px; }
+    .diagram { position: relative; min-width: max-content; }
+    .arrows { position: absolute; inset: 0; pointer-events: none; overflow: visible; z-index: 0; }
+    .level { position: relative; z-index: 1; display: flex; justify-content: center; align-items: flex-start; gap: 22px; margin-bottom: 56px; min-height: 126px; }
+    .node { width: 118px; border: 1px solid light-dark(#d7d0c4, #3c4148); border-radius: 8px; background: light-dark(#fffdf8, #22252a); color: inherit; padding: 7px; box-shadow: 0 8px 24px rgba(0,0,0,.08); text-align: left; cursor: pointer; }
+    .node.win { border-color: light-dark(#15803d, #86efac); }
+    .node.draw { border-color: light-dark(#6d5f11, #fde68a); }
+    .node.loss { border-color: light-dark(#b42318, #fb7185); }
+    .node.active { outline: 2px solid light-dark(#b45309, #fbbf24); outline-offset: 2px; }
+    .node:disabled { cursor: default; opacity: .9; }
+    .node-title { display: flex; justify-content: space-between; gap: 4px; font-size: .72rem; font-weight: 700; margin-bottom: 5px; }
+    .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+    .board span { aspect-ratio: 1; display: grid; place-items: center; border: 1px solid light-dark(#d7d0c4, #3c4148); border-radius: 4px; background: light-dark(#faf7ef, #1b1e22); font-size: .86rem; font-weight: 800; }
+    .meta { margin-top: 5px; color: light-dark(#68645d, #b8b2a7); font-size: .68rem; display: grid; gap: 1px; }
+    .badge { display: inline-flex; width: fit-content; border-radius: 99px; padding: 1px 6px; font-weight: 800; font-size: .66rem; }
+    .badge.win { color: #052e16; background: light-dark(#86efac, #86efac); }
+    .badge.draw { color: #292000; background: light-dark(#fde68a, #fde68a); }
+    .badge.loss { color: #3a0308; background: light-dark(#fb7185, #fb7185); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>${escapeHtml(title)}</h1>
+    <p class="note">${escapeHtml(POS_NAME[state.lastDecisionMove])} 선택 직전 판 기준 · 말단 경로 ${state.treeRoot.stats.terminals.toLocaleString("ko-KR")}개</p>
+    <div class="toolbar">
+      <button type="button" id="closeAllBtn">모두 닫기</button>
+      <button type="button" id="openAllBtn">모두 열기</button>
+      <span class="note" id="statusText"></span>
+    </div>
+  </header>
+  <main class="stage">
+    <div class="diagram" id="diagram">
+      <svg class="arrows" id="arrows"></svg>
+      <div id="levels"></div>
+    </div>
+  </main>
+  <script>
+    const POS_NAME = ${JSON.stringify(POS_NAME)};
+    const expanded = new Set(["root"]);
+    const treeRoot = window.__treeRoot;
+    const mode = window.__treeMode;
+
+    function outcomeInfo(score) {
+      if (score > 0) return { label: "컴승", className: "win" };
+      if (score < 0) return { label: "컴패", className: "loss" };
+      return { label: "무승부", className: "draw" };
+    }
+
+    function collectVisibleLevels(root) {
+      const levels = [];
+      const queue = [{ node: root, depth: 0, parentId: null }];
+      while (queue.length) {
+        const item = queue.shift();
+        if (!levels[item.depth]) levels[item.depth] = [];
+        levels[item.depth].push(item);
+        if (expanded.has(item.node.id)) {
+          item.node.children.forEach(child => queue.push({ node: child, depth: item.depth + 1, parentId: item.node.id }));
+        }
+      }
+      return levels;
+    }
+
+    function boardMarkup(board) {
+      return '<div class="board">' + board.map(mark => '<span>' + (mark || '') + '</span>').join('') + '</div>';
+    }
+
+    function nodeMarkup(item) {
+      const node = item.node;
+      const outcome = outcomeInfo(node.score);
+      const terminal = !node.children.length;
+      const turnLabel = node.id === "root"
+        ? "현재 상태"
+        : node.mark === treeRoot.current
+          ? "컴퓨터 차례"
+          : "사람 차례";
+      const title = node.id === "root" ? "현재 상태" : node.mark + " → " + POS_NAME[node.move];
+      const metric = mode === "blind"
+        ? '<span>' + turnLabel + (terminal ? " · 종료" : "") + '</span><span>점수 ' + node.score + '</span><span>경로 ' + node.stats.terminals.toLocaleString("ko-KR") + '</span><span>승 ' + node.stats.win.toLocaleString("ko-KR") + ' · 무 ' + node.stats.draw.toLocaleString("ko-KR") + '</span><span>패 ' + node.stats.loss.toLocaleString("ko-KR") + '</span>'
+        : '<span>' + turnLabel + (terminal ? " · 종료" : "") + '</span><span class="badge ' + outcome.className + '">' + outcome.label + '</span><span>점수 ' + node.score + '</span>';
+      const active = expanded.has(node.id) && node.children.length ? ' active' : '';
+      const disabled = node.children.length ? '' : ' disabled';
+      return '<button type="button" class="node ' + outcome.className + active + '" data-node-id="' + node.id + '" data-parent-id="' + (item.parentId || '') + '"' + disabled + '>' +
+        '<div class="node-title"><span>' + title + '</span><span>' + (node.children.length || '끝') + '</span></div>' +
+        boardMarkup(node.board) +
+        '<div class="meta">' + metric + '</div>' +
+      '</button>';
+    }
+
+    function render() {
+      const levels = collectVisibleLevels(treeRoot);
+      const levelsEl = document.getElementById("levels");
+      levelsEl.innerHTML = levels.map(level => '<section class="level">' + level.map(nodeMarkup).join('') + '</section>').join('');
+      document.querySelectorAll(".node:not(:disabled)").forEach(button => {
+        button.addEventListener("click", () => {
+          const id = button.dataset.nodeId;
+          if (id === "root") return;
+          if (expanded.has(id)) expanded.delete(id);
+          else expanded.add(id);
+          render();
+        });
+      });
+      document.getElementById("statusText").textContent = '표시 노드 ' + levels.reduce((sum, level) => sum + level.length, 0).toLocaleString("ko-KR") + '개 · 열린 노드 ' + expanded.size.toLocaleString("ko-KR") + '개';
+      requestAnimationFrame(drawArrows);
+    }
+
+    function drawArrows() {
+      const diagram = document.getElementById("diagram");
+      const svg = document.getElementById("arrows");
+      const nodes = [...document.querySelectorAll(".node")];
+      const byId = new Map(nodes.map(node => [node.dataset.nodeId, node]));
+      const colorPalette = ["#e11d48", "#2563eb", "#16a34a", "#9333ea", "#ea580c", "#0891b2", "#dc2626", "#4f46e5", "#15803d"];
+      const parentOrder = new Map();
+      const rect = diagram.getBoundingClientRect();
+      svg.setAttribute("width", diagram.scrollWidth);
+      svg.setAttribute("height", diagram.scrollHeight);
+      svg.setAttribute("viewBox", '0 0 ' + diagram.scrollWidth + ' ' + diagram.scrollHeight);
+      svg.innerHTML = '<defs>' + colorPalette.map((color, index) => '<marker id="arrow-' + index + '" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="' + color + '"></path></marker>').join('') + '</defs>';
+      nodes.forEach(node => {
+        const parent = byId.get(node.dataset.parentId);
+        if (!parent) return;
+        if (!parentOrder.has(parent.dataset.nodeId)) parentOrder.set(parent.dataset.nodeId, parentOrder.size);
+        const colorIndex = parentOrder.get(parent.dataset.nodeId) % colorPalette.length;
+        const color = colorPalette[colorIndex];
+        const a = parent.getBoundingClientRect();
+        const b = node.getBoundingClientRect();
+        const x1 = a.left + a.width / 2 - rect.left;
+        const y1 = a.bottom - rect.top;
+        const x2 = b.left + b.width / 2 - rect.left;
+        const y2 = b.top - rect.top;
+        const mid = (y1 + y2) / 2;
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M' + x1 + ',' + y1 + ' C' + x1 + ',' + mid + ' ' + x2 + ',' + mid + ' ' + x2 + ',' + y2);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', color);
+        path.setAttribute('stroke-opacity', '.95');
+        path.setAttribute('stroke-width', '2.4');
+        path.setAttribute('marker-end', 'url(#arrow-' + colorIndex + ')');
+        svg.appendChild(path);
+      });
+    }
+
+    function collectAllIds(node, ids = []) {
+      if (node.children.length) ids.push(node.id);
+      node.children.forEach(child => collectAllIds(child, ids));
+      return ids;
+    }
+
+    document.getElementById("closeAllBtn").addEventListener("click", () => { expanded.clear(); expanded.add("root"); render(); });
+    document.getElementById("openAllBtn").addEventListener("click", () => { expanded.clear(); collectAllIds(treeRoot).forEach(id => expanded.add(id)); render(); });
+    window.addEventListener("resize", drawArrows);
+    render();
+  <\/script>
+</body>
+</html>`;
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+    }
+
+    humanFirstBtn.addEventListener("click", () => resetGame(true));
+    computerFirstBtn.addEventListener("click", () => resetGame(false));
+    resetBtn.addEventListener("click", () => resetGame(state.human === "X"));
+    blindModeBtn.addEventListener("click", () => setSearchMode("blind"));
+    outcomeModeBtn.addEventListener("click", () => setSearchMode("outcome"));
+    openFullTreeBtn.addEventListener("click", openFullTreeWindow);
+    collapseTreeBtn.addEventListener("click", () => {
+      state.selectedTreePath = [];
+      renderTree();
+      renderOutcomeTree();
+    });
+
+    resetGame(true);
+  </script>
+</body>
+</html>
