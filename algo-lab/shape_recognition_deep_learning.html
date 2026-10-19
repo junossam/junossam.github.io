@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>도형 인식 딥러닝 - 선택 뉴런 연결선 강조 v8</title>
+<style>
+:root{font-family:system-ui,'Malgun Gothic',sans-serif;color:#1b2940;background:#f4f7fb}
+*{box-sizing:border-box}
+body{margin:0;background:#f4f7fb}
+header{background:#142a48;color:#fff;padding:22px max(20px,calc((100% - 1650px)/2))}
+h1{font-size:25px;margin:0 0 8px}
+header p{margin:0;color:#d7e2f0}
+main{max-width:1660px;margin:auto;padding:18px}
+.layout{display:grid;grid-template-columns:300px minmax(760px,1fr);gap:16px}
+.card{background:#fff;border:1px solid #dde6f0;border-radius:16px;padding:16px;box-shadow:0 3px 15px rgba(21,42,60,.05)}
+h2{font-size:18px;margin:0 0 10px}
+.sub{font-size:13px;color:#66768b;line-height:1.65}
+.pixels{width:232px;display:grid;grid-template-columns:repeat(8,1fr);gap:3px;margin:16px auto;touch-action:none;user-select:none}
+.pixel{aspect-ratio:1;background:#e9eef5;border:1px solid #cbd6e3;border-radius:3px;cursor:crosshair}
+.pixel.on{background:#2563eb;border-color:#1d4ed8}
+.buttons{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+button{border:1px solid #b8c9dc;background:#fff;padding:9px 11px;border-radius:8px;cursor:pointer;font:inherit;font-size:13px}
+button.primary{background:#215baa;border-color:#215baa;color:#fff;font-weight:700}
+.statusBox{margin-top:12px;padding:12px 14px;background:#f3f7fc;border:1px solid #d9e5f3;border-radius:12px}
+.result{font-size:18px;font-weight:800;color:#6038bd;margin:6px 0}
+.network{width:100%;height:auto;display:block;min-width:980px}
+.networkWrap{overflow-x:auto}
+.key{display:flex;gap:14px;font-size:12px;color:#637085;flex-wrap:wrap;margin-top:8px}
+.key span:before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;background:var(--color)}
+.stageLabel{font-size:17px;font-weight:800;fill:#21324f}
+.stageDesc{font-size:12px;fill:#6c7890}
+.probtext{font-size:14px;font-weight:700;fill:#1d2941}
+.node{cursor:pointer}
+.node:hover{stroke-width:3}
+.detail{margin-top:15px;display:grid;grid-template-columns:minmax(320px,1fr) 280px;gap:16px}
+.formula{padding:14px;border-radius:10px;background:#f1f6fb;font-size:14px;line-height:1.8}
+.heat{display:grid;grid-template-columns:repeat(8,23px);gap:3px}
+.heat i{height:23px;border-radius:3px;display:block}
+.vectorBars{display:grid;gap:4px}
+.barRow{display:grid;grid-template-columns:52px 1fr 52px;align-items:center;gap:7px;font-size:12px;color:#475569}
+.barTrack{height:14px;background:#edf2f7;border-radius:999px;overflow:hidden;position:relative}
+.barFill{height:100%;border-radius:999px}
+.foot{font-size:12px;line-height:1.7;color:#627186;padding:14px 2px 2px}
+@media(max-width:1100px){.layout{grid-template-columns:1fr}.detail{grid-template-columns:1fr}}
+.copyright{margin-top:22px;padding:20px 16px 8px;text-align:center;color:#6b7280;font-size:13px;line-height:1.8}
+.copyright strong{display:block;color:#374151;margin-bottom:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>내 그림이 인공신경망을 통과하면?</h1>
+  <p>버튼 없이 그림을 그리는 즉시 입력층 → 은닉층 1 → 은닉층 2 → 은닉층 3 → 출력층으로 자동 처리됩니다.</p>
+</header>
+<main>
+  <div class="layout">
+    <section class="card">
+      <h2>도형 그리기</h2>
+      <div class="sub">칸을 클릭하거나 드래그해서 도형을 그리세요. 색칠된 칸은 1, 빈 칸은 0입니다. <b>그리는 즉시</b> 인공신경망이 자동으로 계산합니다.</div>
+      <div class="pixels" id="drawing"></div>
+      <div class="buttons">
+        <button onclick="sample(0)">원 예시</button>
+        <button onclick="sample(1)">삼각형 예시</button>
+        <button onclick="sample(2)">사각형 예시</button>
+        <button onclick="erase()">지우기</button>
+      </div>
+      <div class="sub">원, 삼각형, 사각형을 자유롭게 그려 보고 결과가 어떻게 바뀌는지 확인해 보세요.</div>
+      <div class="statusBox">
+        <div class="result" id="result">결과 대기 중</div>
+        <div class="sub" id="status">도형을 그리면 자동으로 계산됩니다.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>인공신경망의 계산 과정</h2>
+      <div class="sub">왼쪽의 8×8 그림이 64개의 입력값이 되어 3개의 은닉층을 차례대로 지나갑니다. <b>은닉층이나 출력층의 뉴런을 클릭</b>하면 그 뉴런이 이전 층의 값을 어떻게 받아 계산하는지 확인할 수 있습니다.</div>
+      <div class="networkWrap"><svg class="network" id="network" viewBox="0 0 1290 560" role="img" aria-label="입력층, 3개의 은닉층, 출력층으로 이루어진 신경망"></svg></div>
+      <div class="key">
+        <span style="--color:#2563eb">입력값 1</span>
+        <span style="--color:#0d9488">현재 계산된 은닉 뉴런</span>
+        <span style="--color:#f59e0b">선택한 뉴런</span>
+        <span style="--color:#7c3aed">출력 결과</span>
+        <span style="--color:#cbd5e1">아직 계산 전</span>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:15px">
+    <h2>은닉층·출력층 뉴런의 계산 살펴보기</h2>
+    <div class="detail">
+      <div id="explanation" class="formula">도형을 그린 뒤 은닉층 또는 출력층의 뉴런을 클릭해 보세요.</div>
+      <div>
+        <div class="sub" id="detailTitle" style="margin-bottom:8px"><b>가중치 시각화</b></div>
+        <div id="weightmap"></div>
+      </div>
+    </div>
+  </section>
+  <div class="foot">이 페이지는 실제로 학습된 <b>64 → 8 → 6 → 4 → 3</b> 신경망을 사용합니다. 8×8 이진 도형 데이터(원, 삼각형, 사각형)로 학습했으며, 생성된 시험 데이터 기준 정확도는 약 99.2%입니다. 학생이 자유롭게 그린 도형은 더 어렵게 분류될 수 있습니다.</div>
+<div class="copyright">
+  <strong>© 2026 Junossam | 교사 강준호 · 성서고등학교</strong>
+  본 페이지는 생성형 인공지능을 활용한 바이브 코딩 방식으로 구현하였습니다.
+</div>
+</main>
+<script>
+const MODEL = {"structure":[64,8,6,4,3],"labels":["원","삼각형","사각형"],"accuracy":0.9916666666666667,"weights":[[[-0.6093199849128723,-0.35526201128959656,0.324057012796402,-0.0913039967417717,-0.21832600235939026,0.28079500794410706,0.490790992975235,-0.4639210104942322],[-0.16403500735759735,-0.16860699653625488,0.08801999688148499,0.260470986366272,0.15696699917316437,-0.040539998561143875,0.3559179902076721,-0.16505099833011627],[0.23710200190544128,0.07170099765062332,-0.03565400093793869,0.17545099556446075,-0.04526999965310097,-0.11910700052976608,0.49316298961639404,-0.03376699984073639],[0.48916301131248474,0.5530279874801636,0.210099995136261,-0.2162330001592636,-0.09145700186491013,-0.16836600005626678,0.30908000469207764,0.30389299988746643],[0.13839399814605713,-0.26563701033592224,0.21105599403381348,0.3147740066051483,0.5738000273704529,-0.02746099978685379,0.05337899923324585,0.17828600108623505],[-0.48033401370048523,-0.477183997631073,0.3997119963169098,0.024608999490737915,0.28702300786972046,-0.24522800743579865,0.320699006319046,0.03771800175309181],[-0.22276300191879272,-0.011296999640762806,0.26395300030708313,0.09290699660778046,-0.07229900360107422,-0.05176800116896629,0.14011499285697937,-0.37126800417900085],[-0.004137000069022179,-0.3505310118198395,-0.6436290144920349,-0.10620000213384628,0.20135000348091125,0.15730799734592438,0.9093279838562012,-0.2946870028972626],[-0.09414800256490707,-0.38533300161361694,-0.08718500286340714,-0.20467700064182281,-0.49915799498558044,0.38095301389694214,0.8054749965667725,0.1344289928674698],[-0.021128999069333076,-0.045712001621723175,-0.3048830032348633,0.22085200250148773,-0.09186699986457825,0.04357200115919113,0.43813198804855347,-0.10066500306129456],[0.32099100947380066,-0.11956299841403961,-0.15433000028133392,0.1767590045928955,-0.1281139999628067,-0.382999986410141,0.28610000014305115,-0.003665999975055456],[-0.0801519975066185,0.0411980003118515,0.0647599995136261,-0.05793000012636185,0.16989199817180634,-0.07397200167179108,0.024501999840140343,-0.07213900238275528],[-0.017576999962329865,0.21593500673770905,0.4207429885864258,0.0727199986577034,0.005987999960780144,-0.2695600092411041,0.17301400005817413,0.16558100283145905],[-0.21679799258708954,-0.10060200095176697,0.32612600922584534,0.1057479977607727,0.07733400166034698,0.07993599772453308,0.3077020049095154,0.09464000165462494],[0.302590012550354,0.3176810145378113,-0.04161199927330017,0.26087701320648193,-0.3548550009727478,0.11182499676942825,0.6374719738960266,-0.028943000361323357],[-0.15987899899482727,0.5416049957275391,0.2778249979019165,-0.03749699890613556,-0.6669020056724548,0.7867509722709656,0.5464180111885071,0.09216900169849396],[0.13322800397872925,0.27108699083328247,0.009511999785900116,-0.10896600037813187,-0.016541000455617905,0.5552560091018677,0.73990797996521,0.45784300565719604],[0.04686199873685837,0.2721099853515625,0.17591199278831482,0.20794400572776794,-0.16387400031089783,0.3467699885368347,0.19972999393939972,0.26251301169395447],[-0.054492998868227005,0.13973499834537506,-0.1034030020236969,-0.02010899968445301,-0.4676699936389923,0.20833200216293335,0.3046880066394806,0.14313000440597534],[0.07806900143623352,-0.08226200193166733,0.36763501167297363,-0.26191601157188416,0.4153209924697876,-0.001970000099390745,-0.08774299919605255,-0.005783999804407358],[0.16362300515174866,0.3393799960613251,0.218967005610466,-0.47035399079322815,-0.33078300952911377,-0.07161899656057358,0.088128000497818,-0.06003100052475929],[-0.029944000765681267,-0.04162999987602234,0.099031001329422,0.09305600076913834,0.07327499985694885,-0.04081200063228607,0.3365750014781952,0.15050099790096283],[0.3373650014400482,0.0676250010728836,0.26123300194740295,-0.10880699753761292,-0.08562599867582321,0.06660100072622299,0.6098870038986206,0.14310100674629211],[-0.21476000547409058,0.3687329888343811,0.13938799500465393,-0.1844179928302765,-0.04970699921250343,0.76214200258255,0.5966190099716187,0.24060599505901337],[0.5723789930343628,0.05169999971985817,0.3433629870414734,-0.22815999388694763,-0.05362600088119507,0.4975709915161133,-0.07998400181531906,0.12729600071907043],[0.09018100053071976,-0.3009890019893646,0.10762300342321396,0.17853200435638428,-0.05413300171494484,0.32745400071144104,0.03700200095772743,0.24323399364948273],[-0.38878899812698364,0.04274199903011322,0.2327129989862442,-0.21159499883651733,-0.2744530141353607,0.2035450041294098,0.1361989974975586,0.1803310066461563],[-0.18287600576877594,-0.07699000090360641,-0.0774800032377243,-0.061131998896598816,-0.022446999326348305,-0.05553000047802925,-0.16021400690078735,-0.013790000230073929],[0.12930899858474731,-0.20059500634670258,-0.2445400059223175,-0.16626200079917908,0.24262499809265137,-0.09597200155258179,-0.09308099746704102,-0.2116989940404892],[0.4913940131664276,-0.04215700179338455,0.06720399856567383,0.21418799459934235,-0.394897997379303,0.08939900249242783,0.269432008266449,-0.20942600071430206],[0.13579699397087097,-0.29480698704719543,0.3481990098953247,-0.036371998488903046,0.23106999695301056,0.24417200684547424,0.433010995388031,0.20703600347042084],[-0.41537201404571533,-0.12765200436115265,0.47277599573135376,-0.15860199928283691,-0.2520430088043213,0.3569500148296356,0.2668760120868683,0.2916159927845001],[-0.2498369961977005,-0.9216939806938171,0.031429000198841095,-0.041078999638557434,-0.3294669985771179,-0.06787999719381332,-0.17249399423599243,-0.28934401273727417],[-0.1298770010471344,-0.25203898549079895,0.352167010307312,0.10182400047779083,0.06854300200939178,-0.15242800116539001,-0.07599800080060959,-0.282366007566452],[-0.09850499778985977,-0.5354660153388977,-0.06781499832868576,0.25459301471710205,0.10533899813890457,-0.060106001794338226,0.11678600311279297,-0.17827600240707397],[0.0035520000383257866,0.014286999590694904,-0.27534300088882446,-0.3481990098953247,-0.16408300399780273,-0.3550490140914917,-0.24298200011253357,-0.09352300316095352],[0.0005389999714680016,-0.14747799932956696,0.03378399834036827,-0.057075001299381256,0.1643880009651184,-0.4062969982624054,-0.26377400755882263,-0.21421200037002563],[-0.13410399854183197,-0.1568949967622757,0.2746579945087433,0.11042500287294388,-0.15143199265003204,-0.14245499670505524,0.012538000009953976,-0.23860299587249756],[-0.4658440053462982,-0.2218409925699234,0.42691099643707275,-0.29356399178504944,0.10891799628734589,0.1282079964876175,-0.022266000509262085,-0.03849099949002266],[-0.01875999942421913,-0.5978479981422424,0.5653709769248962,0.04625900089740753,-0.08652199804782867,0.1680849939584732,0.40288498997688293,-0.1830659955739975],[-0.5012980103492737,-0.08140400052070618,0.5226029753684998,0.10374999791383743,-0.12147299945354462,-0.14604300260543823,-0.028512999415397644,-0.12991200387477875],[0.09823500365018845,-0.05934999883174896,-0.05420900136232376,-0.12432099878787994,0.17511999607086182,-0.031150000169873238,-0.030327999964356422,-0.42247501015663147],[0.13920199871063232,0.21690799295902252,-0.05342999845743179,-0.045145999640226364,0.1970050036907196,-0.10904499888420105,0.22141799330711365,-0.2765969932079315],[0.15749700367450714,0.19082200527191162,-0.2906250059604645,0.17430999875068665,0.21656200289726257,0.09485200047492981,0.06987400352954865,0.2916029989719391],[0.11032900214195251,0.08019600063562393,-0.035698000341653824,-0.06498900055885315,0.2161410003900528,-0.032166000455617905,-0.036935001611709595,0.22583800554275513],[-0.3043609857559204,0.24338799715042114,0.33971700072288513,0.021821999922394753,-0.049222998321056366,-0.06304500252008438,0.17159900069236755,0.025270000100135803],[-0.0594789981842041,0.09986600279808044,0.26262199878692627,-0.20636999607086182,-0.16852599382400513,-0.04565899819135666,0.11835700273513794,-0.3854059875011444],[0.5094079971313477,0.06743700057268143,0.4427669942378998,0.24732300639152527,0.18102799355983734,0.20905999839305878,0.008062000386416912,-0.5108219981193542],[-0.35092398524284363,0.4531799852848053,-0.2927350103855133,-0.1491290032863617,0.3936010003089905,-0.28443199396133423,0.07824099808931351,-0.062300000339746475],[-0.10243500024080276,0.5093269944190979,0.3147140145301819,-0.19315600395202637,-0.02402600087225437,0.10377199947834015,0.33995699882507324,-0.6394299864768982],[0.25140801072120667,0.23214900493621826,-0.1879570037126541,0.18122099339962006,0.055160000920295715,0.19124899804592133,-0.24403199553489685,-0.5890640020370483],[0.17585499584674835,0.2041029930114746,0.20137399435043335,-0.30083298683166504,-0.21369199454784393,0.5748969912528992,0.007437999825924635,0.099542997777462],[-0.01825699955224991,0.025345999747514725,0.1965620070695877,-0.13191799819469452,0.0716719999909401,0.26709601283073425,-0.16176800429821014,0.2241159975528717],[-0.5616949796676636,0.30767300724983215,-0.09243500232696533,0.01371499989181757,0.11932200193405151,0.32425999641418457,0.012749999761581421,0.41278699040412903],[0.18261100351810455,0.3331010043621063,0.05227399989962578,-0.03422899916768074,-0.08692999929189682,-0.19691899418830872,0.06125900149345398,-0.20285500586032867],[0.07725299894809723,0.4781169891357422,-0.06773699820041656,0.20070800185203552,0.3611989915370941,-0.14609499275684357,0.012791999615728855,-0.505952000617981],[0.3408359885215759,0.38734400272369385,-0.6038079857826233,0.31910398602485657,0.47718000411987305,-0.3669779896736145,0.7626529932022095,-0.4492560029029846],[0.1352429986000061,0.6865929961204529,-0.16189700365066528,-0.15814700722694397,0.1444610059261322,0.20375099778175354,0.733331024646759,0.5258299708366394],[-0.029368000105023384,0.055546000599861145,0.044603001326322556,-0.09623099863529205,0.2613759934902191,0.33680400252342224,0.2754870057106018,0.033705998212099075],[-0.15682199597358704,-0.10770700126886368,0.33208099007606506,0.14619100093841553,0.028748000040650368,0.38283398747444153,-0.19558000564575195,-0.15781499445438385],[0.06356500089168549,-0.30680200457572937,0.10087999701499939,0.12060099840164185,-0.23937200009822845,0.41094300150871277,-0.03221699967980385,-0.4070819914340973],[0.40637698769569397,0.3433949947357178,0.3107219934463501,-0.20464099943637848,0.21124400198459625,-0.05730599910020828,0.3790220022201538,0.21931800246238708],[-0.07152199745178223,0.16611899435520172,-0.5235379934310913,0.2316260039806366,0.371396005153656,-0.18326899409294128,0.4137139916419983,0.568556010723114],[-0.3902049958705902,0.664188027381897,-0.6512510180473328,0.11100400239229202,0.47140398621559143,0.0050760000012815,0.34056100249290466,-0.013236000202596188]],[[0.33047398924827576,1.2236740589141846,1.2368439435958862,-0.0,-0.7376160025596619,-0.675478994846344],[-0.17146599292755127,-0.7705860137939453,-1.00845205783844,-0.0,-0.9818080067634583,1.2494549751281738],[0.13832400739192963,0.9323779940605164,0.11332699656486511,-9.999999974752427e-07,0.5421850085258484,-0.1298999935388565],[-0.11550500243902206,-0.2841559946537018,0.1971299946308136,0.0,0.654105007648468,-0.37521499395370483],[-0.013806000351905823,0.056157998740673065,-0.7324770092964172,-0.002517000073567033,-0.9497730135917664,0.5569149851799011],[0.13668400049209595,-0.2663879990577698,0.9328820109367371,-0.002560999942943454,1.0614930391311646,0.04069799929857254],[-0.2685979902744293,-0.6061270236968994,-0.006010000128298998,-0.0,1.0194820165634155,0.9168019890785217],[-0.08760199695825577,1.2466330528259277,1.4971950054168701,-0.0006590000120922923,0.550583004951477,-0.5532280206680298]],[[-2.5999999706982635e-05,-0.04512200132012367,-0.38198399543762207,0.21289899945259094],[1.3899539709091187,-1.7343120574951172,0.8729919791221619,0.9944469928741455],[-1.5072920322418213,-0.6155880093574524,1.3978129625320435,1.1470760107040405],[-0.0,0.0,-0.0047889999113976955,-1.4999999621068127e-05],[-0.5451110005378723,1.0837249755859375,-0.14285500347614288,0.37073999643325806],[0.9121829867362976,0.608240008354187,-0.5235450267791748,-1.019690990447998]],[[-0.703324019908905,1.195032000541687,-1.5617769956588745],[-1.4494459629058838,-0.9969589710235596,0.235834002494812],[0.4706529974937439,-1.0816340446472168,-1.1145739555358887],[1.3946260213851929,0.36353400349617004,-1.1127409934997559]]],"biases":[[-0.2894369959831238,-0.029613999649882317,0.3467620015144348,-0.21604500710964203,-0.007482000160962343,0.32946500182151794,-0.1602340042591095,0.37200599908828735],[-0.7076110243797302,-0.023514999076724052,0.3156439960002899,-0.16636300086975098,0.1214900016784668,1.0375529527664185],[0.8406080007553101,0.3401069939136505,0.47110098600387573,0.023881999775767326],[-0.5226650238037109,0.9304720163345337,-0.19375799596309662]]};
+const $ = x => document.getElementById(x);
+const ns='http://www.w3.org/2000/svg';
+const layerSizes = MODEL.structure;
+const samples=[['00111100','01000010','10000001','10000001','10000001','10000001','01000010','00111100'],['00011000','00100100','00100100','01000010','01000010','10000001','11111111','00000000'],['00000000','01111110','01000010','01000010','01000010','01000010','01111110','00000000']];
+let grid=Array(64).fill(0), frozen=Array(64).fill(0), activations=[null,null,null], probs=null, rawScores=null, stage=0, selected={layer:1,index:0}, painting=false;
+let autoToken=0, autoTimer=null;
+const layerX=[120,460,690,910,1150];
+function el(tag,attrs={},txt){const n=document.createElementNS(ns,tag); Object.entries(attrs).forEach(([k,v])=>n.setAttribute(k,v)); if(txt!=null) n.textContent=txt; return n;}
+function txt(g,x,y,t,cls='',extra={}){g.append(el('text',{x,y,class:cls,...extra},t));}
+function posInput(i){return {x:60+(i%8)*18,y:110+Math.floor(i/8)*18};}
+function posLayer(layerIndex,nodeIndex){
+  const size=layerSizes[layerIndex];
+  const spacing = size<=4?95:size<=6?68:42;
+  const start = 230 - (size-1)*spacing/2;
+  return {x:layerX[layerIndex], y:start + nodeIndex*spacing};
+}
+function build(){
+  for(let i=0;i<64;i++){
+    const p=document.createElement('div'); p.className='pixel'; p.dataset.i=i;
+    p.addEventListener('pointerdown',e=>{painting=true; p.setPointerCapture(e.pointerId); pixel(i,grid[i]?0:1);});
+    p.addEventListener('pointermove',e=>{if(!painting) return; const at=document.elementFromPoint(e.clientX,e.clientY); if(at?.classList.contains('pixel')) pixel(+at.dataset.i,1);});
+    p.addEventListener('pointerenter',()=>{if(painting) pixel(i,1);});
+    p.addEventListener('pointerup',()=>painting=false);
+    $('drawing').append(p);
+  }
+  document.addEventListener('pointerup',()=>painting=false);
+  sample(2);
+}
+function pixel(i,v){ if(grid[i]===v) return; grid[i]=v; redraw(); scheduleAutoProcess(); }
+function redraw(){grid.forEach((v,i)=>$('drawing').children[i].classList.toggle('on',!!v));}
+function sample(k){grid=samples[k].join('').split('').map(Number); redraw(); scheduleAutoProcess();}
+function erase(){grid.fill(0); redraw(); scheduleAutoProcess();}
+function clearDetail(){ $('explanation').textContent='도형을 그린 뒤 은닉층 또는 출력층의 뉴런을 클릭해 보세요.'; $('detailTitle').innerHTML='<b>가중치 시각화</b>'; $('weightmap').innerHTML=''; }
+function scheduleAutoProcess(){
+  if(autoTimer) clearTimeout(autoTimer);
+  const token = ++autoToken;
+  frozen = grid.slice();
+  activations=[null,null,null]; probs=null; rawScores=null; stage=1;
+  $('result').textContent='자동 계산 중...';
+  $('status').textContent='입력층에 64개의 0/1 값이 들어가고 있습니다.';
+  
+  drawNet();
+  clearDetail();
+  autoTimer = setTimeout(()=>runAuto(token), 90);
+}
+function relu(x){return Math.max(0,x);}
+function calcLayer(prev, w, b){ return b.map((bias,j)=> relu(bias + prev.reduce((s,v,i)=> s + v*w[i][j], 0))); }
+function runAuto(token){
+  const steps=[
+    ()=>{ if(token!==autoToken) return; activations[0]=calcLayer(frozen, MODEL.weights[0], MODEL.biases[0]); stage=2; $('status').textContent='은닉층 1이 입력값의 첫 번째 특징을 계산하고 있습니다.';  drawNet(); if(selected.layer===1) detail(1, selected.index, true); },
+    ()=>{ if(token!==autoToken) return; activations[1]=calcLayer(activations[0], MODEL.weights[1], MODEL.biases[1]); stage=3; $('status').textContent='은닉층 2가 앞선 특징들을 다시 조합하고 있습니다.';  drawNet(); if(selected.layer===2) detail(2, selected.index, true); },
+    ()=>{ if(token!==autoToken) return; activations[2]=calcLayer(activations[1], MODEL.weights[2], MODEL.biases[2]); stage=4; $('status').textContent='은닉층 3이 마지막 숨은 표현을 만들고 있습니다.';  drawNet(); if(selected.layer===3) detail(3, selected.index, true); },
+    ()=>{ if(token!==autoToken) return; const z = MODEL.biases[3].map((bias,j)=> bias + activations[2].reduce((s,v,i)=> s + v*MODEL.weights[3][i][j], 0)); const mx=Math.max(...z), exp=z.map(v=>Math.exp(v-mx)), sum=exp.reduce((a,b)=>a+b,0); rawScores=z.slice(); probs=exp.map(v=>v/sum); stage=5; const best=probs.indexOf(Math.max(...probs)); $('result').textContent='예측 결과: '+MODEL.labels[best]; $('status').textContent='원 '+(probs[0]*100).toFixed(1)+'% / 삼각형 '+(probs[1]*100).toFixed(1)+'% / 사각형 '+(probs[2]*100).toFixed(1)+'%';  drawNet(); if(selected.layer===4) detail(4,selected.index,true); }
+  ];
+  steps.forEach((fn,idx)=> setTimeout(fn, 120 + idx*150));
+}
+function drawConnections(g, fromLayer, toLayer){
+  const fromCount = layerSizes[fromLayer], toCount = layerSizes[toLayer];
+  for(let i=0;i<fromCount;i++){
+    const a = fromLayer===0 ? posInput(i) : posLayer(fromLayer, i);
+    for(let j=0;j<toCount;j++){
+      const b = posLayer(toLayer, j);
+      let color='#94a3b8', opacity=0.05, width=0.5;
+      if(selected.layer===toLayer && selected.index===j && stage>=(toLayer===4?5:toLayer+1) && (toLayer!==4 || probs)){
+        const w=MODEL.weights[toLayer-1][i][j];
+        color = w>=0 ? '#e36a55' : '#467cd4';
+        const sourceValue = fromLayer===0 ? (stage>=1?frozen[i]:0) : (activations[fromLayer-1]?.[i] ?? 0);
+        opacity = sourceValue>0 ? Math.min(0.95, 0.20 + Math.abs(w)*0.16) : 0.10;
+        width = sourceValue>0 ? 1.6 : 0.7;
+      } else if(stage>=toLayer) {
+        opacity = 0.10; width=0.6;
+      }
+      const x1 = fromLayer===0 ? a.x+5 : a.x+18;
+      const y1 = a.y;
+      const x2 = b.x-18;
+      const y2 = b.y;
+      g.append(el('line',{x1,y1,x2,y2,stroke:color,'stroke-width':width,'stroke-opacity':opacity}));
+    }
+  }
+}
+function drawNet(){
+  const svg=$('network'); svg.replaceChildren();
+  const g=el('g'); svg.append(g);
+  const labels=[['입력층','64개 뉴런'],['은닉층 1','8개 뉴런'],['은닉층 2','6개 뉴런'],['은닉층 3','4개 뉴런'],['출력층','3개 뉴런']];
+  labels.forEach((arr,idx)=>{ txt(g, layerX[idx], 32, arr[0], 'stageLabel', {'text-anchor':'middle'}); txt(g, layerX[idx], 53, arr[1], 'stageDesc', {'text-anchor':'middle'}); });
+  txt(g, 288, 82, '입력 × 가중치 + 편향', 'stageDesc', {'text-anchor':'middle'});
+  txt(g, 575, 82, 'ReLU', 'stageDesc', {'text-anchor':'middle'});
+  txt(g, 800, 82, 'ReLU', 'stageDesc', {'text-anchor':'middle'});
+  txt(g, 1030, 82, '가중합 → Softmax', 'stageDesc', {'text-anchor':'middle'});
+  const links = el('g'); g.append(links);
+  drawConnections(links,0,1); drawConnections(links,1,2); drawConnections(links,2,3); drawConnections(links,3,4);
+  const nodes = el('g'); g.append(nodes);
+  for(let i=0;i<64;i++){
+    const p=posInput(i), v=stage>=1?frozen[i]:null;
+    const active = stage===1 && v===1;
+    nodes.append(el('circle',{cx:p.x,cy:p.y,r:active?7.1:6.2,fill:v===1?'#2563eb':'#e4ebf4',stroke:active?'#f59e0b':(v===1?'#1d4ed8':'#b9c6d6'),'stroke-width':active?2.2:.8}));
+    if(v!=null) txt(nodes,p.x,p.y+2.5,''+v,'',{'font-size':7,'text-anchor':'middle',fill:v?'#fff':'#607289','font-weight':'bold'});
+  }
+  for(let layer=1; layer<=3; layer++){
+    const vals = activations[layer-1];
+    for(let i=0;i<layerSizes[layer];i++){
+      const p=posLayer(layer,i); const v=vals?.[i];
+      const isSel=selected.layer===layer && selected.index===i && stage>=layer+1;
+      const stageActive = stage===layer+1;
+      const circle = el('circle',{class:'node',cx:p.x,cy:p.y,r:stageActive?22:20,fill:v==null?'#dcece9':v>0?'#0d9488':'#afd5d1',stroke:isSel?'#f59e0b':(stageActive?'#0ea5a0':'#12857e'),'stroke-width':isSel?4:(stageActive?2.8:1.4)});
+      circle.addEventListener('click',()=>{ if(stage>=layer+1){ selected={layer:layer,index:i}; detail(layer,i,false); } });
+      circle.append(el('title',{}, `은닉층 ${layer} - 뉴런 ${i+1}`)); nodes.append(circle);
+      txt(nodes,p.x,p.y+4,`H${layer}-${i+1}`,'',{'font-size':11,'text-anchor':'middle','font-weight':'bold',fill:v>0?'white':'#224c4a','pointer-events':'none'});
+      txt(nodes,p.x+32,p.y+4,v==null?'—':v.toFixed(2),'',{'font-size':12,fill:'#22746e','font-weight':'bold'});
+    }
+  }
+  for(let j=0;j<3;j++){
+    const p=posLayer(4,j), isBest=probs && j===probs.indexOf(Math.max(...probs));
+    const outputCircle=el('circle',{class:'node',cx:p.x,cy:p.y,r:stage===5?24:22,fill:probs?(isBest?'#7c3aed':'#d5c8ec'):'#e4ddf1',stroke:stage===5 && selected.layer===4 && selected.index===j?'#f59e0b':'#7c3aed','stroke-width':stage===5&&selected.layer===4&&selected.index===j?4:(isBest?3:1.2)});
+    const openOutput=()=>{ensureOutputReady(); selected={layer:4,index:j}; detail(4,j,false);};
+    outputCircle.addEventListener('click',openOutput);
+    nodes.append(outputCircle);
+    txt(nodes,p.x,p.y+5,['○','△','□'][j],'',{'font-size':19,'text-anchor':'middle',fill:isBest?'white':'#5b4096','pointer-events':'none'});
+    txt(nodes,p.x+34,p.y-17,MODEL.labels[j],'probtext',{'pointer-events':'none'});
+    txt(nodes,p.x+34,p.y+1,rawScores?'가중합: '+rawScores[j].toFixed(3):'가중합: 대기','',{'font-size':12,fill:'#475569','pointer-events':'none'});
+    txt(nodes,p.x+34,p.y+19,probs?'확률: '+(probs[j]*100).toFixed(1)+'%':'확률: 대기','',{'font-size':12,fill:'#6c5a91','pointer-events':'none'});
+    const hit=el('rect',{x:p.x-27,y:p.y-31,width:146,height:65,rx:13,fill:'transparent',style:'cursor:pointer;pointer-events:all'});
+    hit.addEventListener('click',openOutput);
+    hit.append(el('title',{},MODEL.labels[j]+' 계산식 확인')); nodes.append(hit);
+  }
+  txt(g, layerX[0], 286, '8×8 그림이 64개의 입력값이 됨', 'stageDesc', {'text-anchor':'middle'});
+  txt(g, layerX[1], 500, '첫 번째 특징 추출', 'stageDesc', {'text-anchor':'middle'});
+  txt(g, layerX[2], 500, '특징을 다시 조합', 'stageDesc', {'text-anchor':'middle'});
+  txt(g, layerX[3], 500, '마지막 숨은 표현', 'stageDesc', {'text-anchor':'middle'});
+  txt(g, layerX[4], 500, '가장 높은 확률을 선택', 'stageDesc', {'text-anchor':'middle'});
+}
+function ensureOutputReady(){
+  // 계산 애니메이션 중에도 출력층을 클릭하면 바로 계산 결과를 확인할 수 있다.
+  if(stage===5 && probs) return;
+  ++autoToken;
+  if(autoTimer) clearTimeout(autoTimer);
+  frozen=grid.slice();
+  activations[0]=calcLayer(frozen, MODEL.weights[0], MODEL.biases[0]);
+  activations[1]=calcLayer(activations[0], MODEL.weights[1], MODEL.biases[1]);
+  activations[2]=calcLayer(activations[1], MODEL.weights[2], MODEL.biases[2]);
+  const z=MODEL.biases[3].map((bias,j)=>bias+activations[2].reduce((sum,v,i)=>sum+v*MODEL.weights[3][i][j],0));
+  const m=Math.max(...z),ex=z.map(v=>Math.exp(v-m)),total=ex.reduce((a,b)=>a+b,0);
+  rawScores=z.slice(); probs=ex.map(v=>v/total); stage=5;
+  const best=probs.indexOf(Math.max(...probs));
+  $('result').textContent='예측 결과: '+MODEL.labels[best];
+  $('status').textContent='원 '+(probs[0]*100).toFixed(1)+'% / 삼각형 '+(probs[1]*100).toFixed(1)+'% / 사각형 '+(probs[2]*100).toFixed(1)+'%';
+}
+function detail(layer, index, keepSelection){
+  if(!keepSelection) selected={layer,index};
+  const prev = layer===1 ? frozen : layer===4 ? activations[2] : activations[layer-2];
+  const current = layer===4 ? probs : activations[layer-1];
+  if(!prev || (layer!==4 && !current) || (layer===4 && !probs)) return;
+  const weights = MODEL.weights[layer-1].map(row=>row[index]);
+  const bias = MODEL.biases[layer-1][index];
+  let raw = bias; for(let i=0;i<prev.length;i++) raw += prev[i]*weights[i];
+  // 실제 가중합을 계산한 모든 항을 그대로 풀어서 표시한다.
+  const terms = prev.map((v,i)=>`(${Number(v).toFixed(layer===1?0:3)} × ${weights[i].toFixed(3)})`);
+  const expanded = terms.join(' + ') + ` + (${bias.toFixed(3)})`;
+  const heading = layer===4 ? `출력층: ${MODEL.labels[index]}` : `은닉층 ${layer}의 뉴런 ${index+1}`;
+  const resultLine = layer===4
+    ? `가중합 점수 = <b>${raw.toFixed(4)}</b><div>Softmax 변환 후 ${MODEL.labels[index]} 예측 확률 = <b>${(probs[index]*100).toFixed(2)}%</b></div><div class="sub">Softmax는 출력층의 세 점수를 함께 비교하여 확률로 변환합니다.</div>`
+    : `ReLU(${raw.toFixed(4)}) = <b>${current[index].toFixed(4)}</b><div class="sub">ReLU는 음수를 0으로 바꾸고 양수는 그대로 통과시킵니다.</div>`;
+  $('explanation').innerHTML = `<b>${heading}</b><div>이 뉴런은 이전 층의 값 ${prev.length}개를 받아 각각 가중치를 곱한 뒤 편향을 더합니다.</div>
+    <div style="margin-top:8px"><b>계산식</b>: (이전층 값 × 가중치)의 합 + 편향 = ${raw.toFixed(4)}</div>
+    <div style="margin-top:8px"><b>실제 계산</b></div>
+    <div style="overflow-wrap:anywhere;word-break:break-word;line-height:2;background:white;border:1px solid #dce5ee;border-radius:8px;padding:10px;font-family:Consolas,monospace;font-size:12px">${expanded} = <b>${raw.toFixed(4)}</b></div>
+    <div style="margin-top:9px">${resultLine}</div>`;
+  if(layer===1){
+    $('detailTitle').innerHTML='<b>입력층 → 은닉층 1 가중치</b><div class="sub">빨강: 양의 가중치 · 파랑: 음의 가중치</div>';
+    const max = Math.max(.01,...weights.map(v=>Math.abs(v)));
+    $('weightmap').className='heat';
+    $('weightmap').innerHTML = weights.map(v=>{ const alpha=(.12+.88*Math.abs(v)/max).toFixed(2); return `<i title="${v.toFixed(3)}" style="background:${v>=0?'rgba(225,87,74,':'rgba(58,115,215,'}${alpha})"></i>`; }).join('');
+  } else {
+    const max = Math.max(.01,...weights.map(v=>Math.abs(v)));
+    $('detailTitle').innerHTML=`<b>${layer===4?'은닉층 3 → 출력층':`은닉층 ${layer-1} → 은닉층 ${layer}`} 가중치</b><div class="sub">이전 층의 각 뉴런이 얼마나 영향을 주는지 표시</div>`;
+    $('weightmap').className='vectorBars';
+    $('weightmap').innerHTML = weights.map((v,i)=>{
+      const width=(Math.abs(v)/max*100).toFixed(1);
+      const color=v>=0?'#e36a55':'#467cd4';
+      const prevPrefix=layer===2?'H1':layer===3?'H2':'H3';
+      return `<div class="barRow"><div>${prevPrefix}-${i+1}</div><div class="barTrack"><div class="barFill" style="width:${width}%;background:${color}"></div></div><div>${v.toFixed(2)}</div></div>`;
+    }).join('');
+  }
+  drawNet();
+}
+build();
+</script>
+</body>
+</html>

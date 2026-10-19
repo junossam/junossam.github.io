@@ -75,6 +75,42 @@
       gap: 14px;
     }
 
+    .group + .group {
+      margin-top: 34px;
+    }
+
+    .group-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 14px;
+      padding: 0 4px 10px;
+      font-size: 21px;
+      font-weight: 800;
+      color: #1f2937;
+      border-bottom: 2px solid #c7d2fe;
+    }
+
+    .group-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #4f46e5;
+      color: #fff;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .group-count {
+      margin-left: auto;
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7280;
+    }
+
     .list-item {
       display: block;
       padding: 20px 22px;
@@ -173,6 +209,10 @@
         padding: 18px;
       }
 
+      .group-title {
+        font-size: 19px;
+      }
+
       .brand-text {
         font-size: 23px;
       }
@@ -227,9 +267,30 @@
         .trim();
     }
 
+    // README의 "## 1. 파이썬 기초" 같은 번호 붙은 제목을 기준으로 묶음을 나눕니다.
     function parseMarkdown(md) {
       const normalized = normalizeMarkdown(md);
-      const blocks = normalized.split(/\n(?=###\s+)/);
+      const chunks = normalized.split(/\n(?=##\s+\d+\.)/);
+      const groups = [];
+
+      for (const chunk of chunks) {
+        const groupMatch = chunk.match(/^##\s+(\d+)\.\s*(.+)/);
+        const items = parseItems(chunk);
+
+        if (items.length) {
+          groups.push({
+            number: groupMatch ? groupMatch[1] : "",
+            title: groupMatch ? groupMatch[2].trim() : "",
+            items,
+          });
+        }
+      }
+
+      return groups;
+    }
+
+    function parseItems(md) {
+      const blocks = md.split(/\n(?=###\s+)/);
       const items = [];
 
       for (const block of blocks) {
@@ -265,10 +326,24 @@
       return items;
     }
 
-    function render(items) {
+    function renderGroupTitle(group) {
+      if (!group.title) {
+        return "";
+      }
+
+      return `
+        <h2 class="group-title">
+          ${group.number ? `<span class="group-number">${escapeHtml(group.number)}</span>` : ""}
+          ${escapeHtml(group.title)}
+          <span class="group-count">${group.items.length}개</span>
+        </h2>
+      `;
+    }
+
+    function render(groups) {
       const app = document.getElementById("app");
 
-      if (!items.length) {
+      if (!groups.length) {
         app.innerHTML = `
           <div class="empty">
             데이터가 없습니다.<br />
@@ -278,9 +353,13 @@
         return;
       }
 
-      app.innerHTML = `
+      app.innerHTML = groups
+        .map(
+          (group) => `
+        <section class="group">
+          ${renderGroupTitle(group)}
         <div class="list">
-          ${items
+          ${group.items
             .map(
               (item) => `
                 <a class="list-item" href="${item.file}">
@@ -311,7 +390,10 @@
             )
             .join("")}
         </div>
-      `;
+        </section>
+      `
+        )
+        .join("");
     }
 
     async function init() {
@@ -327,8 +409,8 @@
         }
 
         const markdown = await response.text();
-        const items = parseMarkdown(markdown);
-        render(items);
+        const groups = parseMarkdown(markdown);
+        render(groups);
       } catch (error) {
         app.innerHTML = `
           <div class="error">
