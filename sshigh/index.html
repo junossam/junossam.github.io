@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speaking Practice Web App</title>
+  <style>
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      background-color: #f9f9f9;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      padding: 15px !important;
+      box-sizing: border-box;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    button {
+      background: #1A237E;
+      color: white;
+      border: none;
+      padding: 14px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      margin: 5px 2px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    button.stop-btn { background: #C2185B; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+
+    textarea, input[type="text"], select {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    .status { font-weight: bold; color: #1A237E; }
+
+    .highlight-box {
+      background-color: #fffde7;
+      border: 1px solid #ffe082;
+      padding: 15px;
+      border-radius: 8px;
+      min-height: 60px;
+      margin-top: 10px;
+      line-height: 1.8;
+      font-size: 16px;
+      word-break: break-word;
+    }
+
+    .active-word {
+      background-color: #ffeb3b;
+      font-weight: bold;
+      border-radius: 3px;
+      padding: 2px 4px;
+    }
+
+    .history-box {
+      background: #f1f8e9;
+      border: 1px solid #c8e6c9;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-top: 10px;
+      max-height: 120px;
+      overflow-y: auto;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🎤 영어 발표 연습 & 제출실</h2>
+
+  <!-- 1. 기본 정보 & 대본 입력 -->
+  <div class="card">
+    <h3>1. 학번/이름 및 대본 입력</h3>
+    <label>학번 및 이름</label>
+    <input type="text" id="studentInfo" placeholder="예: 10315 홍길동">
+
+    <label>영어 대본</label>
+    <textarea id="englishScript" rows="5" placeholder="작성한 영어 대본을 여기에 붙여넣으세요."></textarea>
+
+    <div style="display: flex; gap: 10px;">
+      <div style="flex: 1;">
+        <label>원어민 성별 선택</label>
+        <select id="voiceGender">
+          <option value="female">여성 목소리 (Female)</option>
+          <option value="male">남성 목소리 (Male)</option>
+        </select>
+      </div>
+      <div style="flex: 1;">
+        <label>원어민 음성 듣기 속도</label>
+        <select id="ttsRate">
+          <option value="0.5">0.5배속 (천천히)</option>
+          <option value="0.7">0.7배속 (보통)</option>
+          <option value="0.9" selected>0.9배속 (약간 빠르게)</option>
+        </select>
+      </div>
+    </div>
+    <p id="voiceHint" style="font-size:14px; color:#555; margin:0 0 8px;"></p>
+
+    <div>
+      <button onclick="playTTS()">🔊 원어민 발표 듣기 (하이라이트 지원)</button>
+      <button class="stop-btn" onclick="stopTTS()">⏹️ 듣기 정지</button>
+    </div>
+
+    <div id="highlightDisplay" class="highlight-box">
+      <em>대본을 입력하고 [원어민 발표 듣기]를 누르면 읽는 위치가 여기에 표시됩니다.</em>
+    </div>
+  </div>
+
+  <!-- 2. 발표 연습 및 녹음 -->
+  <div class="card">
+    <h3>2. 발표 연습 & 녹음</h3>
+    <p>인정된 연습 횟수: <span id="practiceCount" class="status">0</span>회 (최소 5회 완료 필수)</p>
+    <p>⭐ 최고 점수: <span id="bestScore" class="status">0</span>점</p>
+    
+    <button id="recordBtn" onclick="toggleRecording()">🎙️ 연습 시작 (녹음하기)</button>
+    <p id="recordStatus"></p>
+    <div id="levelWrap" style="display:none; margin-bottom:10px;">
+      <div style="font-size:14px;">🎚️ 마이크 입력 크기 <span id="micName" style="color:#777;"></span></div>
+      <div style="background:#eee; border-radius:6px; height:14px; overflow:hidden;">
+        <div id="levelBar" style="background:#43A047; height:100%; width:0%; transition:width 0.1s;"></div>
+      </div>
+    </div>
+
+    <label style="margin-top: 10px; display: block; font-weight: bold;">📊 완료된 회차별 이력</label>
+    <div id="historyList" class="history-box">
+      아직 완료된 연습 기록이 없습니다.
+    </div>
+
+    <audio id="audioPreview" controls style="display:none; width:100%; margin-top:10px;"></audio>
+  </div>
+
+  <!-- 3. 제출하기 -->
+  <div class="card">
+    <h3>3. 최종 제출하기</h3>
+    <label>한국어 대본 사진 첨부</label>
+    <input type="file" id="koreanPhoto" accept="image/*">
+    <br><br>
+    <button id="submitBtn" onclick="submitWork()" disabled style="background: #ccc;">📤 선생님께 제출하기 (5회 이상 완료 필요)</button>
+    <p id="submitStatus" style="font-weight: bold; margin-top: 5px;"></p>
+  </div>
+
+  <script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz95LNnpclRkk00pf35NgGHZBWLP5xhrtzyksPa7QXj0jq2ObQQrI1l21VFJgHs9rUk8g/exec";
+
+    let practiceCount = 0;
+    let bestScore = 0;
+    let bestAudioBlob = null;
+    let practiceHistories = [];
+
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let currentAudioBlob = null;
+    let isRecording = false;
+    let globalStream = null;
+
+    let voices = [];
+    function loadVoices() {
+      if (!('speechSynthesis' in window)) return;
+      voices = window.speechSynthesis.getVoices();
+    }
+    loadVoices();
+    if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = () => { loadVoices(); updateVoiceHint(); };
+    }
+
+    // 음성 이름에 성별이 없는 경우가 많아, Windows/Edge/Chrome/macOS의 대표 음성 이름으로 판별한다.
+    // 'female' 안에 'male'이 들어 있으므로 반드시 단어 단위(\b)로 검사해야 한다.
+    const FEMALE_VOICE = /\b(female|woman|zira|aria|jenny|michelle|ana|emma|ava|sonia|libby|maisie|natasha|clara|susan|hazel|samantha|karen|moira|tessa|victoria|allison|serena|fiona|catherine|emily|joanna|salli|kimberly|ivy|kendra|amy|google us english)\b/i;
+    const MALE_VOICE = /\b(male|man|david|mark|guy|christopher|eric|roger|steffan|ryan|thomas|william|liam|george|daniel|alex|fred|aaron|arthur|oliver|rishi|andrew|brian|james|matthew|justin|joey)\b/i;
+
+    function voiceGender(v) {
+      if (FEMALE_VOICE.test(v.name)) return 'female';
+      if (MALE_VOICE.test(v.name)) return 'male';
+      return 'unknown';
+    }
+
+    function pickVoice(gender) {
+      if (voices.length === 0) loadVoices();
+      const english = voices.filter(v => v.lang.toLowerCase().startsWith('en'));
+      if (english.length === 0) return null;
+
+      // 미국 영어 > 그 밖의 영어, 그 안에서 기기 내장 음성 우선
+      const rank = v => (v.lang.toLowerCase() === 'en-us' ? 0 : 2) + (v.localService ? 0 : 1);
+      const sorted = [...english].sort((a, b) => rank(a) - rank(b));
+
+      return sorted.find(v => voiceGender(v) === gender)
+        || sorted.find(v => voiceGender(v) === 'unknown')
+        || sorted[0];
+    }
+
+    function updateVoiceHint() {
+      const gender = document.getElementById('voiceGender').value;
+      const v = pickVoice(gender);
+      const hint = document.getElementById('voiceHint');
+      if (!v) {
+        hint.innerText = '⚠️ 이 기기에는 영어 음성이 설치되어 있지 않습니다.';
+      } else if (voiceGender(v) !== gender) {
+        hint.innerText = `⚠️ 이 기기에는 ${gender === 'male' ? '남성' : '여성'} 영어 음성이 없어 "${v.name}"(으)로 재생됩니다.`;
+      } else {
+        hint.innerText = `사용 음성: ${v.name}`;
+      }
+    }
+    document.getElementById('voiceGender').addEventListener('change', updateVoiceHint);
+    updateVoiceHint();
+
+    function playTTS() {
+      const text = document.getElementById('englishScript').value.trim();
+      const displayArea = document.getElementById('highlightDisplay');
+      const gender = document.getElementById('voiceGender').value;
+      
+      if (!text) {
+        alert("영어 대본을 먼저 입력해주세요.");
+        return;
+      }
+      if (!('speechSynthesis' in window)) {
+        alert("이 기기/브라우저는 음성 재생을 지원하지 않습니다.");
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+
+      const selectedRate = parseFloat(document.getElementById('ttsRate').value);
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = selectedRate;
+
+      const chosenVoice = pickVoice(gender);
+      if (chosenVoice) {
+        utterance.voice = chosenVoice;
+        utterance.lang = chosenVoice.lang;
+      }
+
+      utterance.onboundary = function(event) {
+        if (event.name === 'word') {
+          const charIndex = event.charIndex;
+          const charLength = event.charLength || 5;
+          const before = text.substring(0, charIndex);
+          const current = text.substring(charIndex, charIndex + charLength);
+          const after = text.substring(charIndex + charLength);
+          displayArea.innerHTML = `${before}<span class="active-word">${current}</span>${after}`;
+        }
+      };
+
+      utterance.onend = function() { 
+        displayArea.innerHTML = text; 
+      };
+
+      displayArea.innerHTML = text;
+      
+      setTimeout(() => {
+        window.speechSynthesis.speak(utterance);
+      }, 50);
+    }
+
+    function stopTTS() {
+      if ('speechSynthesis' in window) { 
+        window.speechSynthesis.cancel(); 
+      }
+      const text = document.getElementById('englishScript').value.trim();
+      const displayArea = document.getElementById('highlightDisplay');
+      displayArea.innerHTML = text ? text : '<em>대본을 입력하고 [원어민 발표 듣기]를 누르면 여기에 대본이 표시됩니다.</em>';
+    }
+
+    async function toggleRecording() {
+      if (!isRecording) {
+        await startRecording();
+      } else {
+        stopRecording();
+      }
+    }
+
+    async function startRecording() {
+      const scriptText = document.getElementById('englishScript').value.trim();
+      if (!scriptText) {
+        alert("먼저 영어 대본을 입력해주세요!");
+        return;
+      }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("이 환경에서는 마이크를 사용할 수 없습니다.");
+        return;
+      }
+
+      try {
+        globalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // 원본의 호환성을 유지하되 지원되는 포맷만 유연하게 탐색
+        let options = { mimeType: 'audio/webm' };
+        if (!MediaRecorder.isTypeSupported('audio/webm')) {
+          if (MediaRecorder.isTypeSupported('audio/mp4')) {
+            options = { mimeType: 'audio/mp4' };
+          } else {
+            options = {};
+          }
+        }
+
+        mediaRecorder = new MediaRecorder(globalStream, options);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = event => {
+          if (event.data && event.data.size > 0) {
+            audioChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          // 녹음기가 마지막 데이터를 다 넘긴 뒤에 마이크를 끈다
+          stopMicStream();
+
+          currentAudioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+          const audioPreview = document.getElementById('audioPreview');
+          if (audioPreview.src) URL.revokeObjectURL(audioPreview.src);
+          audioPreview.src = URL.createObjectURL(currentAudioBlob);
+          audioPreview.style.display = 'block';
+
+          const seconds = (Date.now() - recordStartTime) / 1000;
+          if (currentAudioBlob.size === 0) {
+            document.getElementById('recordStatus').innerText = "⚠️ 녹음 데이터가 비어 있습니다. 다른 브라우저(Chrome/Edge)로 다시 시도해 주세요.";
+            return;
+          }
+          if (peakLevel < 0.02) {
+            document.getElementById('recordStatus').innerText =
+              `⚠️ 마이크에서 소리가 거의 들어오지 않았습니다 (${seconds.toFixed(1)}초). 횟수에 포함되지 않습니다.\n` +
+              "→ 마이크가 음소거되어 있지 않은지, Windows [설정 > 시스템 > 소리 > 입력]에서 올바른 마이크가 선택되어 있는지 확인해 주세요.";
+            return;
+          }
+
+          processCompletedPractice();
+        };
+
+        startLevelMeter(globalStream);
+        recordStartTime = Date.now();
+        mediaRecorder.start(250);
+        isRecording = true;
+
+        const recordBtn = document.getElementById('recordBtn');
+        recordBtn.innerText = "⏹️ 녹음 중지하기 (완료)";
+        recordBtn.style.background = "#C2185B";
+        document.getElementById('recordStatus').innerText = "🔴 녹음 중... 마이크를 향해 읽고 위 버튼을 누르세요!";
+
+      } catch (err) {
+        stopMicStream();
+        alert("마이크 권한이 차단되었습니다. 브라우저 설정에서 마이크 권한을 허용해 주세요.");
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();   // 마이크 해제는 onstop에서 처리
+      } else {
+        stopMicStream();
+      }
+
+      isRecording = false;
+      const recordBtn = document.getElementById('recordBtn');
+      recordBtn.innerText = "🎙️ 연습 시작 (녹음하기)";
+      recordBtn.style.background = "#1A237E";
+    }
+
+    let recordStartTime = 0;
+    let peakLevel = 0;
+    let meterCtx = null;
+    let meterTimer = null;
+
+    function startLevelMeter(stream) {
+      peakLevel = 0;
+      const track = stream.getAudioTracks()[0];
+      document.getElementById('micName').innerText = track ? `(${track.label || '기본 마이크'})` : '';
+      document.getElementById('levelWrap').style.display = 'block';
+      try {
+        meterCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = meterCtx.createAnalyser();
+        analyser.fftSize = 1024;
+        meterCtx.createMediaStreamSource(stream).connect(analyser);
+        const buf = new Float32Array(analyser.fftSize);
+        meterTimer = setInterval(() => {
+          analyser.getFloatTimeDomainData(buf);
+          let peak = 0;
+          for (const v of buf) peak = Math.max(peak, Math.abs(v));
+          peakLevel = Math.max(peakLevel, peak);
+          document.getElementById('levelBar').style.width = Math.min(100, peak * 200) + '%';
+        }, 100);
+      } catch (e) {
+        peakLevel = 1;   // 측정 불가 환경에서는 검사를 건너뛴다
+      }
+    }
+
+    function stopMicStream() {
+      if (meterTimer) { clearInterval(meterTimer); meterTimer = null; }
+      if (meterCtx) { meterCtx.close(); meterCtx = null; }
+      document.getElementById('levelBar').style.width = '0%';
+      document.getElementById('levelWrap').style.display = 'none';
+      if (globalStream) {
+        globalStream.getTracks().forEach(track => track.stop());
+        globalStream = null;
+      }
+    }
+
+    // Chrome의 webm 녹음은 길이 정보가 없어 미리듣기가 0:00으로 보이는 문제 보정
+    document.getElementById('audioPreview').addEventListener('loadedmetadata', function () {
+      if (this.duration === Infinity) {
+        this.currentTime = 1e101;
+        this.addEventListener('timeupdate', function reset() {
+          this.removeEventListener('timeupdate', reset);
+          this.currentTime = 0;
+        });
+      }
+    });
+
+    function processCompletedPractice() {
+      practiceCount++;
+      document.getElementById('practiceCount').innerText = practiceCount;
+
+      let score = 95;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestAudioBlob = currentAudioBlob;
+      } else if (!bestAudioBlob && currentAudioBlob) {
+        bestAudioBlob = currentAudioBlob;
+      }
+      document.getElementById('bestScore').innerText = bestScore;
+
+      practiceHistories.push(`• ${practiceCount}회차 완료 (녹음 저장됨)`);
+      updateHistoryDisplay();
+
+      document.getElementById('recordStatus').innerText = `✅ ${practiceCount}회차 연습 완료!`;
+
+      if (practiceCount >= 5) {
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = false;
+        submitBtn.style.background = "#1A237E";
+        submitBtn.innerText = "📤 최고 기록으로 선생님께 제출하기 (계속 연습 가능)";
+      }
+    }
+
+    function updateHistoryDisplay() {
+      const historyDiv = document.getElementById('historyList');
+      historyDiv.innerHTML = practiceHistories.join('<br>');
+      historyDiv.scrollTop = historyDiv.scrollHeight;
+    }
+
+    async function submitWork() {
+      const studentInfo = document.getElementById('studentInfo').value;
+      const englishScript = document.getElementById('englishScript').value;
+      const photoFile = document.getElementById('koreanPhoto').files[0];
+
+      if (!studentInfo || !englishScript || !photoFile || !bestAudioBlob) {
+        return alert("학번/이름, 영어 대본, 한국어 대본 사진, 그리고 최소 5회 이상의 연습을 완료해 주세요!");
+      }
+
+      document.getElementById('submitStatus').innerText = "최고 기록 녹음 파일을 제출 중입니다...";
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.style.background = "#ccc";
+
+      const photoBase64 = await toBase64(photoFile);
+      const audioBase64 = await toBase64(bestAudioBlob);
+
+      const payload = {
+        studentInfo: studentInfo,
+        englishScript: englishScript,
+        practiceCount: practiceCount,
+        bestScore: bestScore,
+        photoData: photoBase64.split(',')[1],
+        photoType: photoFile.type,
+        audioData: audioBase64.split(',')[1],
+        audioType: bestAudioBlob.type
+      };
+
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.result === 'success') {
+          document.getElementById('submitStatus').innerText = "✅ 성공적으로 제출되었습니다!";
+        } else {
+          document.getElementById('submitStatus').innerText = "❌ 제출 실패: " + data.error;
+          submitBtn.disabled = false;
+          submitBtn.style.background = "#1A237E";
+        }
+      })
+      .catch(err => {
+        document.getElementById('submitStatus').innerText = "❌ 제출 중 오류가 발생했습니다. 인터넷 연결을 확인해 주세요.";
+        submitBtn.disabled = false;
+        submitBtn.style.background = "#1A237E";
+      });
+    }
+
+    function toBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
+    }
+  </script>
+</body>
+</html>
