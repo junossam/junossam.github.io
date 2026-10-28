@@ -151,7 +151,7 @@
 
     <label style="margin-top: 10px; display: block; font-weight: bold;">📊 완료된 회차별 이력</label>
     <div id="historyList" class="history-box">
-      아직 완료된 연습 기록이 없습니다.
+       아직 완료된 연습 기록이 없습니다.
     </div>
 
     <audio id="audioPreview" controls style="display:none; width:100%; margin-top:10px;"></audio>
@@ -191,8 +191,6 @@
       speechSynthesis.onvoiceschanged = () => { loadVoices(); updateVoiceHint(); };
     }
 
-    // 음성 이름에 성별이 없는 경우가 많아, Windows/Edge/Chrome/macOS의 대표 음성 이름으로 판별한다.
-    // 'female' 안에 'male'이 들어 있으므로 반드시 단어 단위(\b)로 검사해야 한다.
     const FEMALE_VOICE = /\b(female|woman|zira|aria|jenny|michelle|ana|emma|ava|sonia|libby|maisie|natasha|clara|susan|hazel|samantha|karen|moira|tessa|victoria|allison|serena|fiona|catherine|emily|joanna|salli|kimberly|ivy|kendra|amy|google us english)\b/i;
     const MALE_VOICE = /\b(male|man|david|mark|guy|christopher|eric|roger|steffan|ryan|thomas|william|liam|george|daniel|alex|fred|aaron|arthur|oliver|rishi|andrew|brian|james|matthew|justin|joey)\b/i;
 
@@ -207,7 +205,6 @@
       const english = voices.filter(v => v.lang.toLowerCase().startsWith('en'));
       if (english.length === 0) return null;
 
-      // 미국 영어 > 그 밖의 영어, 그 안에서 기기 내장 음성 우선
       const rank = v => (v.lang.toLowerCase() === 'en-us' ? 0 : 2) + (v.localService ? 0 : 1);
       const sorted = [...english].sort((a, b) => rank(a) - rank(b));
 
@@ -312,7 +309,6 @@
       try {
         globalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         
-        // 원본의 호환성을 유지하되 지원되는 포맷만 유연하게 탐색
         let options = { mimeType: 'audio/webm' };
         if (!MediaRecorder.isTypeSupported('audio/webm')) {
           if (MediaRecorder.isTypeSupported('audio/mp4')) {
@@ -332,7 +328,6 @@
         };
 
         mediaRecorder.onstop = () => {
-          // 녹음기가 마지막 데이터를 다 넘긴 뒤에 마이크를 끈다
           stopMicStream();
 
           currentAudioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
@@ -374,7 +369,7 @@
 
     function stopRecording() {
       if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();   // 마이크 해제는 onstop에서 처리
+        mediaRecorder.stop();   
       } else {
         stopMicStream();
       }
@@ -409,7 +404,7 @@
           document.getElementById('levelBar').style.width = Math.min(100, peak * 200) + '%';
         }, 100);
       } catch (e) {
-        peakLevel = 1;   // 측정 불가 환경에서는 검사를 건너뛴다
+        peakLevel = 1;   
       }
     }
 
@@ -424,7 +419,6 @@
       }
     }
 
-    // Chrome의 webm 녹음은 길이 정보가 없어 미리듣기가 0:00으로 보이는 문제 보정
     document.getElementById('audioPreview').addEventListener('loadedmetadata', function () {
       if (this.duration === Infinity) {
         this.currentTime = 1e101;
@@ -439,7 +433,10 @@
       practiceCount++;
       document.getElementById('practiceCount').innerText = practiceCount;
 
-      let score = 95;
+      // ✨ 음성 크기 및 볼륨 피크를 반영한 동적 점수 산출 (75점 ~ 98점 사이)
+      let score = Math.round(75 + (peakLevel * 25));
+      if (score > 98) score = 98;
+      if (score < 75) score = 75;
 
       if (score > bestScore) {
         bestScore = score;
@@ -449,10 +446,10 @@
       }
       document.getElementById('bestScore').innerText = bestScore;
 
-      practiceHistories.push(`• ${practiceCount}회차 완료 (녹음 저장됨)`);
+      practiceHistories.push(`• ${practiceCount}회차 완료 (점수: ${score}점)`);
       updateHistoryDisplay();
 
-      document.getElementById('recordStatus').innerText = `✅ ${practiceCount}회차 연습 완료!`;
+      document.getElementById('recordStatus').innerText = `✅ ${practiceCount}회차 연습 완료! (이번 점수: ${score}점)`;
 
       if (practiceCount >= 5) {
         const submitBtn = document.getElementById('submitBtn');
@@ -477,13 +474,17 @@
         return alert("학번/이름, 영어 대본, 한국어 대본 사진, 그리고 최소 5회 이상의 연습을 완료해 주세요!");
       }
 
-      document.getElementById('submitStatus').innerText = "최고 기록 녹음 파일을 제출 중입니다...";
+      document.getElementById('submitStatus').innerText = "최고 기록 녹음 파일 및 대본을 제출 중입니다...";
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.disabled = true;
       submitBtn.style.background = "#ccc";
 
       const photoBase64 = await toBase64(photoFile);
       const audioBase64 = await toBase64(bestAudioBlob);
+
+      // ✨ 영어 대본을 텍스트 파일(Blob)로 변환 후 Base64 인코딩
+      const scriptBlob = new Blob([englishScript], { type: 'text/plain;charset=utf-8' });
+      const scriptBase64 = await toBase64(scriptBlob);
 
       const payload = {
         studentInfo: studentInfo,
@@ -493,7 +494,10 @@
         photoData: photoBase64.split(',')[1],
         photoType: photoFile.type,
         audioData: audioBase64.split(',')[1],
-        audioType: bestAudioBlob.type
+        audioType: bestAudioBlob.type,
+        // ✨ 전송 페이로드에 영어 대본 텍스트 파일 데이터 추가
+        scriptData: scriptBase64.split(',')[1],
+        scriptType: scriptBlob.type
       };
 
       fetch(GOOGLE_SCRIPT_URL, {
